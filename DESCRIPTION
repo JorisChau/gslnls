@@ -1,0 +1,14 @@
+Package: gslnls
+Type: Package
+Title: GSL Nonlinear Least-Squares Fitting
+Version: 1.0.0
+Date: 2021-09-10
+Authors@R: person("Joris", "Chau", email = "joris.chau@openanalytics.eu", role = c("aut", "cre"))
+Description: 'R' interface to nonlinear least-squares optimization with the GNU Scientific Library (GSL). The available trust region methods include the Levenberg-Marquadt algorithm with and without geodesic acceleration, and several variants of Powell's dogleg algorithm. Bindings are provided to tune a number of parameters affecting the low-level aspects of the trust region algorithms. The interface mimicks 'R''s nls() function and returns model objects inheriting from the same class.
+Depends: 
+    R (>= 3.5)
+Encoding: UTF-8
+License: GPL-3
+LazyData: true
+SystemRequirements: GSL
+RoxygenNote: 7.1.1
