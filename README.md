@@ -86,7 +86,7 @@ devtools::install_github("JorisChau/gslnls")
 
 ## Example usage
 
-### Exponential model
+### Example 1: Exponential model
 
 #### Data
 
@@ -347,7 +347,7 @@ different model parameterization (`A = R0 - Asym`, `lam = exp(lrc)`, `b
 = Asym`), but the fitted models are equivalent. Also, when using a
 *self-starting* model, no starting values need to be provided.
 
-### Gaussian function
+### Example 2: Gaussian function
 
 #### Data
 
@@ -681,7 +681,7 @@ ex2c_fit
 #> Achieved convergence tolerance: 6.772e-11
 ```
 
-### Branin function
+### Example 3: Branin function
 
 As a third example, we compare the available trust region methods by
 minimizing the Branin test function, a common optimization test problem.
