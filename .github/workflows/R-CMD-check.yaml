@@ -2,13 +2,31 @@
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
   pull_request:
-    branches: [main, master]
+    branches:
+      - main
+      - master
 
 name: R-CMD-check
 
 jobs:
+  run-rchk:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - uses: r-lib/actions/run-rchk@master
+        with:
+          apt: libgsl-dev
+          package: gslnls
+
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
 
@@ -38,6 +56,11 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
+
+      - name: Install lib-gsl (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install gsl
 
       - uses: r-lib/actions/setup-r-dependencies@v1
         with:
