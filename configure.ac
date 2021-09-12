@@ -1,5 +1,5 @@
 
-AC_INIT([gslnls], 0.0.0.900)
+AC_INIT([gslnls], 1.0.0)
 
 AC_CHECK_LIB([m],[cos])
 AC_CHECK_LIB([gslcblas],[cblas_dgemm])
@@ -17,7 +17,7 @@ if test "x$ac_cv_lib_gsl_gsl_blas_dgemm" != xyes; then
     echo "R CMD INSTALL --configure-vars='INCLUDE_DIR=... LIB_DIR=...'"
     echo "--------------------------------------------------------------------"
   exit 1;
-fi 
+fi
 
 ## credits to Dirk Eddelbuetel and RcppGSL package
 AC_PATH_PROG([GSL_CONFIG], [gsl-config])
