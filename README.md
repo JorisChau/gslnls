@@ -5,6 +5,7 @@
 
 <!-- badges: start -->
 
+[![R-CMD-check](https://github.com/JorisChau/gslnls/workflows/R-CMD-check/badge.svg)](https://github.com/JorisChau/gslnls/actions)
 <!-- badges: end -->
 
 The {gslnls}-package provides R bindings to nonlinear least-squares
@@ -639,7 +640,7 @@ ex2c_fit <- gsl_nls(
   fvv = fvv,                                ## analytic fvv 
   xi = x                                    ## fvv function argument 
 )
-#> iter 0: ssr = 1192.49, cond(J) = inf, |a|/|v| = 0
+#> iter 0: ssr = 1192.49, cond(J) = -nan, |a|/|v| = 0
 #> iter 1: ssr = 985.222, cond(J) = 29.1802, |a|/|v| = 0.285933
 #> iter 2: ssr = 871.164, cond(J) = 6.33554, |a|/|v| = 0.331994
 #> iter 3: ssr = 749.318, cond(J) = 6.52269, |a|/|v| = 0.0313447
