@@ -39,18 +39,16 @@ interface and the relevant mathematical background.
 
 ### System requirements
 
-When installing the R-package from source, verify that GSL is installed
-on the system, e.g. on Ubuntu/Debian Linux:
+When installing the R-package from source, verify that GSL (\>= 2.2) is
+installed on the system, e.g. on Ubuntu/Debian Linux:
 
     gsl-config --version
 
-If GSL is not found on the system, install GSL from a pre-compiled
-binary package (see the examples below) or install GSL from source by
-downloading the latest stable release
+If GSL (\>= 2.2) is not available on the system, install GSL from a
+pre-compiled binary package (see the examples below) or install GSL from
+source by downloading the latest stable release
 (<https://www.gnu.org/software/gsl/>) and following the installation
-instructions in the included README and INSTALL files. Note:
-pre-compiled binary packages are included in most GNU/Linux
-distributions.
+instructions in the included README and INSTALL files.
 
 #### GSL installation examples
 
@@ -68,17 +66,12 @@ distributions.
 
 ##### Windows
 
-With [Rtools40](https://cran.r-project.org/bin/windows/Rtools/)
-installed, GSL can be installed from the Rtools bash shell using the
-`pacman` package manager (as explained
-[here](https://github.com/r-windows/docs/blob/master/rtools40.md#readme))
-with the command:
-
-    pacman -S mingw-w64-{i686,x86_64}-gsl
+On windows, a binary version of GSL (2.7) is automatically downloaded
+from <https://github.com/rwinlib/gsl>, no additional action is needed.
 
 ### R-package installation
 
-With GSL installed, install the latest development version of the
+With GSL available, install the latest development version of the
 R-package from GitHub with:
 
 ``` r
@@ -640,7 +633,7 @@ ex2c_fit <- gsl_nls(
   fvv = fvv,                                ## analytic fvv 
   xi = x                                    ## fvv function argument 
 )
-#> iter 0: ssr = 1192.49, cond(J) = -nan, |a|/|v| = 0
+#> iter 0: ssr = 1192.49, cond(J) = inf, |a|/|v| = 0
 #> iter 1: ssr = 985.222, cond(J) = 29.1802, |a|/|v| = 0.285933
 #> iter 2: ssr = 871.164, cond(J) = 6.33554, |a|/|v| = 0.331994
 #> iter 3: ssr = 749.318, cond(J) = 6.52269, |a|/|v| = 0.0313447

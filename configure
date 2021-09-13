@@ -2725,7 +2725,7 @@ if test "x$ac_cv_lib_gsl_gsl_blas_dgemm" != xyes; then
   exit 1;
 fi
 
-## credits to Dirk Eddelbuetel and RcppGSL package
+## credits to Dirk Eddelbuettel and RcppGSL
 # Extract the first word of "gsl-config", so it can be a program name with args.
 set dummy gsl-config; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5

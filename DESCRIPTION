@@ -10,5 +10,5 @@ Depends:
 Encoding: UTF-8
 License: GPL-3
 LazyData: true
-SystemRequirements: GSL
+SystemRequirements: GSL (>= 2.2)
 RoxygenNote: 7.1.1

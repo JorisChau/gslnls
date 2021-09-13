@@ -36,7 +36,7 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: macOS-latest,   r: 'release'}
+          #- {os: macOS-latest,   r: 'release'}
           - {os: windows-latest, r: 'release'}
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
@@ -57,10 +57,10 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      - name: Install lib-gsl (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install gsl
+      # - name: Install lib-gsl (macOS)
+      #   if: runner.os == 'macOS'
+      #   run: |
+      #     brew install gsl
 
       - uses: r-lib/actions/setup-r-dependencies@v1
         with:

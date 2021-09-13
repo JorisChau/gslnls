@@ -1,3 +1,11 @@
-## This assumes that the LIB_GSL variable points to working GSL libraries
-PKG_CPPFLAGS=-I$(LIB_GSL)/include
-PKG_LIBS=-L$(LIB_GSL)/lib -lgsl -lgslcblas 
+## credits to Dirk Eddelbuettel and rccpziggurat
+PKG_CPPFLAGS= -I../windows/gsl-2.7/include -I../inst/include
+PKG_LIBS= -L../windows/gsl-2.7/lib${R_ARCH}${CRT} -lgsl -lgslcblas
+
+all: clean winlibs
+
+winlibs:
+	"${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" "../tools/winlibs.R"
+
+clean:
+	rm -f $(SHLIB) $(OBJECTS)

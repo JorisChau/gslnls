@@ -19,7 +19,7 @@ if test "x$ac_cv_lib_gsl_gsl_blas_dgemm" != xyes; then
   exit 1;
 fi
 
-## credits to Dirk Eddelbuetel and RcppGSL package
+## credits to Dirk Eddelbuettel and RcppGSL
 AC_PATH_PROG([GSL_CONFIG], [gsl-config])
 if test "${GSL_CONFIG}" != ""; then
     # Use gsl-config for header and linker arguments (without BLAS which we get from R)
