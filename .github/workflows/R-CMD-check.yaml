@@ -60,11 +60,6 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      - name: Install lib-gsl
-        if: runner.os == 'macOS'
-        run: |
-          brew install gsl
-
       - uses: r-lib/actions/setup-r-dependencies@v1
         with:
           extra-packages: rcmdcheck
