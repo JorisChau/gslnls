@@ -13,19 +13,19 @@ on:
 name: R-CMD-check
 
 jobs:
-  run-rchk:
-    runs-on: ubuntu-latest
-
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-
-    steps:
-      - uses: actions/checkout@v1
-
-      - uses: r-lib/actions/run-rchk@master
-        with:
-          apt: libgsl-dev
-          package: gslnls
+  # run-rchk:
+  #   runs-on: ubuntu-latest
+  #
+  #   env:
+  #     GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+  #
+  #   steps:
+  #     - uses: actions/checkout@v1
+  #
+  #     - uses: r-lib/actions/run-rchk@master
+  #       with:
+  #         apt: libgsl-dev
+  #         package: gslnls
 
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
@@ -37,10 +37,10 @@ jobs:
       matrix:
         config:
           - {os: macOS-latest,   r: 'release'}
-          - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-latest,   r: 'release'}
-          - {os: ubuntu-latest,   r: 'oldrel/1'}
+          #- {os: windows-latest, r: 'release'}
+          #- {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
+          #- {os: ubuntu-latest,   r: 'release'}
+          #- {os: ubuntu-latest,   r: 'oldrel/1'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
