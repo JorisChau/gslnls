@@ -1,5 +1,6 @@
 inst/doc
 src/Makevars
+autom4te.cache/*
 doc
 Meta
 .RData
