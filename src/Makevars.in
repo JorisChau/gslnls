@@ -5,4 +5,4 @@ GSL_LIBS   = @GSL_LIBS@
 
 # combine with standard arguments for R
 PKG_CPPFLAGS = $(GSL_CFLAGS)
-PKG_LIBS = $(GSL_LIBS) 
+PKG_LIBS = $(GSL_LIBS)
