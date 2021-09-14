@@ -8,6 +8,7 @@ if test "${GSL_CONFIG}" != ""; then
     # Use gsl-config for header and linker arguments (without BLAS which we get from R)
     GSL_CFLAGS=`${GSL_CONFIG} --cflags`
     GSL_LIBS=`${GSL_CONFIG} --libs`
+    LDFLAGS=`${GSL_CONFIG} --libs`
 else
     echo "------------------------- LIBGSL ERROR ------------------------------"
     echo "Configuration failed because libgsl was not found. Try installing:"
