@@ -1,3 +1,3 @@
-# gslnls 0.0.0.900
+# gslnls 1.0.0
 
-* development version
+* Initial package version

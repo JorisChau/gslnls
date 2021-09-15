@@ -67,7 +67,8 @@ instructions in the included README and INSTALL files.
 ##### Windows
 
 On windows, a binary version of GSL (2.7) is automatically downloaded
-from <https://github.com/rwinlib/gsl>, no additional action is needed.
+from <https://github.com/rwinlib/gsl> when installing the R-package, no
+additional action is needed.
 
 ### R-package installation
 
@@ -123,7 +124,7 @@ f <- function(A, lam, b, x) A * exp(-lam * x) + b
 y <- f(A = 5, lam = 1.5, b = 1, x) + rnorm(n, sd = 0.25)
 ```
 
-<img src="README-unnamed-chunk-4-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="README/fig-1-1.png" width="100%" style="display: block; margin: auto;" />
 
 #### Model fit
 
@@ -258,7 +259,7 @@ predict(ex1_fit, interval = "prediction", level = 0.95)
 ....
 ```
 
-<img src="README-unnamed-chunk-9-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="README/fig-2-1.png" width="100%" style="display: block; margin: auto;" />
 
 #### Jacobian calculation
 
@@ -384,7 +385,7 @@ f <- function(a, b, c, x) a * exp(-(x - b)^2 / (2 * c^2))
 y <- f(a = 5, b = 0.4, c = 0.15, x) * rnorm(n, mean = 1, sd = 0.1)
 ```
 
-<img src="README-unnamed-chunk-13-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="README/fig-3-1.png" width="100%" style="display: block; margin: auto;" />
 
 #### Model fit
 
@@ -633,7 +634,7 @@ ex2c_fit <- gsl_nls(
   fvv = fvv,                                ## analytic fvv 
   xi = x                                    ## fvv function argument 
 )
-#> iter 0: ssr = 1192.49, cond(J) = inf, |a|/|v| = 0
+#> iter 0: ssr = 1192.49, cond(J) = -nan, |a|/|v| = 0
 #> iter 1: ssr = 985.222, cond(J) = 29.1802, |a|/|v| = 0.285933
 #> iter 2: ssr = 871.164, cond(J) = 6.33554, |a|/|v| = 0.331994
 #> iter 3: ssr = 749.318, cond(J) = 6.52269, |a|/|v| = 0.0313447
@@ -790,7 +791,7 @@ methods, i.e. `algorithm` set to `"lm"`, `"lmaccel"`, `"dogleg"`,
 values at each iteration, we can visualize the minimization paths
 followed by each method.
 
-<img src="README-unnamed-chunk-19-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="README/fig-4-1.png" width="100%" style="display: block; margin: auto;" />
 
 Analogous to the
 [example](https://www.gnu.org/software/gsl/doc/html/nls.html#comparing-trs-methods-example)

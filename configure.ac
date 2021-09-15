@@ -48,7 +48,7 @@ int main() {
 [gsl_version_ok=no],
 [gsl_version_ok=yes])
 if test "${gsl_version_ok}" = no; then
-  AC_MSG_ERROR([issing required GSL headers. Upgrade GSL to version >= 2.2])
+  AC_MSG_ERROR([Missing required GSL headers. Upgrade GSL to version >= 2.2])
 else
   AC_MSG_RESULT([yes])
 fi
