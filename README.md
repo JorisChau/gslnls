@@ -347,7 +347,7 @@ different model parameterization (`A = R0 - Asym`, `lam = exp(lrc)`, `b
 #### Data
 
 The following code generates ![n
-= 200](https://latex.codecogs.com/png.latex?n%20%3D%20200 "n = 200")
+= 300](https://latex.codecogs.com/png.latex?n%20%3D%20300 "n = 300")
 noisy observations
 ![y\_1,\\ldots,y\_n](https://latex.codecogs.com/png.latex?y_1%2C%5Cldots%2Cy_n
 "y_1,\\ldots,y_n") from a Gaussian function with multiplicative
@@ -634,7 +634,7 @@ ex2c_fit <- gsl_nls(
   fvv = fvv,                                ## analytic fvv 
   xi = x                                    ## fvv function argument 
 )
-#> iter 0: ssr = 1192.49, cond(J) = -nan, |a|/|v| = 0
+#> iter 0: ssr = 1192.49, cond(J) = inf, |a|/|v| = 0
 #> iter 1: ssr = 985.222, cond(J) = 29.1802, |a|/|v| = 0.285933
 #> iter 2: ssr = 871.164, cond(J) = 6.33554, |a|/|v| = 0.331994
 #> iter 3: ssr = 749.318, cond(J) = 6.52269, |a|/|v| = 0.0313447
