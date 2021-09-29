@@ -12,7 +12,7 @@
 \item{correlation}{logical; if \code{TRUE}, the correlation matrix of the estimated
 parameters is returned and printed.}
 
-\item{symbolic.cor}{logical; if \code{TRUE}, print the correlations in a symbolic form 
+\item{symbolic.cor}{logical; if \code{TRUE}, print the correlations in a symbolic form
 (see \code{\link[stats]{symnum}}) rather than as numbers.}
 
 \item{...}{At present no optional arguments are used.}

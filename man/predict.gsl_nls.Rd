@@ -16,30 +16,30 @@
 \arguments{
 \item{object}{An object inheriting from class \code{"gsl_nls"}.}
 
-\item{newdata}{A named list or data.frame in which to look for variables with which to predict. If 
+\item{newdata}{A named list or data.frame in which to look for variables with which to predict. If
 \code{newdata} is missing, the predicted values at the original data points are returned.}
 
-\item{scale}{A numeric scalar or vector. If it is set, it is used as the residual standard deviation 
-(or vector of residual standard deviations) in the computation of the standard errors, otherwise 
+\item{scale}{A numeric scalar or vector. If it is set, it is used as the residual standard deviation
+(or vector of residual standard deviations) in the computation of the standard errors, otherwise
 this information is extracted from the model fit.}
 
-\item{interval}{A character string indicating if confidence or prediction (tolerance) intervals 
+\item{interval}{A character string indicating if confidence or prediction (tolerance) intervals
 at the specified level should be returned.}
 
-\item{level}{A numeric scalar between 0 and 1 giving the confidence level for the intervals (if any) 
+\item{level}{A numeric scalar between 0 and 1 giving the confidence level for the intervals (if any)
 to be calculated.}
 
 \item{...}{At present no optional arguments are used.}
 }
 \value{
 If \code{interval = "none"} (default), a vector of predictions for the mean response. Otherwise,
-a matrix with columns \code{fit}, \code{lwr} and \code{upr}. The first column (\code{fit}) contains 
+a matrix with columns \code{fit}, \code{lwr} and \code{upr}. The first column (\code{fit}) contains
 predictions for the mean response. The other two columns contain lower (\code{lwr}) and upper (\code{upr})
 confidence or prediction bounds at the specified \code{level}.
 }
 \description{
 Returns predicted values for the expected response from a fitted \code{"gsl_nls"} object.
-Asymptotic confidence or prediction (tolerance) intervals at a given \code{level} can be evaluated 
+Asymptotic confidence or prediction (tolerance) intervals at a given \code{level} can be evaluated
 by specifying the appropriate \code{interval} argument.
 }
 \examples{

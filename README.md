@@ -261,6 +261,19 @@ predict(ex1_fit, interval = "prediction", level = 0.95)
 
 <img src="README/fig-2-1.png" width="100%" style="display: block; margin: auto;" />
 
+For objects of class `"gsl_nls"`, the `confintd` method can be used to
+evaluate asymptotic confidence intervals of derived (or transformed)
+parameters based on the delta method:
+
+``` r
+## delta method confidence intervals
+confintd(ex1_fit, expr = c("b", "A + b", "log(lam)"), level = 0.95)
+#>                fit       lwr       upr
+#> b        0.9967696 0.8638162 1.1297229
+#> A + b    5.9872681 5.7370725 6.2374637
+#> log(lam) 0.3759724 0.2611080 0.4908368
+```
+
 #### Jacobian calculation
 
 If the `jac` argument in `gsl_nls()` is undefined, the Jacobian matrix
@@ -294,12 +307,39 @@ f\_i}{\\partial A}, \\frac{\\partial f\_i}{\\partial \\lambda},
 which is encoded in the following call to `gsl_nls()`:
 
 ``` r
-## analytic Jacobian
+## analytic Jacobian (1)
 gsl_nls(
   fn = y ~ A * exp(-lam * x) + b,    ## model formula
   data = data.frame(x = x, y = y),   ## model fit data
   start = c(A = 0, lam = 0, b = 0),  ## starting values
-  jac = function(par) with(as.list(par), cbind(A = exp(-lam * x), lam = -A * x * exp(-lam * x), b = 1))
+  jac = function(par, x) with(as.list(par), cbind(A = exp(-lam * x), lam = -A * x * exp(-lam * x), b = 1)),
+  x = x                              ## argument passed to jac
+)
+#> Nonlinear regression model
+#>   model: y ~ A * exp(-lam * x) + b
+#>    data: data.frame(x = x, y = y)
+#>      A    lam      b 
+#> 4.9905 1.4564 0.9968 
+#>  residual sum-of-squares: 2.104
+#> 
+#> Algorithm: levenberg-marquardt, (scaling: more, solver: qr)
+#> 
+#> Number of iterations to convergence: 8 
+#> Achieved convergence tolerance: 9.496e-11
+```
+
+If the model formula `fn` can be derived with `stats::deriv()`, then the
+analytic Jacobian in `jac` can be computed automatically using symbolic
+differentiation and no manual calculations are necessary. To evaluate
+`jac` by means of symbolic differentiation, set `jac = TRUE`:
+
+``` r
+## analytic Jacobian (2)
+gsl_nls(
+  fn = y ~ A * exp(-lam * x) + b,    ## model formula
+  data = data.frame(x = x, y = y),   ## model fit data
+  start = c(A = 0, lam = 0, b = 0),  ## starting values
+  jac = TRUE                         ## symbolic derivation
 )
 #> Nonlinear regression model
 #>   model: y ~ A * exp(-lam * x) + b
@@ -315,15 +355,17 @@ gsl_nls(
 ```
 
 Alternatively, a self-starting nonlinear model (see `?selfStart`) can be
-passed to `gsl_nls()`, in which case the Jacobian matrix is evaluated
+passed to `gsl_nls()`. In this case, the Jacobian matrix is evaluated
 from the `"gradient"` attribute of the self-starting model object:
 
 ``` r
 ## self-starting model
-gsl_nls(
+ss_fit <- gsl_nls(
   fn =  y ~ SSasymp(x, Asym, R0, lrc),    ## model formula
   data = data.frame(x = x, y = y)         ## model fit data
 )
+
+ss_fit
 #> Nonlinear regression model
 #>   model: y ~ SSasymp(x, Asym, R0, lrc)
 #>    data: data.frame(x = x, y = y)
@@ -337,10 +379,23 @@ gsl_nls(
 #> Achieved convergence tolerance: 1.762e-12
 ```
 
-**Remark**: the self-starting model `SSasymp()` uses a slightly
-different model parameterization (`A = R0 - Asym`, `lam = exp(lrc)`, `b
-= Asym`), but the fitted models are equivalent. Also, when using a
-*self-starting* model, no starting values need to be provided.
+The self-starting model `SSasymp()` uses a different model
+parameterization (`A = R0 - Asym`, `lam = exp(lrc)`, `b = Asym`), but
+the fitted models are equivalent. Also, when using a *self-starting*
+model, no starting values need to be provided.
+
+**Remark**: confidence intervals for the fitted coefficients in the
+original parameterization can be approximated using the `confintd`
+method:
+
+``` r
+## delta method confidnce intervals
+confintd(ss_fit, expr = c("R0 - Asym", "exp(lrc)", "Asym"), level = 0.95)
+#>                 fit       lwr      upr
+#> R0 - Asym 4.9904986 4.7529300 5.228067
+#> exp(lrc)  1.4564071 1.2891178 1.623696
+#> Asym      0.9967697 0.8638164 1.129723
+```
 
 ### Example 2: Gaussian function
 
@@ -482,7 +537,7 @@ ex2b_fit <- gsl_nls(
   algorithm = "lmaccel",                    ## algorithm
   trace = TRUE                              ## verbose output
 )
-#> iter 0: ssr = 1192.49, cond(J) = -nan, |a|/|v| = 0
+#> iter 0: ssr = 1192.49, cond(J) = inf, |a|/|v| = 0
 #> iter 1: ssr = 902.787, cond(J) = 29.1802, |a|/|v| = 0.288
 #> iter 2: ssr = 726.988, cond(J) = 3.53773, |a|/|v| = 0.233334
 #> iter 3: ssr = 444.339, cond(J) = 5.56604, |a|/|v| = 0.304665
@@ -553,11 +608,11 @@ f\_i}{\\partial a \\partial b} & \\frac{\\partial^2 f\_i}{\\partial a
 \\partial c} \\\\&#10;& \\frac{\\partial^2 f\_i}{\\partial b^2} &
 \\frac{\\partial^2 f\_i}{\\partial b \\partial c} \\\\&#10;& &
 \\frac{\\partial^2 f\_i}{\\partial c^2}&#10;\\end{matrix}\\right\] \\ =
-\\ &#10;\\left\[\\begin{matrix}&#10;0 & -\\frac{z\_i}{c} e\_i &
--\\frac{z\_i^2}{c} e\_i \\\\&#10;& \\frac{a}{c^2} (1 - z\_i^2) e\_i &
-\\frac{a}{c^2} z\_i (2 - z\_i^2) e\_i \\\\&#10;& & \\frac{a}{c^2} z\_i^2
-(3 - z\_i^2) e\_i
-&#10;\\end{matrix}\\right\]&#10;](https://latex.codecogs.com/png.latex?%0A%5Cboldsymbol%7BH%7D_%7Bf_i%7D%20%5C%20%3D%20%5C%20%0A%5Cleft%5B%5Cbegin%7Bmatrix%7D%20%0A%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%5E2%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20b%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20c%7D%20%5C%5C%0A%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%5E2%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%20%5Cpartial%20c%7D%20%5C%5C%0A%26%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20c%5E2%7D%0A%5Cend%7Bmatrix%7D%5Cright%5D%20%5C%20%3D%20%5C%20%0A%5Cleft%5B%5Cbegin%7Bmatrix%7D%0A0%20%26%20-%5Cfrac%7Bz_i%7D%7Bc%7D%20e_i%20%26%20-%5Cfrac%7Bz_i%5E2%7D%7Bc%7D%20e_i%20%5C%5C%0A%26%20%5Cfrac%7Ba%7D%7Bc%5E2%7D%20%281%20-%20z_i%5E2%29%20e_i%20%26%20%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%20%282%20-%20z_i%5E2%29%20e_i%20%5C%5C%0A%26%20%26%20%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%5E2%20%283%20-%20z_i%5E2%29%20e_i%20%0A%5Cend%7Bmatrix%7D%5Cright%5D%0A
+\\ &#10;\\left\[\\begin{matrix}&#10;0 & \\frac{z\_i}{c} e\_i &
+\\frac{z\_i^2}{c} e\_i \\\\&#10;& -\\frac{a}{c^2} (1 - z\_i^2) e\_i &
+-\\frac{a}{c^2} z\_i (2 - z\_i^2) e\_i \\\\&#10;& & -\\frac{a}{c^2}
+z\_i^2 (3 - z\_i^2) e\_i
+&#10;\\end{matrix}\\right\]&#10;](https://latex.codecogs.com/png.latex?%0A%5Cboldsymbol%7BH%7D_%7Bf_i%7D%20%5C%20%3D%20%5C%20%0A%5Cleft%5B%5Cbegin%7Bmatrix%7D%20%0A%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%5E2%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20b%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20c%7D%20%5C%5C%0A%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%5E2%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%20%5Cpartial%20c%7D%20%5C%5C%0A%26%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20c%5E2%7D%0A%5Cend%7Bmatrix%7D%5Cright%5D%20%5C%20%3D%20%5C%20%0A%5Cleft%5B%5Cbegin%7Bmatrix%7D%0A0%20%26%20%5Cfrac%7Bz_i%7D%7Bc%7D%20e_i%20%26%20%5Cfrac%7Bz_i%5E2%7D%7Bc%7D%20e_i%20%5C%5C%0A%26%20-%5Cfrac%7Ba%7D%7Bc%5E2%7D%20%281%20-%20z_i%5E2%29%20e_i%20%26%20-%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%20%282%20-%20z_i%5E2%29%20e_i%20%5C%5C%0A%26%20%26%20-%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%5E2%20%283%20-%20z_i%5E2%29%20e_i%20%0A%5Cend%7Bmatrix%7D%5Cright%5D%0A
 "
 \\boldsymbol{H}_{f_i} \\ = \\ 
 \\left[\\begin{matrix} 
@@ -566,9 +621,9 @@ f\_i}{\\partial a \\partial b} & \\frac{\\partial^2 f\_i}{\\partial a
 & & \\frac{\\partial^2 f_i}{\\partial c^2}
 \\end{matrix}\\right] \\ = \\ 
 \\left[\\begin{matrix}
-0 & -\\frac{z_i}{c} e_i & -\\frac{z_i^2}{c} e_i \\\\
-& \\frac{a}{c^2} (1 - z_i^2) e_i & \\frac{a}{c^2} z_i (2 - z_i^2) e_i \\\\
-& & \\frac{a}{c^2} z_i^2 (3 - z_i^2) e_i 
+0 & \\frac{z_i}{c} e_i & \\frac{z_i^2}{c} e_i \\\\
+& -\\frac{a}{c^2} (1 - z_i^2) e_i & -\\frac{a}{c^2} z_i (2 - z_i^2) e_i \\\\
+& & -\\frac{a}{c^2} z_i^2 (3 - z_i^2) e_i 
 \\end{matrix}\\right]
 ")  
 where the lower half of the Hessian matrix is omitted since it is
@@ -599,15 +654,15 @@ f\_i}{\\partial a \\partial b} + 2v\_av\_c\\frac{\\partial^2
 f\_i}{\\partial a \\partial c} + v\_b^2\\frac{\\partial^2
 f\_i}{\\partial b^2} + 2v\_bv\_c\\frac{\\partial^2 f\_i}{\\partial b
 \\partial c} + v\_c^2\\frac{\\partial^2 f\_i}{\\partial c^2} \\\\&#10;&
-\\ = \\ -2v\_a v\_b\\frac{z\_i}{c} e\_i - 2v\_av\_c \\frac{z\_i^2}{c}
-e\_i + v\_b^2\\frac{a}{c^2} (1 - z\_i^2) e\_i + 2v\_bv\_c \\frac{a}{c^2}
-z\_i (2 - z\_i^2) e\_i + v\_c^2\\frac{a}{c^2} z\_i^2 (3 - z\_i^2)
-e\_i&#10;\\end{aligned}&#10;](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AD_v%5E2%20f_i%20%26%20%5C%20%3D%20%5C%20%5Csum_%7Bj%2Ck%7D%20v_%7B%5Ctheta_j%7Dv_%7B%5Ctheta_k%7D%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20%5Ctheta_j%20%5Cpartial%20%5Ctheta_k%7D%20%5C%5C%0A%26%20%5C%20%3D%20%5C%20v_a%5E2%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%5E2%7D%20%2B%202%20v_av_b%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20b%7D%20%2B%202v_av_c%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20c%7D%20%2B%20v_b%5E2%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%5E2%7D%20%2B%202v_bv_c%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%20%5Cpartial%20c%7D%20%2B%20v_c%5E2%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20c%5E2%7D%20%5C%5C%0A%26%20%5C%20%3D%20%5C%20-2v_a%20v_b%5Cfrac%7Bz_i%7D%7Bc%7D%20e_i%20-%202v_av_c%20%5Cfrac%7Bz_i%5E2%7D%7Bc%7D%20e_i%20%2B%20v_b%5E2%5Cfrac%7Ba%7D%7Bc%5E2%7D%20%281%20-%20z_i%5E2%29%20e_i%20%2B%202v_bv_c%20%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%20%282%20-%20z_i%5E2%29%20e_i%20%2B%20v_c%5E2%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%5E2%20%283%20-%20z_i%5E2%29%20e_i%0A%5Cend%7Baligned%7D%0A
+\\ = \\ 2v\_a v\_b\\frac{z\_i}{c} e\_i + 2v\_av\_c \\frac{z\_i^2}{c}
+e\_i - v\_b^2\\frac{a}{c^2} (1 - z\_i^2) e\_i - 2v\_bv\_c \\frac{a}{c^2}
+z\_i (2 - z\_i^2) e\_i - v\_c^2\\frac{a}{c^2} z\_i^2 (3 - z\_i^2)
+e\_i&#10;\\end{aligned}&#10;](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AD_v%5E2%20f_i%20%26%20%5C%20%3D%20%5C%20%5Csum_%7Bj%2Ck%7D%20v_%7B%5Ctheta_j%7Dv_%7B%5Ctheta_k%7D%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20%5Ctheta_j%20%5Cpartial%20%5Ctheta_k%7D%20%5C%5C%0A%26%20%5C%20%3D%20%5C%20v_a%5E2%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%5E2%7D%20%2B%202%20v_av_b%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20b%7D%20%2B%202v_av_c%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20c%7D%20%2B%20v_b%5E2%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%5E2%7D%20%2B%202v_bv_c%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%20%5Cpartial%20c%7D%20%2B%20v_c%5E2%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20c%5E2%7D%20%5C%5C%0A%26%20%5C%20%3D%20%5C%202v_a%20v_b%5Cfrac%7Bz_i%7D%7Bc%7D%20e_i%20%2B%202v_av_c%20%5Cfrac%7Bz_i%5E2%7D%7Bc%7D%20e_i%20-%20v_b%5E2%5Cfrac%7Ba%7D%7Bc%5E2%7D%20%281%20-%20z_i%5E2%29%20e_i%20-%202v_bv_c%20%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%20%282%20-%20z_i%5E2%29%20e_i%20-%20v_c%5E2%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%5E2%20%283%20-%20z_i%5E2%29%20e_i%0A%5Cend%7Baligned%7D%0A
 "
 \\begin{aligned}
 D_v^2 f_i & \\ = \\ \\sum_{j,k} v_{\\theta_j}v_{\\theta_k} \\frac{\\partial^2 f_i}{\\partial \\theta_j \\partial \\theta_k} \\\\
 & \\ = \\ v_a^2 \\frac{\\partial^2 f_i}{\\partial a^2} + 2 v_av_b\\frac{\\partial^2 f_i}{\\partial a \\partial b} + 2v_av_c\\frac{\\partial^2 f_i}{\\partial a \\partial c} + v_b^2\\frac{\\partial^2 f_i}{\\partial b^2} + 2v_bv_c\\frac{\\partial^2 f_i}{\\partial b \\partial c} + v_c^2\\frac{\\partial^2 f_i}{\\partial c^2} \\\\
-& \\ = \\ -2v_a v_b\\frac{z_i}{c} e_i - 2v_av_c \\frac{z_i^2}{c} e_i + v_b^2\\frac{a}{c^2} (1 - z_i^2) e_i + 2v_bv_c \\frac{a}{c^2} z_i (2 - z_i^2) e_i + v_c^2\\frac{a}{c^2} z_i^2 (3 - z_i^2) e_i
+& \\ = \\ 2v_a v_b\\frac{z_i}{c} e_i + 2v_av_c \\frac{z_i^2}{c} e_i - v_b^2\\frac{a}{c^2} (1 - z_i^2) e_i - 2v_bv_c \\frac{a}{c^2} z_i (2 - z_i^2) e_i - v_c^2\\frac{a}{c^2} z_i^2 (3 - z_i^2) e_i
 \\end{aligned}
 ")  
 
@@ -615,54 +670,50 @@ which can be encoded using `gsl_nls()` as follows:
 
 ``` r
 ## second directional derivative
-fvv <- function(par, v, xi) {
+fvv <- function(par, v, x) {
   with(as.list(par), {
-    zi <- (xi - b) / c
+    zi <- (x - b) / c
     ei <- exp(-zi^2 / 2)
-    -2 * v[["a"]] * v[["b"]] * zi / c * ei - 2 * v[["a"]] * v[["c"]] * zi^2 / c * ei + 
-      v[["b"]]^2 * a / c^2 * (1 - zi^2) * ei + 2 * v[["b"]] * v[["c"]] * a / c^2 * zi * (2 - zi^2) * ei + 
+    2 * v[["a"]] * v[["b"]] * zi / c * ei + 2 * v[["a"]] * v[["c"]] * zi^2 / c * ei - 
+      v[["b"]]^2 * a / c^2 * (1 - zi^2) * ei - 2 * v[["b"]] * v[["c"]] * a / c^2 * zi * (2 - zi^2) * ei -
       v[["c"]]^2 * a / c^2 * zi^2 * (3 - zi^2) * ei
   })
 }
 
-ex2c_fit <- gsl_nls(
+## analytic fvv (1)
+gsl_nls(
   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)), ## model formula
   data = data.frame(x = x, y = y),          ## model fit data
   start = c(a = 1, b = 0, c = 1),           ## starting values
   algorithm = "lmaccel",                    ## algorithm
   trace = TRUE,                             ## verbose output
-  fvv = fvv,                                ## analytic fvv 
-  xi = x                                    ## fvv function argument 
+  fvv = fvv,                                ## analytic function
+  x = x                                     ## argument passed to fvv
 )
 #> iter 0: ssr = 1192.49, cond(J) = inf, |a|/|v| = 0
-#> iter 1: ssr = 985.222, cond(J) = 29.1802, |a|/|v| = 0.285933
-#> iter 2: ssr = 871.164, cond(J) = 6.33554, |a|/|v| = 0.331994
-#> iter 3: ssr = 749.318, cond(J) = 6.52269, |a|/|v| = 0.0313447
-#> iter 4: ssr = 542.661, cond(J) = 4.51806, |a|/|v| = 0.223825
-#> iter 5: ssr = 477.623, cond(J) = 9.1331, |a|/|v| = 0.22102
-#> iter 6: ssr = 162.906, cond(J) = 22.9306, |a|/|v| = 0.378617
-#> iter 7: ssr = 74.5766, cond(J) = 18.6389, |a|/|v| = 0.038455
-#> iter 8: ssr = 25.4786, cond(J) = 24.6805, |a|/|v| = 0.0314638
-#> iter 9: ssr = 16.5859, cond(J) = 31.6505, |a|/|v| = 0.00499098
-#> iter 10: ssr = 16.3478, cond(J) = 34.628, |a|/|v| = 0.00192749
-#> iter 11: ssr = 16.3468, cond(J) = 35.2583, |a|/|v| = 0.000180849
-#> iter 12: ssr = 16.3468, cond(J) = 35.3027, |a|/|v| = 8.40295e-06
-#> iter 13: ssr = 16.3468, cond(J) = 35.3038, |a|/|v| = 3.23773e-07
+#> iter 1: ssr = 903.32, cond(J) = 29.1802, |a|/|v| = 0.285933
+#> iter 2: ssr = 730.345, cond(J) = 3.53454, |a|/|v| = 0.225057
+#> iter 3: ssr = 450.157, cond(J) = 5.5039, |a|/|v| = 0.300547
+#> iter 4: ssr = 156.073, cond(J) = 9.62841, |a|/|v| = 0.256912
+#> iter 5: ssr = 30.9598, cond(J) = 17.6174, |a|/|v| = 0.182755
+#> iter 6: ssr = 16.6262, cond(J) = 28.7755, |a|/|v| = 0.0653318
+#> iter 7: ssr = 16.3476, cond(J) = 34.3847, |a|/|v| = 0.00719674
+#> iter 8: ssr = 16.3468, cond(J) = 35.257, |a|/|v| = 0.000371161
+#> iter 9: ssr = 16.3468, cond(J) = 35.303, |a|/|v| = 1.22868e-05
+#> iter 10: ssr = 16.3468, cond(J) = 35.3038, |a|/|v| = 3.49944e-07
 #> *******************
 #> summary from method 'trust-region/levenberg-marquardt+accel'
-#> number of iterations: 13
+#> number of iterations: 10
 #> reason for stopping: output range error
 #> initial ssr = 1192.49
 #> final ssr = 16.3468
 #> ssr/dof = 0.0550398
-#> ssr achieved tolerance = 6.77183e-11
-#> function evaluations: 62
+#> ssr achieved tolerance = 5.17311e-11
+#> function evaluations: 50
 #> Jacobian evaluations: 0
-#> fvv evaluations: 19
+#> fvv evaluations: 16
 #> status = success
 #> *******************
-
-ex2c_fit
 #> Nonlinear regression model
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
 #>    data: data.frame(x = x, y = y)
@@ -672,8 +723,61 @@ ex2c_fit
 #> 
 #> Algorithm: levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 13 
-#> Achieved convergence tolerance: 6.772e-11
+#> Number of iterations to convergence: 10 
+#> Achieved convergence tolerance: 5.173e-11
+```
+
+If the model formula `fn` can be derived with `stats::deriv()`, then the
+analytic Hessian and second directional derivatives in `fvv` can be
+computed automatically using symbolic differentiation. Analogous to the
+`jac` argument, to evaluate `fvv` by means of symbolic differentiation,
+set `fvv = TRUE`:
+
+``` r
+## analytic fvv (2)
+gsl_nls(
+  fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)), ## model formula
+  data = data.frame(x = x, y = y),          ## model fit data
+  start = c(a = 1, b = 0, c = 1),           ## starting values
+  algorithm = "lmaccel",                    ## algorithm
+  trace = TRUE,                             ## verbose output
+  fvv = TRUE                                ## automatic derivation
+)
+#> iter 0: ssr = 1192.49, cond(J) = -nan, |a|/|v| = 0
+#> iter 1: ssr = 903.32, cond(J) = 29.1802, |a|/|v| = 0.285933
+#> iter 2: ssr = 730.345, cond(J) = 3.53454, |a|/|v| = 0.225057
+#> iter 3: ssr = 450.157, cond(J) = 5.5039, |a|/|v| = 0.300547
+#> iter 4: ssr = 156.073, cond(J) = 9.62841, |a|/|v| = 0.256912
+#> iter 5: ssr = 30.9598, cond(J) = 17.6174, |a|/|v| = 0.182755
+#> iter 6: ssr = 16.6262, cond(J) = 28.7755, |a|/|v| = 0.0653318
+#> iter 7: ssr = 16.3476, cond(J) = 34.3847, |a|/|v| = 0.00719674
+#> iter 8: ssr = 16.3468, cond(J) = 35.257, |a|/|v| = 0.000371161
+#> iter 9: ssr = 16.3468, cond(J) = 35.303, |a|/|v| = 1.22868e-05
+#> iter 10: ssr = 16.3468, cond(J) = 35.3038, |a|/|v| = 3.49944e-07
+#> *******************
+#> summary from method 'trust-region/levenberg-marquardt+accel'
+#> number of iterations: 10
+#> reason for stopping: output range error
+#> initial ssr = 1192.49
+#> final ssr = 16.3468
+#> ssr/dof = 0.0550398
+#> ssr achieved tolerance = 5.17311e-11
+#> function evaluations: 50
+#> Jacobian evaluations: 0
+#> fvv evaluations: 16
+#> status = success
+#> *******************
+#> Nonlinear regression model
+#>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
+#>    data: data.frame(x = x, y = y)
+#>      a      b      c 
+#> 4.9565 0.3982 0.1515 
+#>  residual sum-of-squares: 16.35
+#> 
+#> Algorithm: levenberg-marquardt+accel, (scaling: more, solver: qr)
+#> 
+#> Number of iterations to convergence: 10 
+#> Achieved convergence tolerance: 5.173e-11
 ```
 
 ### Example 3: Branin function

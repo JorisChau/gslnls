@@ -34,12 +34,15 @@
 #' the nonlinear model \code{fn}, where \code{n} is the number of observations and \code{p} the 
 #' number of parameters. If a function, the first argument must be the vector of parameters of length \code{p}.
 #' If \code{NULL}, the Jacobian is computed internally using a finite difference approximations.
+#' Can also be \code{TRUE}, in which case \code{jac} is derived symbolically with \code{\link[stats]{deriv}}, 
+#' this only works if \code{fn} is defined as a (non-selfstarting) formula. 
 #' @param fvv either \code{NULL} (default) or a \link{function} returning an \code{n} dimensional vector containing
 #' the second directional derivatives of the nonlinear model \code{fn}, with \code{n} the number of observations.
 #' This argument is only used if geodesic acceleration is enabled (\code{algorithm = "lmaccel"}). 
 #' If a function, the first argument must be the vector of parameters of length \code{p} and the second argument must be the velocity vector 
 #' also of length \code{p}. If \code{NULL}, the second directional derivative vector is computed internal
-#' using a finite difference approximation. 
+#' using a finite difference approximation. Can also be \code{TRUE}, in which case \code{fvv} is derived 
+#' symbolically with \code{\link[stats]{deriv}}, this only works if \code{fn} is defined as a (non-selfstarting) formula.
 #' @param trace logical value indicating if a trace of the iteration progress should be printed. 
 #' Default is \code{FALSE}. If \code{TRUE}, the residual (weighted) sum-of-squares, the condition 
 #' number of the Jacobian matrix and the ratio between the acceleration correction term and the velocity 
@@ -62,7 +65,7 @@
 #' See the individual method descriptions for the structures of the returned lists and the generic functions 
 #' applicable to objects of both classes.  
 #' @useDynLib gslnls, .registration = TRUE
-#' @importFrom stats nls numericDeriv as.formula coef deviance df.residual fitted formula getInitial model.weights pf pt qt setNames sigma nobs
+#' @importFrom stats nls numericDeriv deriv as.formula coef deviance df.residual fitted formula getInitial model.weights pf pt qt setNames sigma nobs
 #' @seealso \code{\link[stats]{nls}}
 #' @seealso \url{https://www.gnu.org/software/gsl/doc/html/nls.html}
 #' @references M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
@@ -86,7 +89,7 @@
 #' summary(ex1_fit)                                         ## model summary
 #' predict(ex1_fit, interval = "prediction")                ## prediction intervals
 #' 
-#' ## analytic Jacobian
+#' ## analytic Jacobian 1
 #' gsl_nls(
 #'   fn = y ~ A * exp(-lam * x) + b,                        ## model formula
 #'   data = data.frame(x = x, y = y),                       ## model fit data
@@ -94,6 +97,14 @@
 #'   jac = function(par) with(as.list(par),                 ## jacobian 
 #'     cbind(A = exp(-lam * x), lam = -A * x * exp(-lam * x), b = 1)
 #'   )
+#' )
+#' 
+#' ## analytic Jacobian 2
+#' gsl_nls(
+#'   fn = y ~ A * exp(-lam * x) + b,                        ## model formula
+#'   data = data.frame(x = x, y = y),                       ## model fit data
+#'   start = c(A = 0, lam = 0, b = 0),                      ## starting values
+#'   jac = TRUE                                             ## automatic derivation
 #' )
 #' 
 #' ## self-starting model
@@ -130,18 +141,19 @@
 #' )
 #' 
 #' ## Levenberg-Marquadt w/ geodesic acceleration 2
-#' ## analytic second directional derivative
-#' fvv <- function(par, v, xi) {
+#' ## second directional derivative
+#' fvv <- function(par, v, x) {
 #'   with(as.list(par), {
-#'     zi <- (xi - b) / c
+#'     zi <- (x - b) / c
 #'     ei <- exp(-zi^2 / 2)
-#'     -2 * v[["a"]] * v[["b"]] * zi / c * ei - 2 * v[["a"]] * v[["c"]] * zi^2 / c * ei + 
-#'       v[["b"]]^2 * a / c^2 * (1 - zi^2) * ei + 
-#'       2 * v[["b"]] * v[["c"]] * a / c^2 * zi * (2 - zi^2) * ei + 
+#'     2 * v[["a"]] * v[["b"]] * zi / c * ei + 2 * v[["a"]] * v[["c"]] * zi^2 / c * ei - 
+#'       v[["b"]]^2 * a / c^2 * (1 - zi^2) * ei - 
+#'       2 * v[["b"]] * v[["c"]] * a / c^2 * zi * (2 - zi^2) * ei - 
 #'       v[["c"]]^2 * a / c^2 * zi^2 * (3 - zi^2) * ei
 #'   })
 #' }
 #' 
+#' ## analytic fvv 1
 #' gsl_nls(
 #'   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)),             ## model formula
 #'   data = data.frame(x = x, y = y),                      ## model fit data
@@ -149,8 +161,18 @@
 #'   algorithm = "lmaccel",                                ## algorithm
 #'   trace = TRUE,                                         ## verbose output
 #'   fvv = fvv,                                            ## analytic fvv 
-#'   xi = x                                                ## fvv function argument 
+#'   x = x                                                 ## argument passed to fvv
 #' )
+#' 
+#' ## analytic fvv 2
+#' gsl_nls(
+#'   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)),             ## model formula
+#'   data = data.frame(x = x, y = y),                      ## model fit data
+#'   start = c(a = 1, b = 0, c = 1),                       ## starting values
+#'   algorithm = "lmaccel",                                ## algorithm
+#'   trace = TRUE,                                         ## verbose output
+#'   fvv = TRUE                                            ## automatic derivation
+#')
 #' 
 #' # Example 3: Branin function
 #' # (https://www.gnu.org/software/gsl/doc/html/nls.html#comparing-trs-methods-example)
@@ -180,6 +202,7 @@ gsl_nls <- function (fn, ...) {
 #' Therefore, all generic functions applicable to objects of class \code{nls}, such as \code{anova}, \code{coef}, \code{confint}, 
 #' \code{deviance}, \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print}, \code{profile}, 
 #' \code{residuals}, \code{summary}, \code{vcov} and \code{weights} are also applicable to the returned list object.
+#' In addition, a method \code{confintd} is available for inference of derived parameters.
 #' @export
 gsl_nls.formula <- function(fn, data = parent.frame(), start,
     algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
@@ -188,6 +211,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   
   ## adapted from src/library/stats/nls.R
   formula <- as.formula(fn)
+  algorithm <- match.arg(algorithm, choices = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
   
   if(!is.list(data) && !is.environment(data))
     stop("'data' must be a list or an environment")
@@ -318,7 +342,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   varNamesRHS <- varNamesRHS[ varNamesRHS %in% varNames[varIndex] ]
   
   ## function call
-  fn <- function(par) eval(formula[[3L]], envir = c(as.list(par), mf))
+  fn <- function(par, .data = mf) eval(formula[[3L]], envir = c(as.list(par), .data))
   .fcall <- tryCatch(fn(start), error = function(err) err)
   
   if(inherits(.fcall, "error"))
@@ -331,10 +355,21 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   .lhs <- eval(formula[[2L]], envir = mf)
   
   ## jac call
-  if(is.null(jac) && !is.null(attr(.fcall, "gradient"))) {
-    jac <- function(par) attr(fn(par), "gradient") 
+  if(!is.function(jac) && !is.null(attr(.fcall, "gradient"))) {
+    jac <- function(par, .data = mf) attr(fn(par, .data), "gradient") 
+  } else if(isTRUE(jac)) {
+    jac <- NULL
+    exprjac <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start)), error = function(err) err)
+    if(inherits(exprjac, "error")) {
+      warning(sprintf("failed to symbolically derive 'jac': %s", exprjac$message))
+    } else if(is.expression(exprjac)){
+      jac <- function(par, .data = mf) {
+        grad <- eval(exprjac, envir = c(as.list(par), .data))
+        attr(grad, "gradient")
+      }
+    } 
   }
-  if(!is.null(jac)) {
+  if(is.function(jac)) {
     jac1 <- function(par) jac(par, ...)
     .dfcall <- tryCatch(jac1(start), error = function(err) err)
     if(inherits(.dfcall, "error"))
@@ -348,7 +383,23 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   }
   
   ## fvv call
-  if(!is.null(fvv)) {
+  if(isTRUE(fvv)) {
+    fvv <- NULL
+    if(identical(algorithm, "lmaccel")) {
+      exprfvv <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start), hessian = TRUE), error = function(err) err)
+      if(inherits(exprfvv, "error")) {
+        warning(sprintf("failed to symbolically derive 'fvv': %s", exprfvv$message))
+      } else if(is.expression(exprfvv)){
+        fvv <- function(par, v) {
+          grad <- eval(exprfvv, envir = c(as.list(par), mf))
+          hess <- attr(grad, "hessian")
+          c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))    
+        }
+      } 
+    }
+  }
+  
+  if(is.function(fvv)) {
     fvv1 <- function(par, v) fvv(par, v, ...)
     .fvvcall <- tryCatch(fvv1(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
     if(inherits(.fvvcall, "error"))
@@ -440,7 +491,8 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
 #' Although the returned object is not of class \code{nls}, the following generic functions remain
 #' applicable for an object of class \code{gsl_nls}: \code{anova}, \code{coef}, \code{confint}, \code{deviance}, 
 #' \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print},  
-#' \code{residuals}, \code{summary}, \code{vcov} and \code{weights}.
+#' \code{residuals}, \code{summary}, \code{vcov} and \code{weights}. In addition, a method \code{confintd} 
+#' is available for inference of derived parameters.
 #' @export
 gsl_nls.function <- function(fn, y, start,
     algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
@@ -466,7 +518,7 @@ gsl_nls.function <- function(fn, y, start,
     stop("missing values returned by 'fn' at starting values")
   
   ## jac call
-  if(!is.null(jac)) {
+  if(is.function(jac)) {
     jac1 <- function(par) jac(par, ...)
     .dfcall <- tryCatch(jac1(start), error = function(err) err)
     if(inherits(.dfcall, "error"))
@@ -480,7 +532,7 @@ gsl_nls.function <- function(fn, y, start,
   }
   
   ## fvv call
-  if(!is.null(fvv)) {
+  if(is.function(fvv)) {
     fvv1 <- function(par, v) fvv(par, v, ...)
     .fvvcall <- tryCatch(fvv1(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
     if(inherits(.fvvcall, "error"))
@@ -751,11 +803,12 @@ nlsModel <- function(form, data, start, wts, jac, upper=NULL) {
     sqrt(sum(rr[1L:npar]^2) / sum(rr[-(1L:npar)]^2))
   }  
   ## newdata gradient
-  if(!is.null(jac)) {
-    gcall <- do.call(call, args = c("jac", sapply(c(names(formals(jac)[1]), 
-                    intersect(names(data), names(formals(jac)))), as.name)), quote = TRUE)
+  if(is.function(jac)) {
+    gcall <- do.call(call, args = c(".jac", sapply(c(names(formals(jac)[1]), 
+                    intersect(c(".data", names(data)), names(formals(jac)))), as.name)), quote = TRUE)
     gcall[[2]] <- do.call(call, args = c(ifelse(is.list(start), "list", "c"), 
-            sapply(names(start), as.name)), quote = TRUE)    
+            sapply(names(start), as.name)), quote = TRUE) 
+    env$.jac <- jac
   } else {
     gcall <- form[[3L]]
   }
@@ -770,7 +823,8 @@ nlsModel <- function(form, data, start, wts, jac, upper=NULL) {
       gradient1 = function(newdata = list()) {
         rho <- new.env(hash = TRUE, parent = env)
         for(i in names(newdata)) rho[[i]] <- newdata[[i]]
-        if(!is.null(jac)) {
+        if(is.function(env$.jac)) {
+          rho$.data <- as.list(newdata)
           grad <- eval(gcall, envir = rho)
         } else {
           drv <- stats::numericDeriv(form[[3L]], names(ind), rho = rho)
@@ -841,8 +895,9 @@ gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
   parName <- names(formals(fn)[1])
   env[[parName]] <- pars
   fcall <- do.call(call, args = c("fn", sapply(c(substitute(parName), names(data)), as.name)), quote = TRUE)
-  if(!is.null(jac)) {
-    gcall <- do.call(call, args = c("jac", sapply(c(substitute(names(formals(jac)[1])), names(data)), as.name)), quote = TRUE)
+  if(is.function(jac)) {
+    gcall <- do.call(call, args = c(".jac", sapply(c(substitute(names(formals(jac)[1])), names(data)), as.name)), quote = TRUE)
+    env$.jac <- jac
   } else {
     gcall <- fcall
   }
@@ -862,7 +917,7 @@ gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
         rho <- new.env(hash = TRUE, parent = env)
         for(i in names(newdata)) rho[[i]] <- newdata[[i]]
         for(i in names(pars)) rho[[i]] <- pars[[i]]
-        if(!is.null(jac)) {
+        if(is.function(env$.jac)) {
           grad <- eval(gcall, envir = rho)
         } else {
           drv <- stats::numericDeriv(gcall, names(pars), rho = rho)

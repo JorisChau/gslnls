@@ -12,7 +12,7 @@
 \item{...}{At present no optional arguments are used.}
 }
 \description{
-Returns the fitted responses from a \code{"gsl_nls"} object. \code{fitted.values} 
+Returns the fitted responses from a \code{"gsl_nls"} object. \code{fitted.values}
 can also be used as an alias.
 }
 \examples{

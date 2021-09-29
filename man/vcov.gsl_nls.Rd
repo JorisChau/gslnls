@@ -12,7 +12,7 @@
 \item{...}{At present no optional arguments are used.}
 }
 \description{
-Returns the estimated variance-covariance matrix of the model parameters 
+Returns the estimated variance-covariance matrix of the model parameters
 from a fitted \code{"gsl_nls"} object.
 }
 \examples{

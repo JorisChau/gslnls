@@ -12,7 +12,7 @@
 \item{...}{Additional objects inheriting from class \code{"gsl_nls"}.}
 }
 \description{
-Returns the analysis of variance (or deviance) tables for two or 
+Returns the analysis of variance (or deviance) tables for two or
 more fitted \code{"gsl_nls"} objects.
 }
 \examples{

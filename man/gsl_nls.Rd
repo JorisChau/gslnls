@@ -22,7 +22,7 @@ gsl_nls(fn, ...)
   ...
 )
 
-\method{gsl_nls}{`function`}(
+\method{gsl_nls}{function}(
   fn,
   y,
   start,
@@ -72,14 +72,17 @@ See \code{\link{gsl_nls_control}} for the available control parameters and their
 \item{jac}{either \code{NULL} (default) or a \link{function} returning the \code{n} by \code{p} dimensional Jacobian matrix of 
 the nonlinear model \code{fn}, where \code{n} is the number of observations and \code{p} the 
 number of parameters. If a function, the first argument must be the vector of parameters of length \code{p}.
-If \code{NULL}, the Jacobian is computed internally using a finite difference approximations.}
+If \code{NULL}, the Jacobian is computed internally using a finite difference approximations.
+Can also be \code{TRUE}, in which case \code{jac} is derived symbolically with \code{\link[stats]{deriv}}, 
+this only works if \code{fn} is defined as a (non-selfstarting) formula.}
 
 \item{fvv}{either \code{NULL} (default) or a \link{function} returning an \code{n} dimensional vector containing
 the second directional derivatives of the nonlinear model \code{fn}, with \code{n} the number of observations.
 This argument is only used if geodesic acceleration is enabled (\code{algorithm = "lmaccel"}). 
 If a function, the first argument must be the vector of parameters of length \code{p} and the second argument must be the velocity vector 
 also of length \code{p}. If \code{NULL}, the second directional derivative vector is computed internal
-using a finite difference approximation.}
+using a finite difference approximation. Can also be \code{TRUE}, in which case \code{fvv} is derived 
+symbolically with \code{\link[stats]{deriv}}, this only works if \code{fn} is defined as a (non-selfstarting) formula.}
 
 \item{trace}{logical value indicating if a trace of the iteration progress should be printed. 
 Default is \code{FALSE}. If \code{TRUE}, the residual (weighted) sum-of-squares, the condition 
@@ -102,6 +105,7 @@ This argument is only used if \code{fn} is defined as a \link{formula}.}
 
 \item{...}{additional arguments passed to the calls of \code{fn}, \code{jac} and \code{fvv} if 
 defined as functions.}
+
 }
 \value{
 If \code{fn} is a \code{formula} returns a list object of class \code{nls}. 
@@ -119,6 +123,7 @@ nonlinear model using the GNU Scientific Library (GSL).
 Therefore, all generic functions applicable to objects of class \code{nls}, such as \code{anova}, \code{coef}, \code{confint}, 
 \code{deviance}, \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print}, \code{profile}, 
 \code{residuals}, \code{summary}, \code{vcov} and \code{weights} are also applicable to the returned list object.
+In addition, a method \code{confintd} is available for inference of derived parameters.
 
 \item \code{function}: If \code{fn} is a \code{function}, the first argument must be the vector of parameters and 
 the function should return a numeric vector containing the nonlinear model evaluations at 
@@ -128,7 +133,8 @@ vector returned by \code{fn}. The returned list object is (only) of class \code{
 Although the returned object is not of class \code{nls}, the following generic functions remain
 applicable for an object of class \code{gsl_nls}: \code{anova}, \code{coef}, \code{confint}, \code{deviance}, 
 \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print},  
-\code{residuals}, \code{summary}, \code{vcov} and \code{weights}.
+\code{residuals}, \code{summary}, \code{vcov} and \code{weights}. In addition, a method \code{confintd} 
+is available for inference of derived parameters.
 }}
 
 \examples{
@@ -151,7 +157,7 @@ ex1_fit <- gsl_nls(
 summary(ex1_fit)                                         ## model summary
 predict(ex1_fit, interval = "prediction")                ## prediction intervals
 
-## analytic Jacobian
+## analytic Jacobian 1
 gsl_nls(
   fn = y ~ A * exp(-lam * x) + b,                        ## model formula
   data = data.frame(x = x, y = y),                       ## model fit data
@@ -159,6 +165,14 @@ gsl_nls(
   jac = function(par) with(as.list(par),                 ## jacobian 
     cbind(A = exp(-lam * x), lam = -A * x * exp(-lam * x), b = 1)
   )
+)
+
+## analytic Jacobian 2
+gsl_nls(
+  fn = y ~ A * exp(-lam * x) + b,                        ## model formula
+  data = data.frame(x = x, y = y),                       ## model fit data
+  start = c(A = 0, lam = 0, b = 0),                      ## starting values
+  jac = TRUE                                             ## automatic derivation
 )
 
 ## self-starting model
@@ -195,18 +209,19 @@ gsl_nls(
 )
 
 ## Levenberg-Marquadt w/ geodesic acceleration 2
-## analytic second directional derivative
-fvv <- function(par, v, xi) {
+## second directional derivative
+fvv <- function(par, v, x) {
   with(as.list(par), {
-    zi <- (xi - b) / c
+    zi <- (x - b) / c
     ei <- exp(-zi^2 / 2)
-    -2 * v[["a"]] * v[["b"]] * zi / c * ei - 2 * v[["a"]] * v[["c"]] * zi^2 / c * ei + 
-      v[["b"]]^2 * a / c^2 * (1 - zi^2) * ei + 
-      2 * v[["b"]] * v[["c"]] * a / c^2 * zi * (2 - zi^2) * ei + 
+    2 * v[["a"]] * v[["b"]] * zi / c * ei + 2 * v[["a"]] * v[["c"]] * zi^2 / c * ei - 
+      v[["b"]]^2 * a / c^2 * (1 - zi^2) * ei - 
+      2 * v[["b"]] * v[["c"]] * a / c^2 * zi * (2 - zi^2) * ei - 
       v[["c"]]^2 * a / c^2 * zi^2 * (3 - zi^2) * ei
   })
 }
 
+## analytic fvv 1
 gsl_nls(
   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)),             ## model formula
   data = data.frame(x = x, y = y),                      ## model fit data
@@ -214,7 +229,17 @@ gsl_nls(
   algorithm = "lmaccel",                                ## algorithm
   trace = TRUE,                                         ## verbose output
   fvv = fvv,                                            ## analytic fvv 
-  xi = x                                                ## fvv function argument 
+  x = x                                                 ## argument passed to fvv
+)
+
+## analytic fvv 2
+gsl_nls(
+  fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)),             ## model formula
+  data = data.frame(x = x, y = y),                      ## model fit data
+  start = c(a = 1, b = 0, c = 1),                       ## starting values
+  algorithm = "lmaccel",                                ## algorithm
+  trace = TRUE,                                         ## verbose output
+  fvv = TRUE                                            ## automatic derivation
 )
 
 # Example 3: Branin function
