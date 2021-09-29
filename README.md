@@ -261,9 +261,10 @@ predict(ex1_fit, interval = "prediction", level = 0.95)
 
 <img src="README/fig-2-1.png" width="100%" style="display: block; margin: auto;" />
 
-For objects of class `"gsl_nls"`, the `confintd` method can be used to
-evaluate asymptotic confidence intervals of derived (or transformed)
-parameters based on the delta method:
+In addition, the new `confintd` method can be used to evaluate
+asymptotic confidence intervals of derived (or transformed) parameters
+based on the delta method, i.e. a first-order (Taylor) approximation of
+the function of the parameters:
 
 ``` r
 ## delta method confidence intervals
@@ -384,12 +385,11 @@ parameterization (`A = R0 - Asym`, `lam = exp(lrc)`, `b = Asym`), but
 the fitted models are equivalent. Also, when using a *self-starting*
 model, no starting values need to be provided.
 
-**Remark**: confidence intervals for the fitted coefficients in the
-original parameterization can be approximated using the `confintd`
-method:
+**Remark**: confidence intervals for the coefficients in the original
+model parameterization can be evaluated with the `confintd` method:
 
 ``` r
-## delta method confidnce intervals
+## delta method confidence intervals
 confintd(ss_fit, expr = c("R0 - Asym", "exp(lrc)", "Asym"), level = 0.95)
 #>                 fit       lwr      upr
 #> R0 - Asym 4.9904986 4.7529300 5.228067
@@ -537,7 +537,7 @@ ex2b_fit <- gsl_nls(
   algorithm = "lmaccel",                    ## algorithm
   trace = TRUE                              ## verbose output
 )
-#> iter 0: ssr = 1192.49, cond(J) = inf, |a|/|v| = 0
+#> iter 0: ssr = 1192.49, cond(J) = -nan, |a|/|v| = 0
 #> iter 1: ssr = 902.787, cond(J) = 29.1802, |a|/|v| = 0.288
 #> iter 2: ssr = 726.988, cond(J) = 3.53773, |a|/|v| = 0.233334
 #> iter 3: ssr = 444.339, cond(J) = 5.56604, |a|/|v| = 0.304665
@@ -743,7 +743,7 @@ gsl_nls(
   trace = TRUE,                             ## verbose output
   fvv = TRUE                                ## automatic derivation
 )
-#> iter 0: ssr = 1192.49, cond(J) = -nan, |a|/|v| = 0
+#> iter 0: ssr = 1192.49, cond(J) = inf, |a|/|v| = 0
 #> iter 1: ssr = 903.32, cond(J) = 29.1802, |a|/|v| = 0.285933
 #> iter 2: ssr = 730.345, cond(J) = 3.53454, |a|/|v| = 0.225057
 #> iter 3: ssr = 450.157, cond(J) = 5.5039, |a|/|v| = 0.300547
