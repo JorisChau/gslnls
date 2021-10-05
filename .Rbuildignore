@@ -2,3 +2,5 @@
 ^\.Rproj\.user$
 ^README
 ^\.github$
+^cran-comments.md$
+^CRAN-RELEASE$

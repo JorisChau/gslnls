@@ -412,7 +412,7 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
         if (status == GSL_EBADFUNC || (status == GSL_ENOPROG && iter == 0))
         {
             *info = status;
-            return GSL_EBADFUNC;
+            return status;
         }
 
         ++iter;
