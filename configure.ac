@@ -1,5 +1,5 @@
 
-AC_INIT([gslnls], 1.0.0)
+AC_INIT([gslnls],[1.0.0])
 
 AC_PROG_CC
 
@@ -55,4 +55,5 @@ fi
 AC_SUBST(GSL_CFLAGS)
 AC_SUBST(GSL_LIBS)
 
-AC_OUTPUT(src/Makevars)
+AC_CONFIG_FILES([src/Makevars])
+AC_OUTPUT
