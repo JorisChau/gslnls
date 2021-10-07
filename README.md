@@ -532,7 +532,7 @@ ex2b_fit <- gsl_nls(
   algorithm = "lmaccel",                    ## algorithm
   trace = TRUE                              ## verbose output
 )
-#> iter 0: ssr = 1192.49, cond(J) = inf, |a|/|v| = 0
+#> iter 0: ssr = 1192.49, cond(J) = nan, |a|/|v| = 0
 #> iter 1: ssr = 902.787, cond(J) = 29.1802, |a|/|v| = 0.288
 #> iter 2: ssr = 726.988, cond(J) = 3.53773, |a|/|v| = 0.233334
 #> iter 3: ssr = 444.339, cond(J) = 5.56604, |a|/|v| = 0.304665
