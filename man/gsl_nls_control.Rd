@@ -27,56 +27,56 @@ are supported:
 \itemize{
 \item \code{"more"} Moré rescaling (default). This method makes the problem scale-invariant and has
 been proven effective on a large class of problems.
-\item \code{"levenberg"} Levenberg rescaling. This method has also proven effective on a large class of problems, 
+\item \code{"levenberg"} Levenberg rescaling. This method has also proven effective on a large class of problems,
 but is not scale-invariant. It may perform better for problems susceptible to \emph{parameter evaporation} (parameters going to infinity).
-\item \code{"marquadt"} Marquadt rescaling. This method is scale-invariant, but it is generally 
+\item \code{"marquadt"} Marquadt rescaling. This method is scale-invariant, but it is generally
 considered inferior to both the Levenberg and Moré strategies.
 }}
 
-\item{solver}{character, method used to solve the linear least squares system resulting as a subproblem in each iteration. 
+\item{solver}{character, method used to solve the linear least squares system resulting as a subproblem in each iteration.
 The following choices are supported:
 \itemize{
-\item \code{"qr"} QR decomposition of the Jacobian (default). This method will produce reliable solutions in cases 
+\item \code{"qr"} QR decomposition of the Jacobian (default). This method will produce reliable solutions in cases
 where the Jacobian is rank deficient or near-singular but does require more operations than the Cholesky method.
-\item \code{"cholesky"} Cholesky decomposition of the Jacobian. This method is faster than the QR approach, however 
+\item \code{"cholesky"} Cholesky decomposition of the Jacobian. This method is faster than the QR approach, however
 it is susceptible to numerical instabilities if the Jacobian matrix is rank deficient or near-singular.
-\item \code{"svd"} SVD decomposition of the Jacobian. This method will produce the most reliable solutions for 
+\item \code{"svd"} SVD decomposition of the Jacobian. This method will produce the most reliable solutions for
 ill-conditioned Jacobians but is also the slowest.
 }}
 
-\item{fdtype}{character, method used to numerically approximate the Jacobian, either \code{"forward"} for forward finite differencing 
+\item{fdtype}{character, method used to numerically approximate the Jacobian, either \code{"forward"} for forward finite differencing
 or \code{"center"} for centered finite differencing. This is only used if no analytic Jacobian (\code{jac}) is specified in \code{\link{gsl_nls}}.}
 
-\item{factor_up}{numeric factor by which to increase the trust region radius when a search step is accepted. 
+\item{factor_up}{numeric factor by which to increase the trust region radius when a search step is accepted.
 Too large values may destabilize the search, too small values slow down the search, defaults to 3.}
 
 \item{factor_down}{numeric factor by which to decrease the trust region radius when a search step is rejected.
 Too large values may destabilize the search, too small values slow down the search, defaults to 2.}
 
-\item{avmax}{numeric value, the ratio of the acceleration term to the velocity term when using geodesic acceleration to 
-solve the nonlinear least squares problem. Any steps with a ratio larger than \code{avmax} are rejected, defaults to 0.75. 
+\item{avmax}{numeric value, the ratio of the acceleration term to the velocity term when using geodesic acceleration to
+solve the nonlinear least squares problem. Any steps with a ratio larger than \code{avmax} are rejected, defaults to 0.75.
 For problems which experience difficulty converging, this threshold could be lowered.}
 
 \item{h_df}{numeric value, the step size for approximating the Jacobian matrix with finite differences, defaults to \code{sqrt(.Machine$double.eps)}.}
 
 \item{h_fvv}{numeric value, the step size for approximating the second directional derivative when geodesic acceleration
-is used to solve the nonlinear least squares problem, defaults to 0.02. This is only used if no analytic second 
+is used to solve the nonlinear least squares problem, defaults to 0.02. This is only used if no analytic second
 directional derivative (\code{fvv}) is specified in \code{\link{gsl_nls}}.}
 
 \item{xtol}{numeric value, termination occurs when the relative change in parameters between iterations is \code{<= xtol}.
-A general guideline for selecting the step tolerance is to choose \code{xtol = 10^(-d)} where \code{d} is the number of accurate 
+A general guideline for selecting the step tolerance is to choose \code{xtol = 10^(-d)} where \code{d} is the number of accurate
 decimal digits desired in the parameters, defaults to \code{sqrt(.Machine$double.eps)}.}
 
-\item{ftol}{numeric value, termination occurs when the relative change in sum of squared residuals between iterations is \code{<= ftol}, 
+\item{ftol}{numeric value, termination occurs when the relative change in sum of squared residuals between iterations is \code{<= ftol},
 defaults to \code{sqrt(.Machine$double.eps)}.}
 
-\item{gtol}{numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol}, 
+\item{gtol}{numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
 indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}}
 }
 \value{
 A \code{list} with exactly twelve components:
 \itemize{
-\item maxiter 
+\item maxiter
 \item scale
 \item solver
 \item fdtype
@@ -92,7 +92,7 @@ A \code{list} with exactly twelve components:
 with meanings as explained under 'Arguments'.
 }
 \description{
-Allow the user to tune the characteristics of the \code{\link{gsl_nls}} nonlinear 
+Allow the user to tune the characteristics of the \code{\link{gsl_nls}} nonlinear
 least squares algorithm.
 }
 \note{

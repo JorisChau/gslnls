@@ -11,6 +11,10 @@
 
 \item{...}{Additional objects inheriting from class \code{"gsl_nls"}.}
 }
+\value{
+A data.frame object of class \code{"anova"} similar to \code{\link[stats]{anova}} representing the
+analysis-of-variance table of the fitted model objects when printed.
+}
 \description{
 Returns the analysis of variance (or deviance) tables for two or
 more fitted \code{"gsl_nls"} objects.

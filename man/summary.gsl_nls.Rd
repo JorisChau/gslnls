@@ -17,6 +17,9 @@ parameters is returned and printed.}
 
 \item{...}{At present no optional arguments are used.}
 }
+\value{
+List object of class \code{"summary.nls"} identical to \code{\link[stats]{summary.nls}}
+}
 \description{
 Returns the model summary for a fitted \code{"gsl_nls"} object.
 }
@@ -30,5 +33,5 @@ obj <- gsl_nls(fn = y ~ a + b * x, data = data.frame(x = x, y = y), start = c(a 
 summary(obj)
 }
 \seealso{
-\code{\link{summary}}
+\code{\link[stats]{summary.nls}}
 }

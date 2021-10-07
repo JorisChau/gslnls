@@ -11,6 +11,9 @@
 
 \item{...}{At present no optional arguments are used.}
 }
+\value{
+Integer residual degrees-of-freedom similar to \code{\link[stats]{df.residual}}.
+}
 \description{
 Returns the residual degrees-of-freedom from a fitted \code{"gsl_nls"} object.
 }

@@ -11,6 +11,10 @@
 
 \item{...}{At present no optional arguments are used.}
 }
+\value{
+A matrix containing the estimated covariances between the parameter estimates similar
+to \code{\link[stats]{vcov}} with row and column names corresponding to the parameter names given by \code{\link{coef.gsl_nls}}.
+}
 \description{
 Returns the estimated variance-covariance matrix of the model parameters
 from a fitted \code{"gsl_nls"} object.

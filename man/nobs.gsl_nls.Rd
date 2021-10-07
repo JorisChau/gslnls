@@ -11,6 +11,9 @@
 
 \item{...}{At present no optional arguments are used.}
 }
+\value{
+Integer number of observations similar to \code{\link[stats]{nobs}}
+}
 \description{
 Returns the number of \emph{observations} from a \code{"gsl_nls"} object.
 }

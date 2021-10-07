@@ -55,5 +55,5 @@ predict(obj, interval = "confidence")
 predict(obj, interval = "prediction", level = 0.99)
 }
 \seealso{
-\code{\link[stats]{predict}}
+\code{\link[stats]{predict.nls}}
 }

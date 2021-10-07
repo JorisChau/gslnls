@@ -11,6 +11,10 @@
 
 \item{...}{At present no optional arguments are used.}
 }
+\value{
+If the object inherits from class \code{"nls"} returns the fitted model as a \link{formula} similar
+to \code{\link[stats]{formula}}. Otherwise returns the fitted model as a \link{function}.
+}
 \description{
 Returns the model formula from a fitted \code{"gsl_nls"} object.
 }

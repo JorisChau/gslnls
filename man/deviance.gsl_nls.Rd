@@ -11,6 +11,9 @@
 
 \item{...}{At present no optional arguments are used.}
 }
+\value{
+Numeric deviance value similar to \code{\link[stats]{deviance}}
+}
 \description{
 Returns the deviance of a fitted \code{"gsl_nls"} object.
 }

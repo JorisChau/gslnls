@@ -3,6 +3,7 @@
 #' \code{coefficients} can also be used as an alias.
 #' @param object An object inheriting from class \code{"gsl_nls"}.
 #' @param ... At present no optional arguments are used.
+#' @return Named numeric vector of fitted coefficients similar to \code{\link[stats]{coef}}
 #' @seealso \code{\link[stats]{coef}}
 #' @examples
 #' ## data
@@ -22,6 +23,7 @@ coef.gsl_nls <- function(object, ...) {
 #' can also be used as an alias.
 #' @inheritParams coef.gsl_nls
 #' @seealso \code{\link[stats]{fitted}}
+#' @return Numeric vector of fitted responses similar to \code{\link[stats]{fitted}}.
 #' @examples
 #' ## data
 #' set.seed(1)
@@ -44,6 +46,7 @@ fitted.gsl_nls <- function(object, ...) {
 #' Extract the number of observations
 #' @description Returns the number of \emph{observations} from a \code{"gsl_nls"} object.
 #' @inheritParams coef.gsl_nls
+#' @return Integer number of observations similar to \code{\link[stats]{nobs}}
 #' @seealso \code{\link[stats]{nobs}}
 #' @examples
 #' ## data
@@ -64,6 +67,7 @@ nobs.gsl_nls <- function(object, ...) {
 #' Model deviance
 #' @description Returns the deviance of a fitted \code{"gsl_nls"} object.
 #' @inheritParams coef.gsl_nls
+#' @return Numeric deviance value similar to \code{\link[stats]{deviance}}
 #' @seealso \code{\link[stats]{deviance}}
 #' @examples
 #' ## data
@@ -82,6 +86,8 @@ deviance.gsl_nls <- function(object, ...) {
 #' @description Returns the model formula from a fitted \code{"gsl_nls"} object.
 #' @inheritParams coef.gsl_nls
 #' @param x An object inheriting from class \code{"gsl_nls"}.
+#' @return If the object inherits from class \code{"nls"} returns the fitted model as a \link{formula} similar
+#' to \code{\link[stats]{formula}}. Otherwise returns the fitted model as a \link{function}.
 #' @seealso \code{\link[stats]{formula}}
 #' @examples
 #' ## data
@@ -103,7 +109,8 @@ formula.gsl_nls <- function(x, ...) {
 #' parameters is returned and printed.
 #' @param symbolic.cor logical; if \code{TRUE}, print the correlations in a symbolic form
 #' (see \code{\link[stats]{symnum}}) rather than as numbers.
-#' @seealso \code{\link{summary}}
+#' @return List object of class \code{"summary.nls"} identical to \code{\link[stats]{summary.nls}}
+#' @seealso \code{\link[stats]{summary.nls}}
 #' @examples
 #' ## data
 #' set.seed(1)
@@ -154,6 +161,11 @@ summary.gsl_nls <- function (object, correlation = FALSE, symbolic.cor = FALSE, 
 }
 
 #' Print model object
+#' @description Print method for a fitted \code{"gsl_nls"} object
+#' @param x An object inheriting from class \code{"gsl_nls"}.
+#' @param digits Minimal number of significant digits, see \code{\link{print.default}}.
+#' @param ... At present no optional arguments are used.
+#' @return Returns the object \code{x} \emph{invisibly} (via \code{\link{invisible}}).
 #' @noRd
 #' @export
 print.gsl_nls <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
@@ -190,7 +202,7 @@ print.gsl_nls <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
 #' a matrix with columns \code{fit}, \code{lwr} and \code{upr}. The first column (\code{fit}) contains
 #' predictions for the mean response. The other two columns contain lower (\code{lwr}) and upper (\code{upr})
 #' confidence or prediction bounds at the specified \code{level}.
-#' @seealso \code{\link[stats]{predict}}
+#' @seealso \code{\link[stats]{predict.nls}}
 #' @examples
 #' ## data
 #' set.seed(1)
@@ -239,6 +251,7 @@ predict.gsl_nls <- function(object, newdata, scale = NULL, interval = c("none", 
 #' @inheritParams coef.gsl_nls
 #' @param type character; if \code{"response"} the raw residuals are returned, if \code{"pearson"}
 #' the Pearson are returned, i.e. the raw residuals divided by their standard error.
+#' @return Numeric vector of model residuals similar to \code{\link[stats]{residuals}}.
 #' @seealso \code{\link[stats]{residuals}}
 #' @examples
 #' ## data
@@ -272,6 +285,7 @@ residuals.gsl_nls <- function(object, type = c("response", "pearson"), ...) {
 #' @description Returns the model log-likelihood of a fitted \code{"gsl_nls"} object.
 #' @inheritParams coef.gsl_nls
 #' @param REML logical value; included for compatibility reasons only, should not be used.
+#' @return Numeric object of class \code{"logLik"} identical to \code{\link[stats]{logLik}}.
 #' @seealso \code{\link[stats]{logLik}}
 #' @examples
 #' ## data
@@ -280,7 +294,7 @@ residuals.gsl_nls <- function(object, type = c("response", "pearson"), ...) {
 #' y <- 1 + 0.5 * (1:10) + rnorm(10, sd = 0.1)
 #' ## model
 #' obj <- gsl_nls(fn = y ~ a + b * x, data = data.frame(x = x, y = y), start = c(a = 0, b = 1))
-#' residuals(obj)
+#' logLik(obj)
 #' @export
 logLik.gsl_nls <- function(object, REML = FALSE, ...) {
   if (REML)
@@ -302,6 +316,7 @@ logLik.gsl_nls <- function(object, REML = FALSE, ...) {
 #' Residual degrees-of-freedom
 #' @description Returns the residual degrees-of-freedom from a fitted \code{"gsl_nls"} object.
 #' @inheritParams coef.gsl_nls
+#' @return Integer residual degrees-of-freedom similar to \code{\link[stats]{df.residual}}.
 #' @seealso \code{\link[stats]{df.residual}}
 #' @examples
 #' ## data
@@ -322,6 +337,8 @@ df.residual.gsl_nls <- function(object, ...) {
 #' @description Returns the estimated variance-covariance matrix of the model parameters
 #' from a fitted \code{"gsl_nls"} object.
 #' @inheritParams coef.gsl_nls
+#' @return A matrix containing the estimated covariances between the parameter estimates similar
+#' to \code{\link[stats]{vcov}} with row and column names corresponding to the parameter names given by \code{\link{coef.gsl_nls}}.
 #' @seealso \code{\link[stats]{vcov}}
 #' @examples
 #' ## data
@@ -342,6 +359,8 @@ vcov.gsl_nls <- function(object, ...) {
 #' more fitted \code{"gsl_nls"} objects.
 #' @inheritParams coef.gsl_nls
 #' @param ... Additional objects inheriting from class \code{"gsl_nls"}.
+#' @return A data.frame object of class \code{"anova"} similar to \code{\link[stats]{anova}} representing the
+#' analysis-of-variance table of the fitted model objects when printed.
 #' @seealso \code{\link[stats]{anova}}
 #' @examples
 #' ## data

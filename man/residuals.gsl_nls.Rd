@@ -14,6 +14,9 @@ the Pearson are returned, i.e. the raw residuals divided by their standard error
 
 \item{...}{At present no optional arguments are used.}
 }
+\value{
+Numeric vector of model residuals similar to \code{\link[stats]{residuals}}.
+}
 \description{
 Returns the model residuals from a fitted \code{"gsl_nls"} object.
 \code{resid} can also be used as an alias.

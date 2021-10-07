@@ -11,6 +11,9 @@
 
 \item{...}{At present no optional arguments are used.}
 }
+\value{
+Named numeric vector of fitted coefficients similar to \code{\link[stats]{coef}}
+}
 \description{
 Returns the fitted model coefficients from a \code{"gsl_nls"} object.
 \code{coefficients} can also be used as an alias.

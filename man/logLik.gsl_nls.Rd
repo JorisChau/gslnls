@@ -13,6 +13,9 @@
 
 \item{...}{At present no optional arguments are used.}
 }
+\value{
+Numeric object of class \code{"logLik"} identical to \code{\link[stats]{logLik}}.
+}
 \description{
 Returns the model log-likelihood of a fitted \code{"gsl_nls"} object.
 }
@@ -23,7 +26,7 @@ x <- 1:10
 y <- 1 + 0.5 * (1:10) + rnorm(10, sd = 0.1)
 ## model
 obj <- gsl_nls(fn = y ~ a + b * x, data = data.frame(x = x, y = y), start = c(a = 0, b = 1))
-residuals(obj)
+logLik(obj)
 }
 \seealso{
 \code{\link[stats]{logLik}}
