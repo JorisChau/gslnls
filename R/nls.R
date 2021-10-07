@@ -22,10 +22,10 @@
 #' to not using geodesic acceleration.
 #' \item \code{"dogleg"} Powell's dogleg algorithm
 #' \item \code{"ddogleg"} Double dogleg algorithm, an improvement over \code{"dogleg"}
-#' by including information about the Gauss-Newtwon step while the iteration is still
+#' by including information about the Gauss-Newton step while the iteration is still
 #' far from the minimum.
 #' \item \code{"subspace2D"} 2D generalization of the dogleg algorithm. This method
-#' searches a larger supsace for a solution, it can converge more quickly than \code{"dogleg"}
+#' searches a larger subspace for a solution, it can converge more quickly than \code{"dogleg"}
 #' on some problems.
 #' }
 #' @param control an optional list of control parameters to tune the least squares iterations.

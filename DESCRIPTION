@@ -10,6 +10,7 @@ URL: https://github.com/JorisChau/gslnls
 Depends: 
     R (>= 3.5)
 Encoding: UTF-8
+Language: en-US
 License: GPL-3
 SystemRequirements: GSL (>= 2.2)
 RoxygenNote: 7.1.2
