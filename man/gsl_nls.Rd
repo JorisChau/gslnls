@@ -85,9 +85,7 @@ using a finite difference approximation. Can also be \code{TRUE}, in which case 
 symbolically with \code{\link[stats]{deriv}}, this only works if \code{fn} is defined as a (non-selfstarting) formula.}
 
 \item{trace}{logical value indicating if a trace of the iteration progress should be printed.
-Default is \code{FALSE}. If \code{TRUE}, the residual (weighted) sum-of-squares, the condition
-number of the Jacobian matrix and the ratio between the acceleration correction term and the velocity
-step term are printed after each iteration. The latter is only informative if geodesic acceleration is enabled.}
+Default is \code{FALSE}. If \code{TRUE}, the residual (weighted) sum-of-squares and the current parameter estimates are printed after each iteration.}
 
 \item{subset}{an optional vector specifying a subset of observations to be used in the fitting process.
 This argument is only used if \code{fn} is defined as a \link{formula}.}

@@ -106,6 +106,9 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
     fdf.fvv = NULL; // not using geodesic acceleration
     fdf.n = n;
     fdf.p = p;
+    fdf.nevalf = 0;
+    fdf.nevaldf = 0;
+    fdf.nevalfvv = 0;
     fdf.params = &params;
 
     /* use Jacobian function */
@@ -155,19 +158,20 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
     }
 
     /* compute initial cost function */
-    double chisq_init, chisq0, chisq1;
+    double chisq_init = 0.0;
     gsl_vector *resid = gsl_multifit_nlinear_residual(w);
     gsl_blas_ddot(resid, resid, &chisq_init);
-    chisq0 = chisq_init;
-    chisq1 = chisq_init;
+    double chisq0 = chisq_init;
+    double chisq1 = chisq_init;
 
     /* solve the system  */
-    int info;
+    int info = GSL_CONTINUE;
     int status = gsl_multifit_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback : NULL, verbose ? &params : NULL, &info, &chisq0, &chisq1, w);
     R_len_t iter = gsl_multifit_nlinear_niter(w);
 
     /* compute covariance and cost at best fit parameters */
-    gsl_matrix *J, *cov;
+    gsl_matrix *J = NULL;
+    gsl_matrix *cov = NULL;
     if (status == GSL_SUCCESS || status == GSL_EMAXITER)
     {
         cov = gsl_matrix_alloc(p, p);
@@ -192,7 +196,7 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
     }
 
     /* initialize result */
-    SEXP ans;
+    SEXP ans = NULL;
     if (verbose)
     {
         const char *ansnms[] = {"par", "covar", "resid", "grad", "niter", "status", "conv", "ssr", "ssrtol",
@@ -379,9 +383,9 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
                                  double *chisq1,
                                  gsl_multifit_nlinear_workspace *w)
 {
-    int status;
+    int status = GSL_CONTINUE;
     size_t iter = 0;
-    gsl_vector *f;
+    gsl_vector *f = NULL;
 
     /* call user callback function prior to any iterations
    * with initial system state */
@@ -445,9 +449,9 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
 int gsl_f(const gsl_vector *x, void *params, gsl_vector *f)
 {
     /* construct parameter vector */
-    SEXP par, start;
+    SEXP par = NULL;
     R_len_t p = ((fdata *)params)->p;
-    start = ((fdata *)params)->start;
+    SEXP start = ((fdata *)params)->start;
     if (Rf_isNumeric(start))
     {
         par = PROTECT(Rf_allocVector(REALSXP, p));
@@ -498,9 +502,9 @@ int gsl_f(const gsl_vector *x, void *params, gsl_vector *f)
 int gsl_df(const gsl_vector *x, void *params, gsl_matrix *J)
 {
     /* construct parameter vector */
-    SEXP par, start;
+    SEXP par = NULL;
     R_len_t p = ((fdata *)params)->p;
-    start = ((fdata *)params)->start;
+    SEXP start = ((fdata *)params)->start;
     if (Rf_isNumeric(start))
     {
         par = PROTECT(Rf_allocVector(REALSXP, p));
@@ -550,9 +554,9 @@ int gsl_df(const gsl_vector *x, void *params, gsl_matrix *J)
 int gsl_fvv(const gsl_vector *x, const gsl_vector *v, void *params, gsl_vector *fvv)
 {
     /* populate parameter vector */
-    SEXP par, start, vpar;
+    SEXP par = NULL;
     R_len_t p = ((fdata *)params)->p;
-    start = ((fdata *)params)->start;
+    SEXP start = ((fdata *)params)->start;
     SEXP parnames = PROTECT(Rf_getAttrib(start, R_NamesSymbol));
     if (Rf_isNumeric(start))
     {
@@ -569,7 +573,7 @@ int gsl_fvv(const gsl_vector *x, const gsl_vector *v, void *params, gsl_vector *
     Rf_setAttrib(par, R_NamesSymbol, parnames);
 
     /* populate v vector */
-    vpar = PROTECT(Rf_allocVector(REALSXP, p));
+    SEXP vpar = PROTECT(Rf_allocVector(REALSXP, p));
     for (R_len_t k = 0; k < p; k++)
         SET_REAL_ELT(vpar, k, gsl_vector_get(v, k));
     Rf_setAttrib(vpar, R_NamesSymbol, parnames);
@@ -610,11 +614,8 @@ int gsl_fvv(const gsl_vector *x, const gsl_vector *v, void *params, gsl_vector *
 void callback(const size_t iter, void *params, const gsl_multifit_nlinear_workspace *w)
 {
     gsl_vector *f = gsl_multifit_nlinear_residual(w);
-    double rcond, chisq, avratio;
-
-    gsl_multifit_nlinear_rcond(&rcond, w);     // reciprocal condition number J(x)
-    gsl_blas_ddot(f, f, &chisq);               // current ssr
-    avratio = gsl_multifit_nlinear_avratio(w); // ratio |a|/|v|
+    double chisq = 0.0;
+    gsl_blas_ddot(f, f, &chisq);                      // current ssr
 
     /* update traces */
     SET_REAL_ELT(((fdata *)params)->ssrtrace, (R_len_t)iter, chisq);
@@ -625,5 +626,10 @@ void callback(const size_t iter, void *params, const gsl_multifit_nlinear_worksp
         parptr[iter + n * k] = gsl_vector_get(w->x, k);
 
     /* print trace */
-    Rprintf("iter %d: ssr = %g, cond(J) = %g, |a|/|v| = %g\n", iter, chisq, 1.0 / rcond, avratio);
+    Rprintf("iter %3d: ssr = %g, par = (", iter, chisq);
+    for (R_len_t k = 0; k < p; k++) 
+        Rprintf((k < (p -1)) ? "%g, " : "%g)\n", parptr[iter + n * k]);
+
 }
+
+

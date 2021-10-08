@@ -443,11 +443,9 @@ Using the default
 [Levenberg-Marquadt](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt)
 algorithm (without geodesic acceleration), the nonlinear Gaussian model
 can be fitted with a call to `gsl_nls()` analogous to the previous
-example. Here, the `trace` argument is activated in order to print
-additional convergence information at each solver iteration; `ssr` is
-the current sum of squared residuals, `cond(J)` is the condition number
-of the Jacobian matrix, and `|a|/|v|` is the ratio of the acceleration
-term to the velocity term when using geodesic acceleration.
+example. Here, the `trace` argument is activated in order to trace the
+sum of squared residuals (`ssr`) and parameter estimates (`par`) at each
+iteration of the algorithm.
 
 ``` r
 ## Levenberg-Marquadt (default)
@@ -457,33 +455,33 @@ ex2a_fit <- gsl_nls(
   start = c(a = 1, b = 0, c = 1),           ## starting values
   trace = TRUE                              ## verbose output
 )
-#> iter 0: ssr = 1192.49, cond(J) = inf, |a|/|v| = 0
-#> iter 1: ssr = 997.455, cond(J) = 29.1802, |a|/|v| = 0
-#> iter 2: ssr = 969.039, cond(J) = 1223.57, |a|/|v| = 0
-#> iter 3: ssr = 954.562, cond(J) = 2518.24, |a|/|v| = 0
-#> iter 4: ssr = 948.377, cond(J) = 2916.14, |a|/|v| = 0
-#> iter 5: ssr = 944.512, cond(J) = 3760.78, |a|/|v| = 0
-#> iter 6: ssr = 938.632, cond(J) = 3446.52, |a|/|v| = 0
-#> iter 7: ssr = 929.886, cond(J) = 4875.9, |a|/|v| = 0
-#> iter 8: ssr = 920.215, cond(J) = 3420.25, |a|/|v| = 0
-#> iter 9: ssr = 913.041, cond(J) = 2169.93, |a|/|v| = 0
-#> iter 10: ssr = 903.168, cond(J) = 1627.72, |a|/|v| = 0
-#> iter 11: ssr = 887.731, cond(J) = 973.208, |a|/|v| = 0
-#> iter 12: ssr = 870.975, cond(J) = 617.136, |a|/|v| = 0
-#> iter 13: ssr = 857.044, cond(J) = 537.894, |a|/|v| = 0
-#> iter 14: ssr = 840.912, cond(J) = 484.813, |a|/|v| = 0
-#> iter 15: ssr = 819, cond(J) = 321.328, |a|/|v| = 0
-#> iter 16: ssr = 697.556, cond(J) = 95.6252, |a|/|v| = 0
-#> iter 17: ssr = 662.441, cond(J) = 4.75319, |a|/|v| = 0
-#> iter 18: ssr = 544.736, cond(J) = 5.45748, |a|/|v| = 0
-#> iter 19: ssr = 320.202, cond(J) = 8.27146, |a|/|v| = 0
-#> iter 20: ssr = 102.897, cond(J) = 14.4964, |a|/|v| = 0
-#> iter 21: ssr = 23.9684, cond(J) = 23.7227, |a|/|v| = 0
-#> iter 22: ssr = 16.4604, cond(J) = 31.8506, |a|/|v| = 0
-#> iter 23: ssr = 16.347, cond(J) = 34.8131, |a|/|v| = 0
-#> iter 24: ssr = 16.3468, cond(J) = 35.2818, |a|/|v| = 0
-#> iter 25: ssr = 16.3468, cond(J) = 35.3034, |a|/|v| = 0
-#> iter 26: ssr = 16.3468, cond(J) = 35.3038, |a|/|v| = 0
+#> iter   0: ssr = 1192.49, par = (1, 0, 1)
+#> iter   1: ssr = 997.455, par = (2.07301, 3.44185, -4.13269)
+#> iter   2: ssr = 969.039, par = (1.85608, 2.96819, -5.64562)
+#> iter   3: ssr = 954.562, par = (1.92691, 2.49884, -6.31566)
+#> iter   4: ssr = 948.377, par = (1.83317, 1.48054, -7.39849)
+#> iter   5: ssr = 944.512, par = (1.85867, 0.68953, -7.69123)
+#> iter   6: ssr = 938.632, par = (1.86112, -1.46277, -7.61441)
+#> iter   7: ssr = 929.886, par = (2.03302, -2.61142, -6.30742)
+#> iter   8: ssr = 920.215, par = (2.2643, -3.03203, -5.23921)
+#> iter   9: ssr = 913.041, par = (2.44368, -3.06967, -4.72612)
+#> iter  10: ssr = 903.168, par = (2.71853, -3.04364, -3.85495)
+#> iter  11: ssr = 887.731, par = (3.0702, -2.68982, -3.07924)
+#> iter  12: ssr = 870.975, par = (3.48438, -2.29854, -2.43301)
+#> iter  13: ssr = 857.044, par = (4.12382, -1.64293, -1.60538)
+#> iter  14: ssr = 840.912, par = (4.06894, -1.32611, -1.48701)
+#> iter  15: ssr = 819, par = (3.14724, -0.55636, -1.07771)
+#> iter  16: ssr = 697.556, par = (2.17059, 0.341966, -0.532903)
+#> iter  17: ssr = 662.441, par = (2.20696, 0.329787, -0.487837)
+#> iter  18: ssr = 544.736, par = (2.33694, 0.339849, -0.362069)
+#> iter  19: ssr = 320.202, par = (2.76929, 0.414852, -0.207189)
+#> iter  20: ssr = 102.897, par = (3.77426, 0.388027, -0.171863)
+#> iter  21: ssr = 23.9684, par = (4.60481, 0.401482, -0.156265)
+#> iter  22: ssr = 16.4604, par = (4.91125, 0.398077, -0.152281)
+#> iter  23: ssr = 16.347, par = (4.95455, 0.398237, -0.151567)
+#> iter  24: ssr = 16.3468, par = (4.95652, 0.398226, -0.151533)
+#> iter  25: ssr = 16.3468, par = (4.95655, 0.398225, -0.151532)
+#> iter  26: ssr = 16.3468, par = (4.95655, 0.398225, -0.151532)
 #> *******************
 #> summary from method 'trust-region/levenberg-marquardt'
 #> number of iterations: 26
@@ -518,10 +516,6 @@ The nonlinear model can also be fitted using the Levenberg-Marquadt
 algorithm with [geodesic
 acceleration](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt-with-geodesic-acceleration)
 by changing the default `algorithm = "lm"` to `algorithm = "lmaccel"`.
-In the console output, larger values of `|a|/|v|` indicate that the
-geodesic acceleration correction term is contributing (substantial)
-information to the solver relative to the standard Levenberg-Marquadt
-velocity step.
 
 ``` r
 ## Levenberg-Marquadt w/ geodesic acceleration
@@ -532,17 +526,17 @@ ex2b_fit <- gsl_nls(
   algorithm = "lmaccel",                    ## algorithm
   trace = TRUE                              ## verbose output
 )
-#> iter 0: ssr = 1192.49, cond(J) = nan, |a|/|v| = 0
-#> iter 1: ssr = 902.787, cond(J) = 29.1802, |a|/|v| = 0.288
-#> iter 2: ssr = 726.988, cond(J) = 3.53773, |a|/|v| = 0.233334
-#> iter 3: ssr = 444.339, cond(J) = 5.56604, |a|/|v| = 0.304665
-#> iter 4: ssr = 151.97, cond(J) = 9.70655, |a|/|v| = 0.260019
-#> iter 5: ssr = 30.071, cond(J) = 17.8093, |a|/|v| = 0.184693
-#> iter 6: ssr = 16.5987, cond(J) = 28.9632, |a|/|v| = 0.0638111
-#> iter 7: ssr = 16.3475, cond(J) = 34.4312, |a|/|v| = 0.00682439
-#> iter 8: ssr = 16.3468, cond(J) = 35.2603, |a|/|v| = 0.000346826
-#> iter 9: ssr = 16.3468, cond(J) = 35.3031, |a|/|v| = 1.29364e-05
-#> iter 10: ssr = 16.3468, cond(J) = 35.3038, |a|/|v| = 1.79918e-06
+#> iter   0: ssr = 1192.49, par = (1, 0, 1)
+#> iter   1: ssr = 902.787, par = (1.5621, 0.512233, 0.527845)
+#> iter   2: ssr = 726.988, par = (1.7993, 0.369273, 0.417081)
+#> iter   3: ssr = 444.339, par = (2.42399, 0.393548, 0.278246)
+#> iter   4: ssr = 151.97, par = (3.51974, 0.395544, 0.209829)
+#> iter   5: ssr = 30.071, par = (4.4884, 0.397546, 0.16718)
+#> iter   6: ssr = 16.5987, par = (4.88957, 0.398378, 0.153295)
+#> iter   7: ssr = 16.3475, par = (4.95309, 0.398252, 0.151615)
+#> iter   8: ssr = 16.3468, par = (4.95649, 0.398227, 0.151534)
+#> iter   9: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
+#> iter  10: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
 #> *******************
 #> summary from method 'trust-region/levenberg-marquardt+accel'
 #> number of iterations: 10
@@ -681,17 +675,17 @@ gsl_nls(
   fvv = fvv,                                ## analytic function
   x = x                                     ## argument passed to fvv
 )
-#> iter 0: ssr = 1192.49, cond(J) = inf, |a|/|v| = 0
-#> iter 1: ssr = 903.32, cond(J) = 29.1802, |a|/|v| = 0.285933
-#> iter 2: ssr = 730.345, cond(J) = 3.53454, |a|/|v| = 0.225057
-#> iter 3: ssr = 450.157, cond(J) = 5.5039, |a|/|v| = 0.300547
-#> iter 4: ssr = 156.073, cond(J) = 9.62841, |a|/|v| = 0.256912
-#> iter 5: ssr = 30.9598, cond(J) = 17.6174, |a|/|v| = 0.182755
-#> iter 6: ssr = 16.6262, cond(J) = 28.7755, |a|/|v| = 0.0653318
-#> iter 7: ssr = 16.3476, cond(J) = 34.3847, |a|/|v| = 0.00719674
-#> iter 8: ssr = 16.3468, cond(J) = 35.257, |a|/|v| = 0.000371161
-#> iter 9: ssr = 16.3468, cond(J) = 35.303, |a|/|v| = 1.22868e-05
-#> iter 10: ssr = 16.3468, cond(J) = 35.3038, |a|/|v| = 3.49944e-07
+#> iter   0: ssr = 1192.49, par = (1, 0, 1)
+#> iter   1: ssr = 903.32, par = (1.56127, 0.512413, 0.528849)
+#> iter   2: ssr = 730.345, par = (1.79301, 0.370435, 0.419517)
+#> iter   3: ssr = 450.157, par = (2.40709, 0.392981, 0.279519)
+#> iter   4: ssr = 156.073, par = (3.49577, 0.395584, 0.210606)
+#> iter   5: ssr = 30.9598, par = (4.47348, 0.397533, 0.167701)
+#> iter   6: ssr = 16.6262, par = (4.88604, 0.398381, 0.153392)
+#> iter   7: ssr = 16.3476, par = (4.95283, 0.398254, 0.151621)
+#> iter   8: ssr = 16.3468, par = (4.95648, 0.398227, 0.151534)
+#> iter   9: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
+#> iter  10: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
 #> *******************
 #> summary from method 'trust-region/levenberg-marquardt+accel'
 #> number of iterations: 10
@@ -734,17 +728,17 @@ gsl_nls(
   trace = TRUE,                             ## verbose output
   fvv = TRUE                                ## automatic derivation
 )
-#> iter 0: ssr = 1192.49, cond(J) = nan, |a|/|v| = 0
-#> iter 1: ssr = 903.32, cond(J) = 29.1802, |a|/|v| = 0.285933
-#> iter 2: ssr = 730.345, cond(J) = 3.53454, |a|/|v| = 0.225057
-#> iter 3: ssr = 450.157, cond(J) = 5.5039, |a|/|v| = 0.300547
-#> iter 4: ssr = 156.073, cond(J) = 9.62841, |a|/|v| = 0.256912
-#> iter 5: ssr = 30.9598, cond(J) = 17.6174, |a|/|v| = 0.182755
-#> iter 6: ssr = 16.6262, cond(J) = 28.7755, |a|/|v| = 0.0653318
-#> iter 7: ssr = 16.3476, cond(J) = 34.3847, |a|/|v| = 0.00719674
-#> iter 8: ssr = 16.3468, cond(J) = 35.257, |a|/|v| = 0.000371161
-#> iter 9: ssr = 16.3468, cond(J) = 35.303, |a|/|v| = 1.22868e-05
-#> iter 10: ssr = 16.3468, cond(J) = 35.3038, |a|/|v| = 3.49944e-07
+#> iter   0: ssr = 1192.49, par = (1, 0, 1)
+#> iter   1: ssr = 903.32, par = (1.56127, 0.512413, 0.528849)
+#> iter   2: ssr = 730.345, par = (1.79301, 0.370435, 0.419517)
+#> iter   3: ssr = 450.157, par = (2.40709, 0.392981, 0.279519)
+#> iter   4: ssr = 156.073, par = (3.49577, 0.395584, 0.210606)
+#> iter   5: ssr = 30.9598, par = (4.47348, 0.397533, 0.167701)
+#> iter   6: ssr = 16.6262, par = (4.88604, 0.398381, 0.153392)
+#> iter   7: ssr = 16.3476, par = (4.95283, 0.398254, 0.151621)
+#> iter   8: ssr = 16.3468, par = (4.95648, 0.398227, 0.151534)
+#> iter   9: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
+#> iter  10: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
 #> *******************
 #> summary from method 'trust-region/levenberg-marquardt+accel'
 #> number of iterations: 10
