@@ -56,7 +56,7 @@ instructions in the included README and INSTALL files.
 
     sudo apt-get install libgsl-dev
 
-##### OSX
+##### macOS
 
     brew install gsl
 
@@ -89,10 +89,9 @@ devtools::install_github("JorisChau/gslnls")
 
 ## Installation from binary
 
-On windows and some macOS builds, binary versions of the R-package are
-available from CRAN
-(<https://cran.r-project.org/web/packages/gslnls/index.html>). In this
-case, GSL does not need to be installed on the system.
+On windows and some macOS builds, the R-package can be installed from
+CRAN as a binary package. In this case, GSL does not need to be
+available on the system.
 
 ``` r
 ## Install latest CRAN release:
