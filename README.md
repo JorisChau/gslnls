@@ -72,11 +72,31 @@ additional action is needed.
 
 ### R-package installation
 
-With GSL available, install the latest development version of the
-R-package from GitHub with:
+With GSL available, install the R-package from source with:
 
 ``` r
+## Install latest CRAN release:
+install.packages("gslnls", type = "source")
+```
+
+or install the latest development version from GitHub with:
+
+``` r
+## Install latest GitHub development version:
+# install.packages("devtools")
 devtools::install_github("JorisChau/gslnls")
+```
+
+## Installation from binary
+
+On windows and some macOS builds, binary versions of the R-package are
+available from CRAN
+(<https://cran.r-project.org/web/packages/gslnls/index.html>). In this
+case, GSL does not need to be installed on the system.
+
+``` r
+## Install latest CRAN release:
+install.packages("gslnls")
 ```
 
 ## Example usage
