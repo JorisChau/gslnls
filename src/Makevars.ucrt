@@ -1,0 +1,2 @@
+CRT=-urct
+include Makevars.win

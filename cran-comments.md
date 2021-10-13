@@ -1,10 +1,10 @@
-## CRAN package version 1.0.1
+## CRAN package version 1.0.2
 
 * System requirements: GSL (>= 2.2)
 
 ### Changes
 
-* Fixed `gsl_linalg_QRPT_rcond` memory error detected by valgrind in CRAN check results
+* Added Makevars.ucrt to fix installation error r-devel-windows-x86_64-gcc10-UCRT
 
 ### Test environments
 
@@ -17,6 +17,7 @@
 * solaris10 gcc R-release/GSL-2.4 (local vm)
 * solaris10 ods R-release/GSL-2.4 (local vm)
 * win-builder R-release, R-devel, R-old-release (see below)
+* windows-ucrt gcc R-devel (local install)
 
 ### Compiled code checks
 
