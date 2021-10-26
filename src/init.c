@@ -6,11 +6,12 @@
 /* .Call calls */
 void R_init_gslnls(DllInfo *dll);
 extern SEXP C_nls(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_nls_large(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
     {"C_nls", (DL_FUNC)&C_nls, 9},
-    {NULL, NULL, 0}
-};
+    {"C_nls_large", (DL_FUNC)&C_nls_large, 9},
+    {NULL, NULL, 0}};
 
 void R_init_gslnls(DllInfo *dll)
 {
