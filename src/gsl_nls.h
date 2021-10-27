@@ -14,6 +14,7 @@ typedef struct
 {
     R_len_t p;     // number of parameters
     R_len_t n;     // number of observations
+    double chisq;  // current ssr
     SEXP f;        // f language call
     SEXP df;       // df (Jacobian) language call
     SEXP fvv;      // fvv (acceleration) language call

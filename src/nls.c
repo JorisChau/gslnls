@@ -158,11 +158,12 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
     }
 
     /* compute initial cost function */
-    double chisq_init = 0.0;
+    double chisq_init = GSL_POSINF;
     gsl_vector *resid = gsl_multifit_nlinear_residual(w);
     gsl_blas_ddot(resid, resid, &chisq_init);
     double chisq0 = chisq_init;
     double chisq1 = chisq_init;
+    params.chisq = chisq_init;
 
     /* solve the system  */
     int info = GSL_CONTINUE;
@@ -352,7 +353,7 @@ Inputs: maxiter  - maximum iterations to allow
         callback - callback function to call each iteration
         callback_params - parameters to pass to callback function
         chisq0   - ssr previous iteration
-        chisq1   - ssr final iteration
+        chisq1   - ssr current iteration
         info     - (output) info flag on why iteration terminated
                    1 = stopped due to small step size ||dx|
                    2 = stopped due to small gradient
@@ -402,6 +403,9 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
         /* new ssr */
         f = gsl_multifit_nlinear_residual(w);
         gsl_blas_ddot(f, f, chisq1);
+
+        if(callback)
+            ((fdata *)callback_params)->chisq = chisq1[0];
 
         /*
        * If the solver reports no progress on the first iteration,
@@ -479,21 +483,16 @@ int gsl_f(const gsl_vector *x, void *params, gsl_vector *f)
         return GSL_EBADFUNC;
     }
 
+    /* set gsl residuals */
     double *fvalptr = REAL(fval);
+    double *yptr = REAL(((fdata *)params)->y);
     for (R_len_t i = 0; i < n; i++)
     {
         if (R_IsNaN(fvalptr[i]) || !R_finite(fvalptr[i]))
-        {
-            Rf_warning("Missing/infinite values not allowed when evaluating fn");
-            UNPROTECT(2);
-            return GSL_EBADFUNC;
-        }
+            gsl_vector_set(f, i, GSL_POSINF);
+        else
+            gsl_vector_set(f, i, fvalptr[i] - yptr[i]);
     }
-
-    /* set gsl residuals */
-    double *yptr = REAL(((fdata *)params)->y);
-    for (R_len_t i = 0; i < n; i++)
-        gsl_vector_set(f, i, fvalptr[i] - yptr[i]);
 
     UNPROTECT(2);
     return GSL_SUCCESS;
@@ -613,11 +612,8 @@ int gsl_fvv(const gsl_vector *x, const gsl_vector *v, void *params, gsl_vector *
 
 void callback(const size_t iter, void *params, const gsl_multifit_nlinear_workspace *w)
 {
-    gsl_vector *f = gsl_multifit_nlinear_residual(w);
-    double chisq = 0.0;
-    gsl_blas_ddot(f, f, &chisq);                      // current ssr
-
     /* update traces */
+    double chisq = ((fdata *)params)->chisq;
     SET_REAL_ELT(((fdata *)params)->ssrtrace, (R_len_t)iter, chisq);
     R_len_t p = ((fdata *)params)->p;
     R_len_t n = (R_len_t)Rf_nrows(((fdata *)params)->partrace);
