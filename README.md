@@ -8,6 +8,7 @@
 [![CRAN
 version](http://www.r-pkg.org/badges/version/gslnls)](https://cran.r-project.org/package=gslnls)
 [![R-CMD-check](https://github.com/JorisChau/gslnls/workflows/R-CMD-check/badge.svg)](https://github.com/JorisChau/gslnls/actions)
+[![status](https://tinyverse.netlify.com/badge/gslnls)](https://CRAN.R-project.org/package=gslnls)
 [![Total
 Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gslnls)](https://cran.r-project.org/package=gslnls)
 <!-- badges: end -->
@@ -394,7 +395,7 @@ ss_fit
 #> Algorithm: levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 1 
-#> Achieved convergence tolerance: 1.762e-12
+#> Achieved convergence tolerance: 1.831e-12
 ```
 
 The self-starting model `SSasymp()` uses a different model
@@ -485,22 +486,22 @@ ex2a_fit <- gsl_nls(
 #> iter   4: ssr = 948.377, par = (1.83317, 1.48054, -7.39849)
 #> iter   5: ssr = 944.512, par = (1.85867, 0.68953, -7.69123)
 #> iter   6: ssr = 938.632, par = (1.86112, -1.46277, -7.61441)
-#> iter   7: ssr = 929.886, par = (2.03302, -2.61142, -6.30742)
-#> iter   8: ssr = 920.215, par = (2.2643, -3.03203, -5.23921)
+#> iter   7: ssr = 929.886, par = (2.03302, -2.61142, -6.30741)
+#> iter   8: ssr = 920.215, par = (2.2643, -3.03203, -5.2392)
 #> iter   9: ssr = 913.041, par = (2.44368, -3.06967, -4.72612)
-#> iter  10: ssr = 903.168, par = (2.71853, -3.04364, -3.85495)
-#> iter  11: ssr = 887.731, par = (3.0702, -2.68982, -3.07924)
-#> iter  12: ssr = 870.975, par = (3.48438, -2.29854, -2.43301)
-#> iter  13: ssr = 857.044, par = (4.12382, -1.64293, -1.60538)
+#> iter  10: ssr = 903.168, par = (2.71854, -3.04364, -3.85494)
+#> iter  11: ssr = 887.731, par = (3.0702, -2.68982, -3.07925)
+#> iter  12: ssr = 870.975, par = (3.48438, -2.29855, -2.43302)
+#> iter  13: ssr = 857.044, par = (4.12382, -1.64294, -1.60539)
 #> iter  14: ssr = 840.912, par = (4.06894, -1.32611, -1.48701)
-#> iter  15: ssr = 819, par = (3.14724, -0.55636, -1.07771)
-#> iter  16: ssr = 697.556, par = (2.17059, 0.341966, -0.532903)
-#> iter  17: ssr = 662.441, par = (2.20696, 0.329787, -0.487837)
-#> iter  18: ssr = 544.736, par = (2.33694, 0.339849, -0.362069)
-#> iter  19: ssr = 320.202, par = (2.76929, 0.414852, -0.207189)
-#> iter  20: ssr = 102.897, par = (3.77426, 0.388027, -0.171863)
-#> iter  21: ssr = 23.9684, par = (4.60481, 0.401482, -0.156265)
-#> iter  22: ssr = 16.4604, par = (4.91125, 0.398077, -0.152281)
+#> iter  15: ssr = 819, par = (3.14727, -0.556378, -1.07772)
+#> iter  16: ssr = 697.562, par = (2.17065, 0.341907, -0.532942)
+#> iter  17: ssr = 662.46, par = (2.207, 0.329739, -0.487881)
+#> iter  18: ssr = 544.788, par = (2.33695, 0.339819, -0.362125)
+#> iter  19: ssr = 320.234, par = (2.76919, 0.414858, -0.207191)
+#> iter  20: ssr = 102.909, par = (3.77419, 0.388022, -0.171865)
+#> iter  21: ssr = 23.9699, par = (4.60478, 0.401484, -0.156265)
+#> iter  22: ssr = 16.4605, par = (4.91124, 0.398076, -0.152281)
 #> iter  23: ssr = 16.347, par = (4.95455, 0.398237, -0.151567)
 #> iter  24: ssr = 16.3468, par = (4.95652, 0.398226, -0.151533)
 #> iter  25: ssr = 16.3468, par = (4.95655, 0.398225, -0.151532)
@@ -512,7 +513,7 @@ ex2a_fit <- gsl_nls(
 #> initial ssr = 1192.49
 #> final ssr = 16.3468
 #> ssr/dof = 0.0550398
-#> ssr achieved tolerance = 7.68807e-12
+#> ssr achieved tolerance = 7.61702e-12
 #> function evaluations: 126
 #> Jacobian evaluations: 0
 #> fvv evaluations: 0
@@ -530,7 +531,7 @@ ex2a_fit
 #> Algorithm: levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 26 
-#> Achieved convergence tolerance: 7.688e-12
+#> Achieved convergence tolerance: 7.617e-12
 ```
 
 #### Geodesic acceleration
@@ -567,7 +568,7 @@ ex2b_fit <- gsl_nls(
 #> initial ssr = 1192.49
 #> final ssr = 16.3468
 #> ssr/dof = 0.0550398
-#> ssr achieved tolerance = 4.29345e-11
+#> ssr achieved tolerance = 4.29523e-11
 #> function evaluations: 66
 #> Jacobian evaluations: 0
 #> fvv evaluations: 0
@@ -585,7 +586,7 @@ ex2b_fit
 #> Algorithm: levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 10 
-#> Achieved convergence tolerance: 4.293e-11
+#> Achieved convergence tolerance: 4.295e-11
 ```
 
 With geodesic acceleration enabled the method converges after 10
@@ -716,7 +717,7 @@ gsl_nls(
 #> initial ssr = 1192.49
 #> final ssr = 16.3468
 #> ssr/dof = 0.0550398
-#> ssr achieved tolerance = 5.17311e-11
+#> ssr achieved tolerance = 5.1692e-11
 #> function evaluations: 50
 #> Jacobian evaluations: 0
 #> fvv evaluations: 16
@@ -732,7 +733,7 @@ gsl_nls(
 #> Algorithm: levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 10 
-#> Achieved convergence tolerance: 5.173e-11
+#> Achieved convergence tolerance: 5.169e-11
 ```
 
 If the model formula `fn` can be derived with `stats::deriv()`, then the
@@ -769,7 +770,7 @@ gsl_nls(
 #> initial ssr = 1192.49
 #> final ssr = 16.3468
 #> ssr/dof = 0.0550398
-#> ssr achieved tolerance = 5.17311e-11
+#> ssr achieved tolerance = 5.1692e-11
 #> function evaluations: 50
 #> Jacobian evaluations: 0
 #> fvv evaluations: 16
@@ -785,7 +786,7 @@ gsl_nls(
 #> Algorithm: levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 10 
-#> Achieved convergence tolerance: 5.173e-11
+#> Achieved convergence tolerance: 5.169e-11
 ```
 
 ### Example 3: Branin function
