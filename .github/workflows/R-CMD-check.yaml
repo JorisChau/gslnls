@@ -13,18 +13,16 @@ on:
 name: R-CMD-check
 
 jobs:
-  run-rchk:
-    runs-on: ubuntu-latest
-
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-
-    steps:
-      - uses: actions/checkout@v1
-
-      - uses: r-lib/actions/run-rchk@master
-        with:
-          cache-version: rchk
+  # run-rchk:
+  #   runs-on: ubuntu-latest
+  #
+  #   env:
+  #     GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+  #
+  #   steps:
+  #     - uses: actions/checkout@v1
+  #
+  #     - uses: r-lib/actions/run-rchk@master
 
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
