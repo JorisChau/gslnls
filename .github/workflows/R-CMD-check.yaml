@@ -23,6 +23,8 @@ jobs:
       - uses: actions/checkout@v1
 
       - uses: r-lib/actions/run-rchk@master
+        with:
+          cache-version: rchk
 
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
