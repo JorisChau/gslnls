@@ -257,12 +257,12 @@ summary(ex1_fit)
 #> Number of iterations to convergence: 8 
 #> Achieved convergence tolerance: 9.503e-11
 
-## profile confidence intervals
+## asymptotic confidence intervals
 confint(ex1_fit)
-#>          2.5%    97.5%
-#> A   4.7542105 5.228848
-#> lam 1.2974126 1.625666
-#> b   0.8583933 1.122182
+#>       2.5 %   97.5 %
+#> 1 4.7529300 5.228067
+#> 2 1.2891176 1.623696
+#> 3 0.8638162 1.129723
 ```
 
 The `predict` method extends the existing `predict.nls` method by

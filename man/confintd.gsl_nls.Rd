@@ -29,7 +29,7 @@ Returns fitted values and confidence intervals for continuous functions of param
 from a fitted \code{"gsl_nls"} object.
 }
 \details{
-This method assumes (approximate) normality of the parameter estimates and confidence intervals are
+This method assumes (approximate) normality of the errors in the model and confidence intervals are
 calculated using the \emph{delta method}, i.e. a first-order Taylor approximation of the (continuous)
 function of the parameters. If \code{dtype = "symbolic"} (the default), \code{expr} is differentiated
 with respect to the parameters using symbolic differentiation with \code{\link[stats]{deriv}}. As such,

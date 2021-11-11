@@ -431,6 +431,63 @@ anova.gsl_nls <- function(object, ...) {
   }
 }
 
+#' Confidence interval for model parameters
+#' @description Returns asymptotic or profile likelihood confidence intervals for the parameters in a
+#' fitted \code{"gsl_nls"} object.
+#' @inheritParams coef.gsl_nls
+#' @param parm A character vector of parameter names for which to evaluate confidence intervals, defaults
+#' to all parameters.
+#' @param level A numeric scalar between 0 and 1 giving the level of the parameter confidence intervals.
+#' @param method Method to be used, either \code{"asymptotic"} for asymptotic confidence intervals or
+#' \code{"profile"} for profile likelihood confidence intervals. The latter is only available for
+#' \code{"gsl_nls"} objects that are also of class \code{"nls"}.
+#' @return A matrix with columns giving the lower and upper confidence limits for each parameter.
+#' @details
+#' Method \code{"asymptotic"} assumes (approximate) normality of the errors in the model and calculates
+#' standard asymptotic confidence intervals based on the quantiles of a t-distritbution. Method \code{"profile"}
+#' calculates profile likelihood confidence intervals using the \code{\link[MASS:confint]{confint.nls}} method
+#' in the \CRANpkg{MASS} package and for this reason is only available for \code{"gsl_nls"} objects that
+#' are \emph{also} of class \code{"nls"}.
+#' @seealso \code{\link[stats]{confint}}, \code{\link[MASS:confint]{confint.nls}} in package \CRANpkg{MASS}.
+#' @examples
+#' ## data
+#' set.seed(1)
+#' x <- 1:10
+#' y <- 1 + 0.5 * (1:10) + rnorm(10, sd = 0.1)
+#' ## model
+#' obj <- gsl_nls(fn = y ~ a + b * x, data = data.frame(x = x, y = y), start = c(a = 0, b = 1))
+#' ## asymptotic ci's
+#' confint(obj)
+#' \dontrun{
+#' ## profile ci's (requires MASS)
+#' confint(obj, method = "profile")
+#' }
+#' @author jchau
+#' @export
+confint.gsl_nls <- function(object, parm, level = 0.95, method = c("asymptotic", "profile"), ...) {
+  method <- match.arg(method)
+  if(identical(method, "profile")) {
+    if(inherits(object, "nls")) {
+      NextMethod()
+    } else {
+      stop("method 'profile' can only be used for \"nls\" objects")
+    }
+  } else {
+    ## from confint.default
+    cf <- coef(object)
+    pnames <- names(cf)
+    if(missing(parm))
+      parm <- seq_along(pnames)
+    else if(is.numeric(parm))
+      parm <- pnames[parm]
+    a <- c((1 - level) / 2, (1 + level) / 2)
+    ses <- sqrt(diag(vcov(object)))[parm]
+    pct <- paste(format(100 * a, trim = TRUE, scientific = FALSE, digits = 3L), "%")
+    ci <- array(NA_real_, dim = c(length(parm), 2), dimnames = list(parm, pct))
+    ci[] <- cf[parm] + ses %o% qt(a, df.residual(object))
+    return(ci)
+  }
+}
 
 #' Confidence intervals for derived parameters
 #' @description \code{confintd} is a generic function to compute confidence intervals for continuous functions
@@ -459,7 +516,7 @@ confintd <- function(object, expr, level = 0.95, ...) {
 #' @return A matrix with columns giving the fitted values and lower and upper confidence limits for
 #' each derived parameter. The row names list the individual derived parameter expressions.
 #' @details
-#' This method assumes (approximate) normality of the parameter estimates and confidence intervals are
+#' This method assumes (approximate) normality of the errors in the model and confidence intervals are
 #' calculated using the \emph{delta method}, i.e. a first-order Taylor approximation of the (continuous)
 #' function of the parameters. If \code{dtype = "symbolic"} (the default), \code{expr} is differentiated
 #' with respect to the parameters using symbolic differentiation with \code{\link[stats]{deriv}}. As such,

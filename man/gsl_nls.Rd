@@ -107,7 +107,6 @@ This argument is only used if \code{fn} is defined as a \link{formula}.}
 
 \item{...}{additional arguments passed to the calls of \code{fn}, \code{jac} and \code{fvv} if
 defined as functions.}
-
 }
 \value{
 If \code{fn} is a \code{formula} returns a list object of class \code{nls}.

@@ -2,6 +2,7 @@
 
 S3method(anova,gsl_nls)
 S3method(coef,gsl_nls)
+S3method(confint,gsl_nls)
 S3method(confintd,gsl_nls)
 S3method(deviance,gsl_nls)
 S3method(df.residual,gsl_nls)
@@ -37,4 +38,5 @@ importFrom(stats,pt)
 importFrom(stats,qt)
 importFrom(stats,setNames)
 importFrom(stats,sigma)
+importFrom(stats,vcov)
 useDynLib(gslnls, .registration = TRUE)
