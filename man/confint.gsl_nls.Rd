@@ -51,6 +51,3 @@ confint(obj, method = "profile")
 \seealso{
 \code{\link[stats]{confint}}, \code{\link[MASS:confint]{confint.nls}} in package \CRANpkg{MASS}.
 }
-\author{
-jchau
-}

@@ -23,9 +23,6 @@ jobs:
       - uses: actions/checkout@v1
 
       - uses: r-lib/actions/run-rchk@master
-        with:
-          apt: libgsl-dev
-          package: gslnls
 
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}

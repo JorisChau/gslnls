@@ -462,7 +462,6 @@ anova.gsl_nls <- function(object, ...) {
 #' ## profile ci's (requires MASS)
 #' confint(obj, method = "profile")
 #' }
-#' @author jchau
 #' @export
 confint.gsl_nls <- function(object, parm, level = 0.95, method = c("asymptotic", "profile"), ...) {
   method <- match.arg(method)
