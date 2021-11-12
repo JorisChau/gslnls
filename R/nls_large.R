@@ -1,4 +1,4 @@
-#' GSL Nonlinear Least Squares fitting
+#' GSL Large-scale Nonlinear Least Squares fitting
 #'
 #' Determine the nonlinear (weighted) least-squares estimates of the parameters of a
 #' nonlinear model using the GNU Scientific Library (GSL).
@@ -35,8 +35,7 @@
 #' number of parameters. If a function, the first argument must be the vector of parameters of length \code{p}.
 #' If \code{NULL}, the Jacobian is computed internally using a finite difference approximations.
 #' Can also be \code{TRUE}, in which case \code{jac} is derived symbolically with \code{\link[stats]{deriv}},
-#' this only works if \code{fn} is defined as a (non-selfstarting) formula. If \code{fn} is a \code{\link{selfStart}} model,
-#' the Jacobian specified in the \code{"gradient"} attribute of the self-start model is used instead.
+#' this only works if \code{fn} is defined as a (non-selfstarting) formula.
 #' @param fvv either \code{NULL} (default) or a \link{function} returning an \code{n} dimensional vector containing
 #' the second directional derivatives of the nonlinear model \code{fn}, with \code{n} the number of observations.
 #' This argument is only used if geodesic acceleration is enabled (\code{algorithm = "lmaccel"}).
@@ -44,8 +43,6 @@
 #' also of length \code{p}. If \code{NULL}, the second directional derivative vector is computed internal
 #' using a finite difference approximation. Can also be \code{TRUE}, in which case \code{fvv} is derived
 #' symbolically with \code{\link[stats]{deriv}}, this only works if \code{fn} is defined as a (non-selfstarting) formula.
-#' If the model \link{function} in \code{fn} also returns a \code{"hessian"} attribute (similar to the \code{"gradient"} attribute
-#' in a \code{selfStart} model), this Hessian matrix is used to evaluate the second directional derivatives instead.
 #' @param trace logical value indicating if a trace of the iteration progress should be printed.
 #' Default is \code{FALSE}. If \code{TRUE}, the residual (weighted) sum-of-squares and the current parameter estimates
 #' are printed after each iteration.
@@ -66,158 +63,33 @@
 #' If \code{fn} is a \code{function} returns a list object of class \code{gsl_nls}.
 #' See the individual method descriptions for the structures of the returned lists and the generic functions
 #' applicable to objects of both classes.
-#' @useDynLib gslnls, .registration = TRUE
-#' @importFrom stats nls numericDeriv deriv as.formula coef deviance df.residual fitted vcov formula getInitial model.weights pf pt qt setNames sigma nobs
 #' @seealso \code{\link[stats]{nls}}
 #' @seealso \url{https://www.gnu.org/software/gsl/doc/html/nls.html}
 #' @references M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
-#' @examples
-#' # Example 1: exponential model
-#' # (https://www.gnu.org/software/gsl/doc/html/nls.html#exponential-fitting-example)
-#'
-#' ## data
-#' set.seed(1)
-#' n <- 50
-#' x <- (seq_len(n) - 1) * 3 / (n - 1)
-#' f <- function(A, lam, b, x) A * exp(-lam * x) + b
-#' y <- f(A = 5, lam = 1.5, b = 1, x) + rnorm(n, sd = 0.25)
-#'
-#' ## model fit
-#' ex1_fit <- gsl_nls(
-#'   fn = y ~ A * exp(-lam * x) + b,                        ## model formula
-#'   data = data.frame(x = x, y = y),                       ## model fit data
-#'   start = c(A = 0, lam = 0, b = 0)                       ## starting values
-#' )
-#' summary(ex1_fit)                                         ## model summary
-#' predict(ex1_fit, interval = "prediction")                ## prediction intervals
-#'
-#' ## analytic Jacobian 1
-#' gsl_nls(
-#'   fn = y ~ A * exp(-lam * x) + b,                        ## model formula
-#'   data = data.frame(x = x, y = y),                       ## model fit data
-#'   start = c(A = 0, lam = 0, b = 0),                      ## starting values
-#'   jac = function(par) with(as.list(par),                 ## jacobian
-#'     cbind(A = exp(-lam * x), lam = -A * x * exp(-lam * x), b = 1)
-#'   )
-#' )
-#'
-#' ## analytic Jacobian 2
-#' gsl_nls(
-#'   fn = y ~ A * exp(-lam * x) + b,                        ## model formula
-#'   data = data.frame(x = x, y = y),                       ## model fit data
-#'   start = c(A = 0, lam = 0, b = 0),                      ## starting values
-#'   jac = TRUE                                             ## automatic derivation
-#' )
-#'
-#' ## self-starting model
-#' gsl_nls(
-#'   fn =  y ~ SSasymp(x, Asym, R0, lrc),                   ## model formula
-#'   data = data.frame(x = x, y = y)                        ## model fit data
-#' )
-#'
-#' # Example 2: Gaussian function
-#' # (https://www.gnu.org/software/gsl/doc/html/nls.html#geodesic-acceleration-example-2)
-#'
-#' ## data
-#' set.seed(1)
-#' n <- 300
-#' x <- seq_len(n) / n
-#' f <- function(a, b, c, x) a * exp(-(x - b)^2 / (2 * c^2))
-#' y <- f(a = 5, b = 0.4, c = 0.15, x) * rnorm(n, mean = 1, sd = 0.1)
-#'
-#' ## Levenberg-Marquadt (default)
-#' gsl_nls(
-#'   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)),             ## model formula
-#'   data = data.frame(x = x, y = y),                      ## model fit data
-#'   start = c(a = 1, b = 0, c = 1),                       ## starting values
-#'   trace = TRUE                                          ## verbose output
-#' )
-#'
-#' ## Levenberg-Marquadt w/ geodesic acceleration 1
-#' gsl_nls(
-#'   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)),             ## model formula
-#'   data = data.frame(x = x, y = y),                      ## model fit data
-#'   start = c(a = 1, b = 0, c = 1),                       ## starting values
-#'   algorithm = "lmaccel",                                ## algorithm
-#'   trace = TRUE                                          ## verbose output
-#' )
-#'
-#' ## Levenberg-Marquadt w/ geodesic acceleration 2
-#' ## second directional derivative
-#' fvv <- function(par, v, x) {
-#'   with(as.list(par), {
-#'     zi <- (x - b) / c
-#'     ei <- exp(-zi^2 / 2)
-#'     2 * v[["a"]] * v[["b"]] * zi / c * ei + 2 * v[["a"]] * v[["c"]] * zi^2 / c * ei -
-#'       v[["b"]]^2 * a / c^2 * (1 - zi^2) * ei -
-#'       2 * v[["b"]] * v[["c"]] * a / c^2 * zi * (2 - zi^2) * ei -
-#'       v[["c"]]^2 * a / c^2 * zi^2 * (3 - zi^2) * ei
-#'   })
-#' }
-#'
-#' ## analytic fvv 1
-#' gsl_nls(
-#'   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)),             ## model formula
-#'   data = data.frame(x = x, y = y),                      ## model fit data
-#'   start = c(a = 1, b = 0, c = 1),                       ## starting values
-#'   algorithm = "lmaccel",                                ## algorithm
-#'   trace = TRUE,                                         ## verbose output
-#'   fvv = fvv,                                            ## analytic fvv
-#'   x = x                                                 ## argument passed to fvv
-#' )
-#'
-#' ## analytic fvv 2
-#' gsl_nls(
-#'   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)),             ## model formula
-#'   data = data.frame(x = x, y = y),                      ## model fit data
-#'   start = c(a = 1, b = 0, c = 1),                       ## starting values
-#'   algorithm = "lmaccel",                                ## algorithm
-#'   trace = TRUE,                                         ## verbose output
-#'   fvv = TRUE                                            ## automatic derivation
-#')
-#'
-#' # Example 3: Branin function
-#' # (https://www.gnu.org/software/gsl/doc/html/nls.html#comparing-trs-methods-example)
-#'
-#' ## Branin model function
-#' branin <- function(x) {
-#'   a <- c(-5.1 / (4 * pi^2), 5 / pi, -6, 10, 1 / (8 * pi))
-#'   f1 <- x[2] + a[1] * x[1]^2 + a[2] * x[1] + a[3]
-#'   f2 <- sqrt(a[4] * (1 + (1 - a[5]) * cos(x[1])))
-#'   c(f1, f2)
-#' }
-#'
-#' ## Dogleg minimization w/ model as function
-#' gsl_nls(
-#'   fn = branin,                   ## model function
-#'   y = c(0, 0),                   ## response vector
-#'   start = c(x1 = 6, x2 = 14.5),  ## starting values
-#'   algorithm = "dogleg"           ## algorithm
-#' )
 #' @export
-gsl_nls <- function (fn, ...) {
-  UseMethod("gsl_nls")
+gsl_nls_large <- function (fn, ...) {
+  UseMethod("gsl_nls_large")
 }
 
-#' @describeIn gsl_nls
+#' @describeIn gsl_nls_large
 #' If \code{fn} is a \code{formula}, the returned list object is of classes \code{gsl_nls} and \code{nls}.
 #' Therefore, all generic functions applicable to objects of class \code{nls}, such as \code{anova}, \code{coef}, \code{confint},
 #' \code{deviance}, \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print}, \code{profile},
 #' \code{residuals}, \code{summary}, \code{vcov} and \code{weights} are also applicable to the returned list object.
 #' In addition, a method \code{confintd} is available for inference of derived parameters.
 #' @export
-gsl_nls.formula <- function(fn, data = parent.frame(), start,
-    algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
+gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
+    algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
     control = gsl_nls_control(), jac = NULL, fvv = NULL, trace = FALSE,
     subset, weights, na.action, model = FALSE, ...) {
-  
+
   ## adapted from src/library/stats/nls.R
   formula <- as.formula(fn)
-  algorithm <- match.arg(algorithm, choices = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
-  
+  algorithm <- match.arg(algorithm, choices = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
+
   if(!is.list(data) && !is.environment(data))
     stop("'data' must be a list or an environment")
-  
+
   mf <- match.call()		# for creating the model frame
   varNames <- all.vars(formula) # parameter and variable names from formula
   ## adjust a one-sided model formula by using 0 as the response
@@ -229,7 +101,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   form2 <- formula; form2[[2L]] <- 0
   varNamesRHS <- all.vars(form2)
   mWeights <- missing(weights)
-  
+
   ## get names of the parameters from the starting values or selfStart model
   pnames <-
       if (missing(start)) {
@@ -249,20 +121,20 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
         }
       } else
         names(start)
-  
+
   if(!is.null(environment(formula))) {
     env <- environment(formula)
   } else {
     env <- parent.frame()
   }
-  
+
   ## Heuristics for determining which names in formula represent actual
   ## variables :
-  
+
   ## If it is a parameter it is not a variable
   if(length(pnames))
     varNames <- varNames[is.na(match(varNames, pnames))]
-  
+
   ## This aux.function needs to be as complicated because
   ## exists(var, data) does not work (with lists or dataframes):
   lenVar <- function(var) tryCatch(length(eval(as.name(var), data, env)),
@@ -288,12 +160,12 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   else { ## length(varNames) == 0
     stop("no parameters to fit and/or no data variables present")
   }
-  
+
   ## If its length is a multiple of the response or LHS of the formula,
   ## then it is probably a variable.
   ## This may fail (e.g. when LHS contains parameters):
   respLength <- length(eval(formula[[2L]], data, env))
-  
+
   if(length(n) > 0L) {
     varIndex <- n %% respLength == 0
     if(is.list(data) && diff(range(n[names(n) %in% names(data)])) > 0) {
@@ -335,27 +207,27 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   else {
     stop("no data variables present")
   }
-  
+
   ## set up iteration
   if(missing(start))
     start <- getInitial(formula, data=mf, control=control, trace=trace)
   for(var in varNames[!varIndex])
     mf[[var]] <- eval(as.name(var), data, env)
   varNamesRHS <- varNamesRHS[ varNamesRHS %in% varNames[varIndex] ]
-  
+
   ## function call
   fn <- function(par, .data = mf) eval(formula[[3L]], envir = c(as.list(par), .data))
   .fcall <- tryCatch(fn(start), error = function(err) err)
-  
+
   if(inherits(.fcall, "error"))
     stop(sprintf("failed to evaluate 'fn' at starting values: %s", .fcall$message))
   if(!is.numeric(.fcall))
     stop("'fn' failed to return a numeric vector at starting values")
   if(any(is.na(.fcall)))
     stop("missing values returned by 'fn' at starting values")
-  
+
   .lhs <- eval(formula[[2L]], envir = mf)
-  
+
   ## jac call
   if(!is.function(jac) && !is.null(attr(.fcall, "gradient"))) {
     jac <- function(par, .data = mf) attr(fn(par, .data), "gradient")
@@ -383,14 +255,9 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   } else {
     jac1 <- NULL
   }
-  
+
   ## fvv call
-  if(!is.function(fvv) && !is.null(attr(.fcall, "hessian"))) {
-    fvv <- function(par, v) {
-      hess <- attr(fn(par), "hessian")
-      c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))
-    }
-  } else if(isTRUE(fvv)) {
+  if(isTRUE(fvv)) {
     fvv <- NULL
     if(identical(algorithm, "lmaccel")) {
       exprfvv <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start), hessian = TRUE), error = function(err) err)
@@ -405,7 +272,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
       }
     }
   }
-  
+
   if(is.function(fvv)) {
     fvv1 <- function(par, v) fvv(par, v, ...)
     .fvvcall <- tryCatch(fvv1(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
@@ -418,7 +285,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   } else {
     fvv1 <- NULL
   }
-  
+
   ## control arguments
   trace <- isTRUE(trace)
   .ctrl <- gsl_nls_control()
@@ -428,7 +295,6 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   }
   algorithm <- match.arg(algorithm)
   .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquadt"))
-  .ctrl$solver <- match.arg(.ctrl$solver, c("qr", "cholesky", "svd"))
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
   stopifnot(
       is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter > 0,
@@ -444,20 +310,19 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   .ctrl_int <- c(
       as.integer(.ctrl$maxiter),
       isTRUE(trace),
-      match(algorithm, c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D")) - 1L,
+      match(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D")) - 1L,
       match(.ctrl$scale, c("more", "levenberg", "marquadt")) - 1L,
-      match(.ctrl$solver, c("qr", "cholesky", "svd")) - 1L,
       match(.ctrl$fdtype, c("forward", "center")) - 1L
   )
   .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol")])
   .ctrl_tol <- unlist(.ctrl[c("xtol", "ftol", "gtol")])
-  
+
   ## optimize
-  cFit <- .Call(C_nls, fn, .lhs, jac1, fvv1, environment(), start, wts, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
-  
+  cFit <- .Call(C_nls_large, fn, .lhs, jac1, fvv1, environment(), start, wts, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
+
   ## convert to nls object
   m <- nlsModel(formula, mf, cFit$par, wts, jac)
-  
+
   convInfo <- list(
       isConv = as.logical(!cFit$conv),
       finIter = cFit$niter,
@@ -467,9 +332,9 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
       stopCode = cFit$conv,
       stopMessage = cFit$status
   )
-  
+
   nls.out <- list(m = m, data = substitute(data), convInfo = convInfo, call = match.call())
-  
+
   nls.out$call$algorithm <- algorithm
   nls.out$call$control <- nls.control() ## needed for profiler
   nls.out$call$trace <- trace
@@ -484,12 +349,12 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   if(!mWeights)
     nls.out$weights <- wts
   class(nls.out) <- c("gsl_nls", "nls")
-  
+
   return(nls.out)
-  
+
 }
 
-#' @describeIn gsl_nls
+#' @describeIn gsl_nls_large
 #' If \code{fn} is a \code{function}, the first argument must be the vector of parameters and
 #' the function should return a numeric vector containing the nonlinear model evaluations at
 #' the provided parameter and predictor or covariate vectors. In addition, the argument \code{y}
@@ -501,20 +366,20 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
 #' \code{residuals}, \code{summary}, \code{vcov} and \code{weights}. In addition, a method \code{confintd}
 #' is available for inference of derived parameters.
 #' @export
-gsl_nls.function <- function(fn, y, start,
-    algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
+gsl_nls_large.function <- function(fn, y, start,
+    algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
     control = gsl_nls_control(), jac = NULL, fvv = NULL, trace = FALSE,
     weights, ...) {
-  
+
   ## starting values
   if(missing(start)) {
     stop("starting values need to be provided if 'fn' is defined as a function")
   }
-  
+
   ## function call
   if(!is.numeric(y))
     stop("'y' should be a numeric response vector")
-  
+
   fn1 <- function(par) fn(par, ...)
   .fcall <- tryCatch(fn1(start), error = function(err) err)
   if(inherits(.fcall, "error"))
@@ -523,12 +388,8 @@ gsl_nls.function <- function(fn, y, start,
     stop("'fn' failed to return a numeric vector equal in length to 'y' at starting values")
   if(any(is.na(.fcall)))
     stop("missing values returned by 'fn' at starting values")
-  
+
   ## jac call
-  if(!is.function(jac) && !is.null(attr(.fcall, "gradient"))) {
-    jac <- function(par, ...) attr(fn(par, ...), "gradient")
-  }
-  
   if(is.function(jac)) {
     jac1 <- function(par) jac(par, ...)
     .dfcall <- tryCatch(jac1(start), error = function(err) err)
@@ -541,15 +402,8 @@ gsl_nls.function <- function(fn, y, start,
   } else {
     jac1 <- NULL
   }
-  
+
   ## fvv call
-  if(!is.function(fvv) && !is.null(attr(.fcall, "hessian"))) {
-    fvv <- function(par, v, ...) {
-      hess <- attr(fn(par, ...), "hessian")
-      c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))
-    }
-  }
-  
   if(is.function(fvv)) {
     fvv1 <- function(par, v) fvv(par, v, ...)
     .fvvcall <- tryCatch(fvv1(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
@@ -562,7 +416,7 @@ gsl_nls.function <- function(fn, y, start,
   } else {
     fvv1 <- NULL
   }
-  
+
   ## control arguments
   trace <- isTRUE(trace)
   .ctrl <- gsl_nls_control()
@@ -572,7 +426,7 @@ gsl_nls.function <- function(fn, y, start,
   }
   algorithm <- match.arg(algorithm)
   .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquadt"))
-  .ctrl$solver <- match.arg(.ctrl$solver, c("qr", "cholesky", "svd"))
+  .ctrl$solver <- match.arg(.ctrl$solver, c("qr", "svd", "cholesky"))
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
   stopifnot(
       is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter > 0,
@@ -588,14 +442,14 @@ gsl_nls.function <- function(fn, y, start,
   .ctrl_int <- c(
       as.integer(.ctrl$maxiter),
       isTRUE(trace),
-      match(algorithm, c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D")) - 1L,
+      match(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D")) - 1L,
       match(.ctrl$scale, c("more", "levenberg", "marquadt")) - 1L,
       match(.ctrl$solver, c("qr", "cholesky", "svd")) - 1L,
       match(.ctrl$fdtype, c("forward", "center")) - 1L
   )
   .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol")])
   .ctrl_tol <- unlist(.ctrl[c("xtol", "ftol", "gtol")])
-  
+
   ## weights
   if(!missing(weights)) {
     if(!is.numeric(weights) || !identical(length(weights), length(y)))
@@ -605,12 +459,14 @@ gsl_nls.function <- function(fn, y, start,
   } else {
     weights <- NULL
   }
-  
+
+  browser()
+
   ## optimize
-  cFit <- .Call(C_nls, fn1, y, jac1, fvv1, environment(), start, weights, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
-  
+  cFit <- .Call(C_nls_large, fn1, y, jac1, fvv1, environment(), start, weights, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
+
   m <- gslModel(fn, y, cFit, start, weights, jac, ...)
-  
+
   ## mimick nls object
   convInfo <- list(
       isConv = as.logical(!cFit$conv),
@@ -621,7 +477,7 @@ gsl_nls.function <- function(fn, y, start,
       stopCode = cFit$conv,
       stopMessage = cFit$status
   )
-  
+
   nls.out <- list(m = m, data = c(list(y = y), list(...)), convInfo = convInfo, call = match.call())
   nls.out$call$algorithm <- algorithm
   nls.out$call$trace <- trace
@@ -633,9 +489,9 @@ gsl_nls.function <- function(fn, y, start,
   if(!is.null(weights))
     nls.out$weights <- weights
   class(nls.out) <- "gsl_nls"
-  
+
   return(nls.out)
-  
+
 }
 
 #' Tunable NLS iteration parameters
@@ -713,11 +569,11 @@ gsl_nls_control <- function(maxiter = 50, scale = "more", solver = "qr",
     fdtype = "forward", factor_up = 3, factor_down = 2, avmax = 0.75,
     h_df = sqrt(.Machine$double.eps), h_fvv = 0.02, xtol = sqrt(.Machine$double.eps),
     ftol = sqrt(.Machine$double.eps), gtol = .Machine$double.eps^(1/3)) {
-  
+
   scale <- match.arg(scale, c("more", "levenberg", "marquadt"))
-  solver <- match.arg(solver, c("qr", "cholesky", "svd"))
+  solver <- match.arg(solver, c("qr", "svd", "cholesky"))
   fdtype <- match.arg(fdtype, c("forward", "center"))
-  
+
   stopifnot(
       is.numeric(maxiter), length(maxiter) == 1, maxiter > 0,
       is.numeric(factor_up), length(factor_up) == 1, factor_up > 0,
@@ -729,11 +585,11 @@ gsl_nls_control <- function(maxiter = 50, scale = "more", solver = "qr",
       is.numeric(ftol), length(ftol) == 1, ftol > 0,
       is.numeric(gtol), length(gtol) == 1, gtol > 0
   )
-  
+
   list(maxiter = as.integer(maxiter), scale = scale, solver = solver, fdtype = fdtype,
       factor_up = factor_up, factor_down = factor_down, avmax = avmax,
       h_df = h_df, h_fvv = h_fvv, xtol = xtol, ftol = ftol, gtol = gtol)
-  
+
 }
 
 nlsModel <- function(form, data, start, wts, jac, upper=NULL) {
@@ -752,7 +608,7 @@ nlsModel <- function(form, data, start, wts, jac, upper=NULL) {
   getPars.noVarying <- function() unlist(mget(names(ind), env))
   getPars <- getPars.noVarying
   internalPars <- getPars()
-  
+
   if(!is.null(upper)) upper <- rep_len(upper, parLength)
   useParams <- rep_len(TRUE, parLength)
   lhs <- eval(form[[2L]], envir = env)
@@ -801,7 +657,7 @@ nlsModel <- function(form, data, start, wts, jac, upper=NULL) {
   qrDim <- min(dim(QR$qr))
   if(QR$rank < qrDim)
     stop("singular gradient matrix at parameter estimates")
-  
+
   getPars.varying <- function() unlist(mget(names(ind), env))[useParams]
   setPars.noVarying <- function(newPars){
     internalPars <<- newPars # envir = thisEnv
@@ -814,7 +670,7 @@ nlsModel <- function(form, data, start, wts, jac, upper=NULL) {
       env[[i]] <- unname(internalPars[ ind[[i]] ])
   }
   setPars <- setPars.noVarying
-  
+
   convCrit <- function() {
     if(npar == 0) return(0)
     rr <- qr.qty(QR, c(resid)) # rotated residual vector
@@ -912,9 +768,9 @@ gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
   }
   parName <- names(formals(fn)[1])
   env[[parName]] <- pars
-  fcall <- do.call(call, args = c("fn", sapply(c(parName, names(data)), as.name)), quote = TRUE)
+  fcall <- do.call(call, args = c("fn", sapply(c(substitute(parName), names(data)), as.name)), quote = TRUE)
   if(is.function(jac)) {
-    gcall <- do.call(call, args = c(".jac", sapply(c(names(formals(jac)[1]), names(data)), as.name)), quote = TRUE)
+    gcall <- do.call(call, args = c(".jac", sapply(c(substitute(names(formals(jac)[1])), names(data)), as.name)), quote = TRUE)
     env$.jac <- jac
   } else {
     gcall <- fcall

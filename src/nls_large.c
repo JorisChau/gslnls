@@ -2,7 +2,7 @@
 
 #include "gsl_nls.h"
 
-SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl)
+SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl)
 {
     /* turn off error handler to avoid aborting on errors */
     gsl_set_error_handler_off();
@@ -16,55 +16,45 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
     int verbose = INTEGER_ELT(control_int, 1);
 
     /* control parameters */
-    gsl_multifit_nlinear_parameters fdf_params = gsl_multifit_nlinear_default_parameters();
+    gsl_multilarge_nlinear_parameters fdf_params = gsl_multilarge_nlinear_default_parameters();
 
     /* minimization algorithm */
     switch (INTEGER_ELT(control_int, 2))
     {
     case 1:
-        fdf_params.trs = gsl_multifit_nlinear_trs_lmaccel;
-        break;
+        fdf_params.trs = gsl_multilarge_nlinear_trs_lm;
+	break;
     case 2:
-        fdf_params.trs = gsl_multifit_nlinear_trs_dogleg;
+        fdf_params.trs = gsl_multilarge_nlinear_trs_lmaccel;
         break;
     case 3:
-        fdf_params.trs = gsl_multifit_nlinear_trs_ddogleg;
+        fdf_params.trs = gsl_multilarge_nlinear_trs_dogleg;
         break;
     case 4:
-        fdf_params.trs = gsl_multifit_nlinear_trs_subspace2D;
+        fdf_params.trs = gsl_multilarge_nlinear_trs_ddogleg;
+        break;
+    case 5:
+        fdf_params.trs = gsl_multilarge_nlinear_trs_subspace2D;
         break;
     default:
-        fdf_params.trs = gsl_multifit_nlinear_trs_lm;
+        fdf_params.trs = gsl_multilarge_nlinear_trs_cgst;
     }
 
     /* scaling method */
     switch (INTEGER_ELT(control_int, 3))
     {
     case 1:
-        fdf_params.scale = gsl_multifit_nlinear_scale_levenberg;
+        fdf_params.scale = gsl_multilarge_nlinear_scale_levenberg;
         break;
     case 2:
-        fdf_params.scale = gsl_multifit_nlinear_scale_marquardt;
+        fdf_params.scale = gsl_multilarge_nlinear_scale_marquardt;
         break;
     default:
-        fdf_params.scale = gsl_multifit_nlinear_scale_more;
-    }
-
-    /* solver type */
-    switch (INTEGER_ELT(control_int, 4))
-    {
-    case 1:
-        fdf_params.solver = gsl_multifit_nlinear_solver_cholesky;
-        break;
-    case 2:
-        fdf_params.solver = gsl_multifit_nlinear_solver_svd;
-        break;
-    default:
-        fdf_params.solver = gsl_multifit_nlinear_solver_qr;
+        fdf_params.scale = gsl_multilarge_nlinear_scale_more;
     }
 
     /* finite differencing type */
-    fdf_params.fdtype = INTEGER_ELT(control_int, 5) ? GSL_MULTIFIT_NLINEAR_CTRDIFF : GSL_MULTIFIT_NLINEAR_FWDIFF;
+    fdf_params.fdtype = INTEGER_ELT(control_int, 4) ? GSL_MULTILARGE_NLINEAR_CTRDIFF : GSL_MULTILARGE_NLINEAR_FWDIFF;
 
     /* miscellaneous parameters */
     fdf_params.factor_up = REAL_ELT(control_dbl, 0);
@@ -79,18 +69,23 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
     /* initialize data */
     SEXP xpar = Rf_install("par");
     SEXP fcall = PROTECT(Rf_lang2(fn, xpar));
+    SEXP dfcall = PROTECT(Rf_lang2(jac, xpar));
     SEXP parnames = PROTECT(Rf_getAttrib(start, R_NamesSymbol));
-    nprotect += 2;
+    nprotect += 3;
 
     fdata params;
     params.n = n;
     params.p = p;
     params.f = fcall;
-    params.df = NULL;
+    params.df = dfcall;
     params.fvv = NULL;
     params.y = y;
     params.rho = env;
     params.start = start;
+
+    /* allocate matrix to store jacobian */
+    gsl_matrix *J = gsl_matrix_alloc(n, p);
+    params.J = J;
 
     if (verbose)
     {
@@ -100,35 +95,23 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
     }
 
     /* define the function to be minimized */
-    gsl_multifit_nlinear_fdf fdf;
+    gsl_multilarge_nlinear_fdf fdf;
     fdf.f = gsl_f;
-    fdf.df = NULL;  // set to NULL for finite-difference Jacobian
-    fdf.fvv = NULL; // not using geodesic acceleration
+    fdf.df = gsl_df_large;  
+    fdf.fvv = NULL; // finite differencing
     fdf.n = n;
     fdf.p = p;
-    fdf.nevalf = 0;
-    fdf.nevaldf = 0;
-    fdf.nevalfvv = 0;
     fdf.params = &params;
 
-    /* use Jacobian function */
-    if (!Rf_isNull(jac))
-    {
-        SEXP dfcall = PROTECT(Rf_lang2(jac, xpar));
-        params.df = dfcall;
-        fdf.df = gsl_df;
-        nprotect++;
-    }
-
     /* use acceleration function */
-    if (!Rf_isNull(fvv))
-    {
-        SEXP vpar = Rf_install("v");
-        SEXP fvvcall = PROTECT(Rf_lang3(fvv, xpar, vpar));
-        params.fvv = fvvcall;
-        fdf.fvv = gsl_fvv;
-        nprotect++;
-    }
+    // if (!Rf_isNull(fvv))
+    // {
+    //     SEXP vpar = Rf_install("v");
+    //     SEXP fvvcall = PROTECT(Rf_lang3(fvv, xpar, vpar));
+    //     params.fvv = fvvcall;
+    //     fdf.fvv = gsl_fvv;
+    //     nprotect++;
+    // }
 
     /* set nls optimization parameters */
     double *start1 = (double *)S_alloc(p, sizeof(double));
@@ -137,79 +120,78 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
     gsl_vector_view par = gsl_vector_view_array(start1, p);
 
     /* initialize solver */
-    const gsl_multifit_nlinear_type *T = gsl_multifit_nlinear_trust;
-    gsl_multifit_nlinear_workspace *w;
+    const gsl_multilarge_nlinear_type *T = gsl_multilarge_nlinear_trust;
+    gsl_multilarge_nlinear_workspace *w;
 
     /* allocate workspace with default parameters */
-    w = gsl_multifit_nlinear_alloc(T, &fdf_params, n, p);
+    w = gsl_multilarge_nlinear_alloc(T, &fdf_params, n, p);
 
     /* initialize solver with starting point and weights */
-    if (!Rf_isNull(swts))
-    {
-        double *swts1 = (double *)S_alloc(n, sizeof(double));
-        for (R_len_t i = 0; i < n; i++)
-            swts1[i] = REAL_ELT(swts, i);
-        gsl_vector_view wts = gsl_vector_view_array(swts1, n);
-        gsl_multifit_nlinear_winit(&par.vector, &wts.vector, &fdf, w);
-    }
-    else
-    {
-        gsl_multifit_nlinear_init(&par.vector, &fdf, w);
-    }
+    gsl_multilarge_nlinear_init(&par.vector, &fdf, w);
+
+    // if (!Rf_isNull(swts))
+    // {
+    //     double *swts1 = (double *)S_alloc(n, sizeof(double));
+    //     for (R_len_t i = 0; i < n; i++)
+    //         swts1[i] = REAL_ELT(swts, i);
+    //     gsl_vector_view wts = gsl_vector_view_array(swts1, n);
+    //     gsl_multifit_nlinear_winit(&par.vector, &wts.vector, &fdf, w);
+    // }
+    // else
+    // {
+    //     gsl_multifit_nlinear_init(&par.vector, &fdf, w);
+    // }
 
     /* compute initial cost function */
-    double chisq_init = GSL_POSINF;
-    multifit_nlinear_residual(w);
+    double chisq_init = 0.0;
+    gsl_vector *resid = gsl_multilarge_nlinear_residual(w);
     gsl_blas_ddot(resid, resid, &chisq_init);
     double chisq0 = chisq_init;
     double chisq1 = chisq_init;
-    params.chisq = chisq_init;
 
     /* solve the system  */
     int info = GSL_CONTINUE;
-    int status = gsl_multifit_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback : NULL, verbose ? &params : NULL, &info, &chisq1, w);
-    R_len_t iter = gsl_multifit_nlinear_niter(w);
+    int status = gsl_multilarge_nlinear_driver2(niter, xtol, gtol, ftol, NULL, NULL, &info, w);
+    R_len_t iter = gsl_multilarge_nlinear_niter(w);
 
     /* compute covariance and cost at best fit parameters */
-    gsl_matrix *J = NULL;
     gsl_matrix *cov = NULL;
     if (status == GSL_SUCCESS || status == GSL_EMAXITER)
     {
         cov = gsl_matrix_alloc(p, p);
-        J = gsl_multifit_nlinear_jac(w);
-        gsl_multifit_nlinear_covar(J, 0.0, cov);
+        gsl_multilarge_nlinear_covar(cov, w);
     }
 
-    if (verbose)
-    {
-        /* print summary statistics*/
-        Rprintf("*******************\nsummary from method '%s/%s'\n", gsl_multifit_nlinear_name(w), gsl_multifit_nlinear_trs_name(w));
-        Rprintf("number of iterations: %d\n", iter);
-        Rprintf("reason for stopping: %s\n", gsl_strerror(info));
-        Rprintf("initial ssr = %g\n", chisq0);
-        Rprintf("final ssr = %g\n", chisq1);
-        Rprintf("ssr/dof = %g\n", chisq1 / (n - p));
-        Rprintf("ssr achieved tolerance = %g\n", chisq0 - chisq1);
-        Rprintf("function evaluations: %d\n", fdf.nevalf);
-        Rprintf("Jacobian evaluations: %d\n", fdf.nevaldf);
-        Rprintf("fvv evaluations: %d\n", fdf.nevalfvv);
-        Rprintf("status = %s\n*******************\n", gsl_strerror(status));
-    }
+    // if (verbose)
+    // {
+    //     /* print summary statistics*/
+    //     Rprintf("*******************\nsummary from method '%s/%s'\n", gsl_multifit_nlinear_name(w), gsl_multifit_nlinear_trs_name(w));
+    //     Rprintf("number of iterations: %d\n", iter);
+    //     Rprintf("reason for stopping: %s\n", gsl_strerror(info));
+    //     Rprintf("initial ssr = %g\n", chisq_init);
+    //     Rprintf("final ssr = %g\n", chisq1);
+    //     Rprintf("ssr/dof = %g\n", chisq1 / (n - p));
+    //     Rprintf("ssr achieved tolerance = %g\n", chisq0 - chisq1);
+    //     Rprintf("function evaluations: %d\n", fdf.nevalf);
+    //     Rprintf("Jacobian evaluations: %d\n", fdf.nevaldf);
+    //     Rprintf("fvv evaluations: %d\n", fdf.nevalfvv);
+    //     Rprintf("status = %s\n*******************\n", gsl_strerror(status));
+    // }
 
     /* initialize result */
     SEXP ans = NULL;
-    if (verbose)
-    {
-        const char *ansnms[] = {"par", "covar", "resid", "grad", "niter", "status", "conv", "ssr", "ssrtol",
-                                "algorithm", "neval", "partrace", "ssrtrace", ""};
-        ans = PROTECT(Rf_mkNamed(VECSXP, ansnms));
-    }
-    else
-    {
+    // if (verbose)
+    // {
+    //     const char *ansnms[] = {"par", "covar", "resid", "grad", "niter", "status", "conv", "ssr", "ssrtol",
+    //                             "algorithm", "neval", "partrace", "ssrtrace", ""};
+    //     ans = PROTECT(Rf_mkNamed(VECSXP, ansnms));
+    // }
+    // else
+    // {
         const char *ansnms[] = {"par", "covar", "resid", "grad", "niter", "status", "conv", "ssr", "ssrtol",
                                 "algorithm", "neval", ""};
         ans = PROTECT(Rf_mkNamed(VECSXP, ansnms));
-    }
+    // }
     nprotect++;
 
     /* estimated parameters */
@@ -309,33 +291,35 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
     SET_VECTOR_ELT(ans, 6, Rf_ScalarInteger(status));
     SET_VECTOR_ELT(ans, 7, Rf_ScalarReal(chisq1));
     SET_VECTOR_ELT(ans, 8, Rf_ScalarReal(chisq0 - chisq1));
-    SET_VECTOR_ELT(ans, 9, Rf_ScalarString(Rf_mkChar(gsl_multifit_nlinear_trs_name(w))));
+    SET_VECTOR_ELT(ans, 9, Rf_ScalarString(Rf_mkChar(gsl_multilarge_nlinear_trs_name(w))));
 
-    const char *nms[] = {"f", "J", "fvv", ""};
+    const char *nms[] = {"f", "dfu", "df2", "fvv", ""};
     SEXP ansneval = PROTECT(Rf_mkNamed(INTSXP, nms));
     SET_INTEGER_ELT(ansneval, 0, fdf.nevalf);
-    SET_INTEGER_ELT(ansneval, 1, fdf.nevaldf);
-    SET_INTEGER_ELT(ansneval, 2, fdf.nevalfvv);
+    SET_INTEGER_ELT(ansneval, 1, fdf.nevaldfu);
+    SET_INTEGER_ELT(ansneval, 2, fdf.nevaldf2);
+    SET_INTEGER_ELT(ansneval, 3, fdf.nevalfvv);
     SET_VECTOR_ELT(ans, 10, ansneval);
     UNPROTECT(1);
 
-    if (verbose)
-    {
-        if (!Rf_isNull(parnames))
-        {
-            SEXP dimnames = PROTECT(Rf_allocVector(VECSXP, 2));
-            SET_VECTOR_ELT(dimnames, 0, R_NilValue);
-            SET_VECTOR_ELT(dimnames, 1, parnames);
-            Rf_setAttrib(params.partrace, R_DimNamesSymbol, dimnames);
-            UNPROTECT(1);
-        }
-        SET_VECTOR_ELT(ans, 11, params.partrace);
-        SET_VECTOR_ELT(ans, 12, params.ssrtrace);
-    }
+    // if (verbose)
+    // {
+    //     if (!Rf_isNull(parnames))
+    //     {
+    //         SEXP dimnames = PROTECT(Rf_allocVector(VECSXP, 2));
+    //         SET_VECTOR_ELT(dimnames, 0, R_NilValue);
+    //         SET_VECTOR_ELT(dimnames, 1, parnames);
+    //         Rf_setAttrib(params.partrace, R_DimNamesSymbol, dimnames);
+    //         UNPROTECT(1);
+    //     }
+    //     SET_VECTOR_ELT(ans, 11, params.partrace);
+    //     SET_VECTOR_ELT(ans, 12, params.ssrtrace);
+    // }
 
     /* free memory */
     UNPROTECT(nprotect);
-    gsl_multifit_nlinear_free(w);
+    gsl_multilarge_nlinear_free(w);
+    gsl_matrix_free(J);
     if (status == GSL_SUCCESS || status == GSL_EMAXITER)
         gsl_matrix_free(cov);
 
@@ -343,7 +327,7 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
 }
 
 /*
-gsl_multifit_nlinear_driver2()
+gsl_multilarge_nlinear_driver()
   Iterate the nonlinear least squares solver until completion
 
 Inputs: maxiter  - maximum iterations to allow
@@ -352,8 +336,6 @@ Inputs: maxiter  - maximum iterations to allow
         ftol     - tolerance in ||f||
         callback - callback function to call each iteration
         callback_params - parameters to pass to callback function
-        chisq0   - ssr previous iteration
-        chisq1   - ssr current iteration
         info     - (output) info flag on why iteration terminated
                    1 = stopped due to small step size ||dx|
                    2 = stopped due to small gradient
@@ -368,24 +350,21 @@ Inputs: maxiter  - maximum iterations to allow
 
 Return:
 GSL_SUCCESS if converged
-GSL_EBADFUNC if function evaluation failed 
 GSL_MAXITER if maxiter exceeded without converging
 GSL_ENOPROG if no accepted step found on first iteration
 */
-int gsl_multifit_nlinear_driver2(const size_t maxiter,
-                                 const double xtol,
-                                 const double gtol,
-                                 const double ftol,
-                                 void (*callback)(const size_t iter, void *params,
-                                                  const gsl_multifit_nlinear_workspace *w),
-                                 void *callback_params,
-                                 int *info,
-                                 double *chisq,
-                                 gsl_multifit_nlinear_workspace *w)
+int gsl_multilarge_nlinear_driver2(const size_t maxiter,
+                                  const double xtol,
+                                  const double gtol,
+                                  const double ftol,
+                                  void (*callback)(const size_t iter, void *params,
+                                                   const gsl_multilarge_nlinear_workspace *w),
+                                  void *callback_params,
+                                  int *info,
+                                  gsl_multilarge_nlinear_workspace *w)
 {
     int status = GSL_CONTINUE;
     size_t iter = 0;
-    gsl_vector *f = NULL;
 
     /* call user callback function prior to any iterations
    * with initial system state */
@@ -394,17 +373,7 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
 
     do
     {
-        status = gsl_multifit_nlinear_iterate(w);
-
-        /* new ssr */
-        f = gsl_multifit_nlinear_residual(w);
-        gsl_blas_ddot(f, f, chisq);
-
-        if(callback)
-            ((fdata *)callback_params)->chisq = chisq[0];
-
-        if(callback)
-            ((fdata *)callback_params)->chisq = chisq1[0];
+        status = gsl_multilarge_nlinear_iterate(w);
 
         /*
        * If the solver reports no progress on the first iteration,
@@ -428,7 +397,7 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
             callback(iter, callback_params, w);
 
         /* test for convergence */
-        status = gsl_multifit_nlinear_test(xtol, gtol, ftol, info, w);
+        status = gsl_multilarge_nlinear_test(xtol, gtol, ftol, info, w);
     } while (status == GSL_CONTINUE && iter < maxiter);
 
     /*
@@ -447,58 +416,9 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
         status = GSL_EMAXITER;
 
     return status;
-} /* gsl_multifit_nlinear_driver() */
+} /* gsl_multilarge_nlinear_driver() */
 
-int gsl_f(const gsl_vector *x, void *params, gsl_vector *f)
-{
-    /* construct parameter vector */
-    SEXP par = NULL;
-    R_len_t p = ((fdata *)params)->p;
-    SEXP start = ((fdata *)params)->start;
-    if (Rf_isNumeric(start))
-    {
-        par = PROTECT(Rf_allocVector(REALSXP, p));
-        for (R_len_t k = 0; k < p; k++)
-            SET_REAL_ELT(par, k, gsl_vector_get(x, k));
-    }
-    else
-    {
-        par = PROTECT(Rf_allocVector(VECSXP, p));
-        for (R_len_t k = 0; k < p; k++)
-            SET_VECTOR_ELT(par, k, Rf_ScalarReal(gsl_vector_get(x, k)));
-    }
-    Rf_setAttrib(par, R_NamesSymbol, Rf_getAttrib(start, R_NamesSymbol));
-
-    /* evaluate function f */
-    SETCADR(((fdata *)params)->f, par);
-    SEXP fval = PROTECT(Rf_eval(((fdata *)params)->f, ((fdata *)params)->rho));
-
-    /* function checks */
-    R_len_t n = ((fdata *)params)->n;
-    if (TYPEOF(fval) != REALSXP || Rf_length(fval) != n)
-    {
-        Rf_warning("Evaluating fn does not return numeric vector of expected length n");
-        UNPROTECT(2);
-        return GSL_EBADFUNC;
-    }
-
-    /* set gsl residuals */
-    double *fvalptr = REAL(fval);
-    double *yptr = REAL(((fdata *)params)->y);
-    for (R_len_t i = 0; i < n; i++)
-    {
-        if (R_IsNaN(fvalptr[i]) || !R_finite(fvalptr[i]))
-            gsl_vector_set(f, i, GSL_POSINF);
-        else
-            gsl_vector_set(f, i, fvalptr[i] - yptr[i]);
-    }
-
-    UNPROTECT(2);
-    return GSL_SUCCESS;
-}
-
-int gsl_df(const gsl_vector *x, void *params, gsl_matrix *J)
-{
+int gsl_df_large(CBLAS_TRANSPOSE_t TransJ, const gsl_vector *x, const gsl_vector *u, void *params, gsl_vector *v, gsl_matrix *JTJ) {
     /* construct parameter vector */
     SEXP par = NULL;
     R_len_t p = ((fdata *)params)->p;
@@ -543,88 +463,36 @@ int gsl_df(const gsl_vector *x, void *params, gsl_matrix *J)
     /* set gsl jacobian matrix */
     for (R_len_t i = 0; i < n; i++)
         for (R_len_t k = 0; k < p; k++)
-            gsl_matrix_set(J, i, k, jacptr[i + n * k]);
+            gsl_matrix_set(((fdata *)params)->J, i, k, jacptr[i + n * k]);
+
+    /* calculate J * u or J' * u and return in v */
+    if(v)
+        gsl_blas_dgemv(TransJ, 1.0, ((fdata *)params)->J, u, 0.0, v);
+
+    /* calculate J'J and return in JTJ */
+    if(JTJ)
+        gsl_blas_dsyrk(CblasLower, CblasTrans, 1.0, ((fdata *)params)->J, 0.0, JTJ);
 
     UNPROTECT(2);
     return GSL_SUCCESS;
 }
 
-int gsl_fvv(const gsl_vector *x, const gsl_vector *v, void *params, gsl_vector *fvv)
-{
-    /* populate parameter vector */
-    SEXP par = NULL;
-    R_len_t p = ((fdata *)params)->p;
-    SEXP start = ((fdata *)params)->start;
-    SEXP parnames = PROTECT(Rf_getAttrib(start, R_NamesSymbol));
-    if (Rf_isNumeric(start))
-    {
-        par = PROTECT(Rf_allocVector(REALSXP, p));
-        for (R_len_t k = 0; k < p; k++)
-            SET_REAL_ELT(par, k, gsl_vector_get(x, k));
-    }
-    else
-    {
-        par = PROTECT(Rf_allocVector(VECSXP, p));
-        for (R_len_t k = 0; k < p; k++)
-            SET_VECTOR_ELT(par, k, Rf_ScalarReal(gsl_vector_get(x, k)));
-    }
-    Rf_setAttrib(par, R_NamesSymbol, parnames);
+// void callback_large(const size_t iter, void *params, const gsl_multilarge_nlinear_workspace *w)
+// {
+//     gsl_vector *f = gsl_multilarge_nlinear_residual(w);
+//     double chisq = 0.0;
+//     gsl_blas_ddot(f, f, &chisq); // current ssr
 
-    /* populate v vector */
-    SEXP vpar = PROTECT(Rf_allocVector(REALSXP, p));
-    for (R_len_t k = 0; k < p; k++)
-        SET_REAL_ELT(vpar, k, gsl_vector_get(v, k));
-    Rf_setAttrib(vpar, R_NamesSymbol, parnames);
+//     /* update traces */
+//     SET_REAL_ELT(((fdata *)params)->ssrtrace, (R_len_t)iter, chisq);
+//     R_len_t p = ((fdata *)params)->p;
+//     R_len_t n = (R_len_t)Rf_nrows(((fdata *)params)->partrace);
+//     double *parptr = REAL(((fdata *)params)->partrace);
+//     for (R_len_t k = 0; k < p; k++)
+//         parptr[iter + n * k] = gsl_vector_get(w->x, k);
 
-    /* evaluate fvv function */
-    SETCADR(((fdata *)params)->fvv, par);
-    SETCADDR(((fdata *)params)->fvv, vpar);
-    SEXP fvvval = PROTECT(Rf_eval(((fdata *)params)->fvv, ((fdata *)params)->rho));
-
-    /* function checks */
-    R_len_t n = ((fdata *)params)->n;
-    if (TYPEOF(fvvval) != REALSXP || Rf_length(fvvval) != n)
-    {
-        Rf_warning("Evaluating fvv does not return numeric vector of expected length n");
-        UNPROTECT(4);
-        return GSL_EBADFUNC;
-    }
-
-    double *fvvvalptr = REAL(fvvval);
-    for (R_len_t i = 0; i < n; i++)
-    {
-        if (R_IsNaN(fvvvalptr[i]) || !R_finite(fvvvalptr[i]))
-        {
-            Rf_warning("Missing/infinite values not allowed when evaluating fvv");
-            UNPROTECT(4);
-            return GSL_EBADFUNC;
-        }
-    }
-
-    /* set fvv vector */
-    for (R_len_t i = 0; i < n; i++)
-        gsl_vector_set(fvv, i, fvvvalptr[i]);
-
-    UNPROTECT(4);
-    return GSL_SUCCESS;
-}
-
-void callback(const size_t iter, void *params, const gsl_multifit_nlinear_workspace *w)
-{
-    /* update traces */
-    double chisq = ((fdata *)params)->chisq;
-    SET_REAL_ELT(((fdata *)params)->ssrtrace, (R_len_t)iter, chisq);
-    R_len_t p = ((fdata *)params)->p;
-    R_len_t n = (R_len_t)Rf_nrows(((fdata *)params)->partrace);
-    double *parptr = REAL(((fdata *)params)->partrace);
-    for (R_len_t k = 0; k < p; k++)
-        parptr[iter + n * k] = gsl_vector_get(w->x, k);
-
-    /* print trace */
-    Rprintf("iter %3d: ssr = %g, par = (", iter, chisq);
-    for (R_len_t k = 0; k < p; k++) 
-        Rprintf((k < (p -1)) ? "%g, " : "%g)\n", parptr[iter + n * k]);
-
-}
-
-
+//     /* print trace */
+//     Rprintf("iter %3d: ssr = %g, par = (", iter, chisq);
+//     for (R_len_t k = 0; k < p; k++)
+//         Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", parptr[iter + n * k]);
+// }
