@@ -25,6 +25,7 @@ typedef struct
     SEXP start;    // start parameter values
     SEXP partrace; // parameter trace
     SEXP ssrtrace; // ssr trace
+    gsl_matrix *J; // jacobian matrix
 } fdata;
 
 /* helper functions */

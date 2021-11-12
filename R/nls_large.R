@@ -295,7 +295,6 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
   }
   algorithm <- match.arg(algorithm)
   .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquadt"))
-  .ctrl$solver <- match.arg(.ctrl$solver, c("qr", "svd", "cholesky"))
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
   stopifnot(
       is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter > 0,
@@ -313,7 +312,6 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
       isTRUE(trace),
       match(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D")) - 1L,
       match(.ctrl$scale, c("more", "levenberg", "marquadt")) - 1L,
-      match(.ctrl$solver, c("qr", "cholesky", "svd")) - 1L,
       match(.ctrl$fdtype, c("forward", "center")) - 1L
   )
   .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol")])

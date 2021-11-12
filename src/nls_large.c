@@ -23,6 +23,7 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     {
     case 1:
         fdf_params.trs = gsl_multilarge_nlinear_trs_lm;
+	break;
     case 2:
         fdf_params.trs = gsl_multilarge_nlinear_trs_lmaccel;
         break;
@@ -53,7 +54,7 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     }
 
     /* finite differencing type */
-    fdf_params.fdtype = INTEGER_ELT(control_int, 5) ? GSL_MULTILARGE_NLINEAR_CTRDIFF : GSL_MULTILARGE_NLINEAR_FWDIFF;
+    fdf_params.fdtype = INTEGER_ELT(control_int, 4) ? GSL_MULTILARGE_NLINEAR_CTRDIFF : GSL_MULTILARGE_NLINEAR_FWDIFF;
 
     /* miscellaneous parameters */
     fdf_params.factor_up = REAL_ELT(control_dbl, 0);
@@ -68,18 +69,23 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     /* initialize data */
     SEXP xpar = Rf_install("par");
     SEXP fcall = PROTECT(Rf_lang2(fn, xpar));
+    SEXP dfcall = PROTECT(Rf_lang2(jac, xpar));
     SEXP parnames = PROTECT(Rf_getAttrib(start, R_NamesSymbol));
-    nprotect += 2;
+    nprotect += 3;
 
     fdata params;
     params.n = n;
     params.p = p;
     params.f = fcall;
-    params.df = NULL;
+    params.df = dfcall;
     params.fvv = NULL;
     params.y = y;
     params.rho = env;
     params.start = start;
+
+    /* allocate matrix to store jacobian */
+    gsl_matrix *J = gsl_matrix_alloc(n, p);
+    params.J = J;
 
     if (verbose)
     {
@@ -91,24 +97,11 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     /* define the function to be minimized */
     gsl_multilarge_nlinear_fdf fdf;
     fdf.f = gsl_f;
-    fdf.df = NULL;  // set to NULL for finite-difference Jacobian
-    fdf.fvv = NULL; // not using geodesic acceleration
+    fdf.df = gsl_df_large;  
+    fdf.fvv = NULL; // finite differencing
     fdf.n = n;
     fdf.p = p;
-    fdf.nevalf = 0;
-    fdf.nevaldfu = 0;
-    fdf.nevaldf2 = 0;
-    fdf.nevalfvv = 0;
     fdf.params = &params;
-
-    /* use Jacobian function */
-    // if (!Rf_isNull(jac))
-    // {
-    //     SEXP dfcall = PROTECT(Rf_lang2(jac, xpar));
-    //     params.df = dfcall;
-    //     fdf.df = gsl_df;
-    //     nprotect++;
-    // }
 
     /* use acceleration function */
     // if (!Rf_isNull(fvv))
@@ -162,7 +155,6 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     R_len_t iter = gsl_multilarge_nlinear_niter(w);
 
     /* compute covariance and cost at best fit parameters */
-    gsl_matrix *J = NULL;
     gsl_matrix *cov = NULL;
     if (status == GSL_SUCCESS || status == GSL_EMAXITER)
     {
@@ -327,6 +319,7 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     /* free memory */
     UNPROTECT(nprotect);
     gsl_multilarge_nlinear_free(w);
+    gsl_matrix_free(J);
     if (status == GSL_SUCCESS || status == GSL_EMAXITER)
         gsl_matrix_free(cov);
 
@@ -425,57 +418,64 @@ int gsl_multilarge_nlinear_driver2(const size_t maxiter,
     return status;
 } /* gsl_multilarge_nlinear_driver() */
 
-// int gsl_df_large(CBLAS_TRANSPOSE_t TransJ, const gsl_vector *x, const gsl_vector *u, void *params, gsl_vector *v, gsl_matrix *JTJ);
-// {
-//     /* construct parameter vector */
-//     SEXP par = NULL;
-//     R_len_t p = ((fdata *)params)->p;
-//     SEXP start = ((fdata *)params)->start;
-//     if (Rf_isNumeric(start))
-//     {
-//         par = PROTECT(Rf_allocVector(REALSXP, p));
-//         for (R_len_t k = 0; k < p; k++)
-//             SET_REAL_ELT(par, k, gsl_vector_get(x, k));
-//     }
-//     else
-//     {
-//         par = PROTECT(Rf_allocVector(VECSXP, p));
-//         for (R_len_t k = 0; k < p; k++)
-//             SET_VECTOR_ELT(par, k, Rf_ScalarReal(gsl_vector_get(x, k)));
-//     }
-//     Rf_setAttrib(par, R_NamesSymbol, Rf_getAttrib(start, R_NamesSymbol));
+int gsl_df_large(CBLAS_TRANSPOSE_t TransJ, const gsl_vector *x, const gsl_vector *u, void *params, gsl_vector *v, gsl_matrix *JTJ) {
+    /* construct parameter vector */
+    SEXP par = NULL;
+    R_len_t p = ((fdata *)params)->p;
+    SEXP start = ((fdata *)params)->start;
+    if (Rf_isNumeric(start))
+    {
+        par = PROTECT(Rf_allocVector(REALSXP, p));
+        for (R_len_t k = 0; k < p; k++)
+            SET_REAL_ELT(par, k, gsl_vector_get(x, k));
+    }
+    else
+    {
+        par = PROTECT(Rf_allocVector(VECSXP, p));
+        for (R_len_t k = 0; k < p; k++)
+            SET_VECTOR_ELT(par, k, Rf_ScalarReal(gsl_vector_get(x, k)));
+    }
+    Rf_setAttrib(par, R_NamesSymbol, Rf_getAttrib(start, R_NamesSymbol));
 
-//     /* evaluate Jacobian function */
-//     SETCADR(((fdata *)params)->df, par);
-//     SEXP dfval = PROTECT(Rf_eval(((fdata *)params)->df, ((fdata *)params)->rho));
+    /* evaluate Jacobian function */
+    SETCADR(((fdata *)params)->df, par);
+    SEXP dfval = PROTECT(Rf_eval(((fdata *)params)->df, ((fdata *)params)->rho));
 
-//     /* Jacobian checks */
-//     R_len_t n = ((fdata *)params)->n;
-//     if (TYPEOF(dfval) != REALSXP || !Rf_isMatrix(dfval) || Rf_ncols(dfval) != p || Rf_nrows(dfval) != n)
-//     {
-//         Rf_warning("Evaluating jac does not return numeric matrix of dimensions n x p");
-//         UNPROTECT(2);
-//         return GSL_EBADFUNC;
-//     }
+    /* Jacobian checks */
+    R_len_t n = ((fdata *)params)->n;
+    if (TYPEOF(dfval) != REALSXP || !Rf_isMatrix(dfval) || Rf_ncols(dfval) != p || Rf_nrows(dfval) != n)
+    {
+        Rf_warning("Evaluating jac does not return numeric matrix of dimensions n x p");
+        UNPROTECT(2);
+        return GSL_EBADFUNC;
+    }
 
-//     double *jacptr = REAL(dfval);
-//     for (R_len_t i = 0; i < n; i++)
-//         for (R_len_t k = 0; k < p; k++)
-//             if (R_IsNaN(jacptr[i + n * k]) || !R_finite(jacptr[i + n * k]))
-//             {
-//                 Rf_warning("Missing/infinite values not allowed when evaluating jac");
-//                 UNPROTECT(2);
-//                 return GSL_EBADFUNC;
-//             }
+    double *jacptr = REAL(dfval);
+    for (R_len_t i = 0; i < n; i++)
+        for (R_len_t k = 0; k < p; k++)
+            if (R_IsNaN(jacptr[i + n * k]) || !R_finite(jacptr[i + n * k]))
+            {
+                Rf_warning("Missing/infinite values not allowed when evaluating jac");
+                UNPROTECT(2);
+                return GSL_EBADFUNC;
+            }
 
-//     /* set gsl jacobian matrix */
-//     for (R_len_t i = 0; i < n; i++)
-//         for (R_len_t k = 0; k < p; k++)
-//             gsl_matrix_set(J, i, k, jacptr[i + n * k]);
+    /* set gsl jacobian matrix */
+    for (R_len_t i = 0; i < n; i++)
+        for (R_len_t k = 0; k < p; k++)
+            gsl_matrix_set(((fdata *)params)->J, i, k, jacptr[i + n * k]);
 
-//     UNPROTECT(2);
-//     return GSL_SUCCESS;
-// }
+    /* calculate J * u or J' * u and return in v */
+    if(v)
+        gsl_blas_dgemv(TransJ, 1.0, ((fdata *)params)->J, u, 0.0, v);
+
+    /* calculate J'J and return in JTJ */
+    if(JTJ)
+        gsl_blas_dsyrk(CblasLower, CblasTrans, 1.0, ((fdata *)params)->J, 0.0, JTJ);
+
+    UNPROTECT(2);
+    return GSL_SUCCESS;
+}
 
 // void callback_large(const size_t iter, void *params, const gsl_multilarge_nlinear_workspace *w)
 // {
