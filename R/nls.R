@@ -1,7 +1,8 @@
 #' GSL Nonlinear Least Squares fitting
 #'
-#' Determine the nonlinear (weighted) least-squares estimates of the parameters of a
-#' nonlinear model using the GNU Scientific Library (GSL).
+#' Determine the nonlinear least-squares estimates of the parameters of a
+#' nonlinear model using the \code{gsl_multifit_nlinear} module present in
+#' the GNU Scientific Library (GSL).
 #'
 #' @param fn a nonlinear model defined either as a two-sided \link{formula} including variables and parameters,
 #' or as a \link{function} returning a numeric vector, with first argument the vector of parameters to be estimated.
@@ -213,7 +214,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   
   ## adapted from src/library/stats/nls.R
   formula <- as.formula(fn)
-  algorithm <- match.arg(algorithm, choices = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
+  algorithm <- match.arg(algorithm, c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
   
   if(!is.list(data) && !is.environment(data))
     stop("'data' must be a list or an environment")
@@ -344,8 +345,8 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   varNamesRHS <- varNamesRHS[ varNamesRHS %in% varNames[varIndex] ]
   
   ## function call
-  fn <- function(par, .data = mf) eval(formula[[3L]], envir = c(as.list(par), .data))
-  .fcall <- tryCatch(fn(start), error = function(err) err)
+  .fn <- function(par, .data = mf) eval(formula[[3L]], envir = c(as.list(par), .data))
+  .fcall <- tryCatch(.fn(start), error = function(err) err)
   
   if(inherits(.fcall, "error"))
     stop(sprintf("failed to evaluate 'fn' at starting values: %s", .fcall$message))
@@ -358,22 +359,22 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   
   ## jac call
   if(!is.function(jac) && !is.null(attr(.fcall, "gradient"))) {
-    jac <- function(par, .data = mf) attr(fn(par, .data), "gradient")
+    jac <- function(par, .data = mf) attr(.fn(par, .data), "gradient")
   } else if(isTRUE(jac)) {
     jac <- NULL
-    exprjac <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start)), error = function(err) err)
-    if(inherits(exprjac, "error")) {
-      warning(sprintf("failed to symbolically derive 'jac': %s", exprjac$message))
-    } else if(is.expression(exprjac)){
+    .exprjac <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start)), error = function(err) err)
+    if(inherits(.exprjac, "error")) {
+      warning(sprintf("failed to symbolically derive 'jac': %s", .exprjac$message))
+    } else if(is.expression(.exprjac)){
       jac <- function(par, .data = mf) {
-        grad <- eval(exprjac, envir = c(as.list(par), .data))
+        grad <- eval(.exprjac, envir = c(as.list(par), .data))
         attr(grad, "gradient")
       }
     }
   }
   if(is.function(jac)) {
-    jac1 <- function(par) jac(par, ...)
-    .dfcall <- tryCatch(jac1(start), error = function(err) err)
+    .jac <- function(par) jac(par, ...)
+    .dfcall <- tryCatch(.jac(start), error = function(err) err)
     if(inherits(.dfcall, "error"))
       stop(sprintf("failed to evaluate 'jac' at starting values: %s", .dfcall$message))
     if(!is.numeric(.dfcall) || !is.matrix(.dfcall) || !identical(dim(.dfcall), c(length(.lhs), length(start))))
@@ -381,42 +382,40 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     if(any(is.na(.dfcall)))
       stop("missing values returned by 'jac' at starting values")
   } else {
-    jac1 <- NULL
+    .jac <- NULL
   }
   
   ## fvv call
-  if(!is.function(fvv) && !is.null(attr(.fcall, "hessian"))) {
-    fvv <- function(par, v) {
-      hess <- attr(fn(par), "hessian")
-      c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))
-    }
-  } else if(isTRUE(fvv)) {
-    fvv <- NULL
-    if(identical(algorithm, "lmaccel")) {
-      exprfvv <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start), hessian = TRUE), error = function(err) err)
-      if(inherits(exprfvv, "error")) {
-        warning(sprintf("failed to symbolically derive 'fvv': %s", exprfvv$message))
-      } else if(is.expression(exprfvv)){
+  .fvv <- NULL
+  if(identical(algorithm, "lmaccel")) {
+    if(!is.function(fvv) && !is.null(attr(.fcall, "hessian"))) {
+      fvv <- function(par, v) {
+        hess <- attr(.fn(par), "hessian")
+        c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))
+      }
+    } else if(isTRUE(fvv)) {
+      fvv <- NULL
+      .exprfvv <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start), hessian = TRUE), error = function(err) err)
+      if(inherits(.exprfvv, "error")) {
+        warning(sprintf("failed to symbolically derive 'fvv': %s", .exprfvv$message))
+      } else if(is.expression(.exprfvv)){
         fvv <- function(par, v) {
-          grad <- eval(exprfvv, envir = c(as.list(par), mf))
+          grad <- eval(.exprfvv, envir = c(as.list(par), mf))
           hess <- attr(grad, "hessian")
           c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))
         }
       }
     }
-  }
-  
-  if(is.function(fvv)) {
-    fvv1 <- function(par, v) fvv(par, v, ...)
-    .fvvcall <- tryCatch(fvv1(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
-    if(inherits(.fvvcall, "error"))
-      stop(sprintf("failed to evaluate 'fvv' at starting values: %s", .fvvcall$message))
-    if(!is.numeric(.fvvcall) || !identical(length(.fvvcall), length(.lhs)))
-      stop("'fvv' failed to return a numeric vector equal in length to 'y' at starting values")
-    if(any(is.na(.fvvcall)))
-      stop("missing values returned by 'fvv' at starting values")
-  } else {
-    fvv1 <- NULL
+    if(is.function(fvv)) {
+      .fvv <- function(par, v) fvv(par, v, ...)
+      .fvvcall <- tryCatch(.fvv(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
+      if(inherits(.fvvcall, "error"))
+        stop(sprintf("failed to evaluate 'fvv' at starting values: %s", .fvvcall$message))
+      if(!is.numeric(.fvvcall) || !identical(length(.fvvcall), length(.lhs)))
+        stop("'fvv' failed to return a numeric vector equal in length to 'y' at starting values")
+      if(any(is.na(.fvvcall)))
+        stop("missing values returned by 'fvv' at starting values")
+    }
   }
   
   ## control arguments
@@ -426,7 +425,6 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     control <- as.list(control)
     .ctrl[names(control)] <- control
   }
-  algorithm <- match.arg(algorithm)
   .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquadt"))
   .ctrl$solver <- match.arg(.ctrl$solver, c("qr", "cholesky", "svd"))
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
@@ -453,7 +451,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   .ctrl_tol <- unlist(.ctrl[c("xtol", "ftol", "gtol")])
   
   ## optimize
-  cFit <- .Call(C_nls, fn, .lhs, jac1, fvv1, environment(), start, wts, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
+  cFit <- .Call(C_nls, .fn, .lhs, .jac, .fvv, environment(), start, wts, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
   
   ## convert to nls object
   m <- nlsModel(formula, mf, cFit$par, wts, jac)
@@ -463,7 +461,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
       finIter = cFit$niter,
       finTol = cFit$ssrtol,
       nEval = cFit$neval,
-      trsName = cFit$algorithm,
+      trsName = paste("multifit", cFit$algorithm, sep = "/"),
       stopCode = cFit$conv,
       stopMessage = cFit$status
   )
@@ -506,6 +504,9 @@ gsl_nls.function <- function(fn, y, start,
     control = gsl_nls_control(), jac = NULL, fvv = NULL, trace = FALSE,
     weights, ...) {
   
+  ## algorithm
+  algorithm <- match.arg(algorithm, c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
+  
   ## starting values
   if(missing(start)) {
     stop("starting values need to be provided if 'fn' is defined as a function")
@@ -515,8 +516,8 @@ gsl_nls.function <- function(fn, y, start,
   if(!is.numeric(y))
     stop("'y' should be a numeric response vector")
   
-  fn1 <- function(par) fn(par, ...)
-  .fcall <- tryCatch(fn1(start), error = function(err) err)
+  .fn <- function(par) fn(par, ...)
+  .fcall <- tryCatch(.fn(start), error = function(err) err)
   if(inherits(.fcall, "error"))
     stop(sprintf("failed to evaluate 'fn' at starting values: %s", .fcall$message))
   if(!is.numeric(.fcall) || !identical(length(.fcall), length(y)))
@@ -530,8 +531,8 @@ gsl_nls.function <- function(fn, y, start,
   }
   
   if(is.function(jac)) {
-    jac1 <- function(par) jac(par, ...)
-    .dfcall <- tryCatch(jac1(start), error = function(err) err)
+    .jac <- function(par) jac(par, ...)
+    .dfcall <- tryCatch(.jac(start), error = function(err) err)
     if(inherits(.dfcall, "error"))
       stop(sprintf("failed to evaluate 'jac' at starting values: %s", .dfcall$message))
     if(!is.numeric(.dfcall) || !is.matrix(.dfcall) || !identical(dim(.dfcall), c(length(y), length(start))))
@@ -539,28 +540,28 @@ gsl_nls.function <- function(fn, y, start,
     if(any(is.na(.dfcall)))
       stop("missing values returned by 'jac' at starting values")
   } else {
-    jac1 <- NULL
+    .jac <- NULL
   }
   
   ## fvv call
-  if(!is.function(fvv) && !is.null(attr(.fcall, "hessian"))) {
-    fvv <- function(par, v, ...) {
-      hess <- attr(fn(par, ...), "hessian")
-      c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))
+  .fvv <- NULL
+  if(identical(algorithm, "lmaccel")) {
+    if(!is.function(fvv) && !is.null(attr(.fcall, "hessian"))) {
+      fvv <- function(par, v, ...) {
+        hess <- attr(fn(par, ...), "hessian")
+        c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))
+      }
     }
-  }
-  
-  if(is.function(fvv)) {
-    fvv1 <- function(par, v) fvv(par, v, ...)
-    .fvvcall <- tryCatch(fvv1(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
-    if(inherits(.fvvcall, "error"))
-      stop(sprintf("failed to evaluate 'fvv' at starting values: %s", .fvvcall$message))
-    if(!is.numeric(.fvvcall) || !identical(length(.fvvcall), length(y)))
-      stop("'fvv' failed to return a numeric vector equal in length to 'y' at starting values")
-    if(any(is.na(.fvvcall)))
-      stop("missing values returned by 'fvv' at starting values")
-  } else {
-    fvv1 <- NULL
+    if(is.function(fvv)) {
+      .fvv <- function(par, v) fvv(par, v, ...)
+      .fvvcall <- tryCatch(.fvv(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
+      if(inherits(.fvvcall, "error"))
+        stop(sprintf("failed to evaluate 'fvv' at starting values: %s", .fvvcall$message))
+      if(!is.numeric(.fvvcall) || !identical(length(.fvvcall), length(y)))
+        stop("'fvv' failed to return a numeric vector equal in length to 'y' at starting values")
+      if(any(is.na(.fvvcall)))
+        stop("missing values returned by 'fvv' at starting values")
+    }
   }
   
   ## control arguments
@@ -570,7 +571,6 @@ gsl_nls.function <- function(fn, y, start,
     control <- as.list(control)
     .ctrl[names(control)] <- control
   }
-  algorithm <- match.arg(algorithm)
   .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquadt"))
   .ctrl$solver <- match.arg(.ctrl$solver, c("qr", "cholesky", "svd"))
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
@@ -607,7 +607,7 @@ gsl_nls.function <- function(fn, y, start,
   }
   
   ## optimize
-  cFit <- .Call(C_nls, fn1, y, jac1, fvv1, environment(), start, weights, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
+  cFit <- .Call(C_nls, .fn, y, .jac, .fvv, environment(), start, weights, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
   
   m <- gslModel(fn, y, cFit, start, weights, jac, ...)
   
@@ -617,7 +617,7 @@ gsl_nls.function <- function(fn, y, start,
       finIter = cFit$niter,
       finTol = cFit$ssrtol,
       nEval = cFit$neval,
-      trsName = cFit$algorithm,
+      trsName = paste("multifit", cFit$algorithm, sep = "/"),
       stopCode = cFit$conv,
       stopMessage = cFit$status
   )
@@ -638,10 +638,10 @@ gsl_nls.function <- function(fn, y, start,
   
 }
 
-#' Tunable NLS iteration parameters
+#' Tunable Nonlinear Least Squares iteration parameters
 #'
-#' Allow the user to tune the characteristics of the \code{\link{gsl_nls}} nonlinear
-#' least squares algorithm.
+#' Allow the user to tune the characteristics of the \code{\link{gsl_nls}} and \code{\link{gsl_nls_large}}
+#' nonlinear least squares algorithms.
 #'
 #' @param maxiter positive integer, termination occurs when the number of iterations reaches \code{maxiter}.
 #' @param scale character, scaling method or damping strategy determining the diagonal scaling matrix D. The following options
@@ -655,7 +655,8 @@ gsl_nls.function <- function(fn, y, start,
 #' considered inferior to both the Levenberg and Moré strategies.
 #' }
 #' @param solver character, method used to solve the linear least squares system resulting as a subproblem in each iteration.
-#' The following choices are supported:
+#' For large-scale problems fitted with \code{\link{gsl_nls_large}}, the Cholesky solver (\code{"cholesky"}) is always selected
+#' and this parameter is not used. For least squares problems fitted with \code{\link{gsl_nls}} the following choices are supported:
 #' \itemize{
 #' \item \code{"qr"} QR decomposition of the Jacobian (default). This method will produce reliable solutions in cases
 #' where the Jacobian is rank deficient or near-singular but does require more operations than the Cholesky method.
@@ -664,8 +665,11 @@ gsl_nls.function <- function(fn, y, start,
 #' \item \code{"svd"} SVD decomposition of the Jacobian. This method will produce the most reliable solutions for
 #' ill-conditioned Jacobians but is also the slowest.
 #' }
-#' @param fdtype character, method used to numerically approximate the Jacobian, either \code{"forward"} for forward finite differencing
-#' or \code{"center"} for centered finite differencing. This is only used if no analytic Jacobian (\code{jac}) is specified in \code{\link{gsl_nls}}.
+#' @param fdtype character, method used to numerically approximate the Jacobian and/or second-order derivatives
+#' when geodesic acceleration is used. Either \code{"forward"} for forward finite differencing or \code{"center"}
+#' for centered finite differencing. For least squares problems solved with \code{\link{gsl_nls_large}}, numerical
+#' approximation of the Jacobian matrix is not available and this parameter is only used to numerically approximate
+#' the second-order derivatives (if geodesic acceleration is used).
 #' @param factor_up numeric factor by which to increase the trust region radius when a search step is accepted.
 #' Too large values may destabilize the search, too small values slow down the search, defaults to 3.
 #' @param factor_down numeric factor by which to decrease the trust region radius when a search step is rejected.
@@ -676,7 +680,7 @@ gsl_nls.function <- function(fn, y, start,
 #' @param h_df numeric value, the step size for approximating the Jacobian matrix with finite differences, defaults to \code{sqrt(.Machine$double.eps)}.
 #' @param h_fvv numeric value, the step size for approximating the second directional derivative when geodesic acceleration
 #' is used to solve the nonlinear least squares problem, defaults to 0.02. This is only used if no analytic second
-#' directional derivative (\code{fvv}) is specified in \code{\link{gsl_nls}}.
+#' directional derivative (\code{fvv}) is specified in \code{\link{gsl_nls}} or \code{\link{gsl_nls_large}}.
 #' @param xtol numeric value, termination occurs when the relative change in parameters between iterations is \code{<= xtol}.
 #' A general guideline for selecting the step tolerance is to choose \code{xtol = 10^(-d)} where \code{d} is the number of accurate
 #' decimal digits desired in the parameters, defaults to \code{sqrt(.Machine$double.eps)}.
@@ -914,8 +918,8 @@ gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
   env[[parName]] <- pars
   fcall <- do.call(call, args = c("fn", sapply(c(parName, names(data)), as.name)), quote = TRUE)
   if(is.function(jac)) {
-    gcall <- do.call(call, args = c(".jac", sapply(c(names(formals(jac)[1]), names(data)), as.name)), quote = TRUE)
-    env$.jac <- jac
+    gcall <- do.call(call, args = c(".gradient", sapply(c(names(formals(jac)[1]), names(data)), as.name)), quote = TRUE)
+    env$.gradient <- jac
   } else {
     gcall <- fcall
   }
@@ -935,7 +939,7 @@ gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
         rho <- new.env(hash = TRUE, parent = env)
         for(i in names(newdata)) rho[[i]] <- newdata[[i]]
         for(i in names(pars)) rho[[i]] <- pars[[i]]
-        if(is.function(env$.jac)) {
+        if(is.function(env$.gradient)) {
           grad <- eval(gcall, envir = rho)
         } else {
           drv <- stats::numericDeriv(gcall, names(pars), rho = rho)

@@ -26,10 +26,14 @@ Returns the model summary for a fitted \code{"gsl_nls"} object.
 \examples{
 ## data
 set.seed(1)
-x <- 1:10
-y <- 1 + 0.5 * (1:10) + rnorm(10, sd = 0.1)
+n <- 50
+xy <- data.frame(
+  x = (1:n) / n, 
+  y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
+)
 ## model
-obj <- gsl_nls(fn = y ~ a + b * x, data = data.frame(x = x, y = y), start = c(a = 0, b = 1))
+obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
+
 summary(obj)
 }
 \seealso{

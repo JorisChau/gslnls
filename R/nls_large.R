@@ -1,21 +1,17 @@
 #' GSL Large-scale Nonlinear Least Squares fitting
 #'
-#' Determine the nonlinear (weighted) least-squares estimates of the parameters of a
-#' nonlinear model using the GNU Scientific Library (GSL).
+#' Determine the nonlinear least-squares estimates of the parameters of a large
+#' nonlinear model system using the \code{gsl_multilarge_nlinear} module present in
+#' the GNU Scientific Library (GSL).
 #'
-#' @param fn a nonlinear model defined either as a two-sided \link{formula} including variables and parameters,
-#' or as a \link{function} returning a numeric vector, with first argument the vector of parameters to be estimated.
-#' See the individual method descriptions below.
-#' @param data an optional data frame in which to evaluate the variables in \code{fn} if
-#' defined as a \link{formula}. Can also be a list or an environment, but not a matrix.
-#' @param y numeric response vector if \code{fn} is defined as a \link{function}, equal in
-#' length to the vector returned by evaluation of the function \code{fn}.
-#' @param start a named list or named numeric vector of starting estimates. \code{start} is
-#' only allowed to be missing if \code{fn} is a \code{\link{selfStart}} model. If \code{fn}
-#' is a \code{formula}, a naive guess for \code{start} is tried, but this should not be relied on.
+#' @inheritParams gsl_nls
 #' @param algorithm character string specifying the algorithm to use. The following choices are supported:
 #' \itemize{
-#' \item \code{"lm"} Levenberg-Marquadt algorithm (default)
+#' \item \code{"cgst"} Steihaug-Toint Conjugate Gradient algorithm (default), a generalization of the dogleg algorithm
+#' that avoids solving for the Gauss-Newton step directly, instead using an iterative conjugate gradient algorithm.
+#' The method performs well at points where the Jacobian is singular, and is also suitable for large-scale problems
+#' where factoring the Jacobian matrix is prohibitively expensive.
+#' \item \code{"lm"} Levenberg-Marquadt algorithm
 #' \item \code{"lmaccel"} Levenberg-Marquadt algorithm with geodesic acceleration.
 #' Can be faster than \code{"lm"} but less stable. Stability is controlled by the
 #' \code{avmax} parameter in \code{control}, setting \code{avmax} to zero is analogous
@@ -28,44 +24,85 @@
 #' searches a larger subspace for a solution, it can converge more quickly than \code{"dogleg"}
 #' on some problems.
 #' }
-#' @param control an optional list of control parameters to tune the least squares iterations.
-#' See \code{\link{gsl_nls_control}} for the available control parameters and their default values.
-#' @param jac either \code{NULL} (default) or a \link{function} returning the \code{n} by \code{p} dimensional Jacobian matrix of
+#' @param jac a \link{function} returning the \code{n} by \code{p} dimensional Jacobian matrix of
 #' the nonlinear model \code{fn}, where \code{n} is the number of observations and \code{p} the
-#' number of parameters. If a function, the first argument must be the vector of parameters of length \code{p}.
-#' If \code{NULL}, the Jacobian is computed internally using a finite difference approximations.
+#' number of parameters. The first argument must be the vector of parameters of length \code{p}.
 #' Can also be \code{TRUE}, in which case \code{jac} is derived symbolically with \code{\link[stats]{deriv}},
-#' this only works if \code{fn} is defined as a (non-selfstarting) formula.
-#' @param fvv either \code{NULL} (default) or a \link{function} returning an \code{n} dimensional vector containing
-#' the second directional derivatives of the nonlinear model \code{fn}, with \code{n} the number of observations.
-#' This argument is only used if geodesic acceleration is enabled (\code{algorithm = "lmaccel"}).
-#' If a function, the first argument must be the vector of parameters of length \code{p} and the second argument must be the velocity vector
-#' also of length \code{p}. If \code{NULL}, the second directional derivative vector is computed internal
-#' using a finite difference approximation. Can also be \code{TRUE}, in which case \code{fvv} is derived
-#' symbolically with \code{\link[stats]{deriv}}, this only works if \code{fn} is defined as a (non-selfstarting) formula.
+#' this only works if \code{fn} is defined as a (non-selfstarting) formula. If \code{fn} is a \code{\link{selfStart}} model,
+#' the Jacobian specified in the \code{"gradient"} attribute of the self-start model is used instead.
 #' @param trace logical value indicating if a trace of the iteration progress should be printed.
-#' Default is \code{FALSE}. If \code{TRUE}, the residual (weighted) sum-of-squares and the current parameter estimates
+#' Default is \code{FALSE}. If \code{TRUE}, the residual (weighted) sum-of-squares,
+#' the squared (Euclidean) norm of the current parameter estimates and the condition number of the Jacobian
 #' are printed after each iteration.
-#' @param subset an optional vector specifying a subset of observations to be used in the fitting process.
-#' This argument is only used if \code{fn} is defined as a \link{formula}.
-#' @param weights an optional numeric vector of (fixed) weights. When present, the objective function is
-#' weighted least squares.
-#' @param na.action a function which indicates what should happen when the data contain \code{NA}s. The
-#' default is set by the \code{na.action} setting of \code{\link{options}}, and is \code{\link{na.fail}} if that is unset.
-#' The 'factory-fresh' default is \code{\link{na.omit}}. Value \code{\link{na.exclude}} can be useful.
-#' This argument is only used if \code{fn} is defined as a \link{formula}.
-#' @param model a logical value. If \code{TRUE}, the model frame is returned as part of the object. Defaults to \code{FALSE}.
-#' This argument is only used if \code{fn} is defined as a \link{formula}.
-#' @param ... additional arguments passed to the calls of \code{fn}, \code{jac} and \code{fvv} if
-#' defined as functions.
 #' @return
 #' If \code{fn} is a \code{formula} returns a list object of class \code{nls}.
 #' If \code{fn} is a \code{function} returns a list object of class \code{gsl_nls}.
 #' See the individual method descriptions for the structures of the returned lists and the generic functions
 #' applicable to objects of both classes.
-#' @seealso \code{\link[stats]{nls}}
+#' @importFrom Matrix nnzero
+#' @seealso \code{\link{gsl_nls}}
 #' @seealso \url{https://www.gnu.org/software/gsl/doc/html/nls.html}
 #' @references M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
+#' @examples
+#' # Large NLS example
+#' # (https://www.gnu.org/software/gsl/doc/html/nls.html#large-nonlinear-least-squares-example)
+#'
+#' ## number of parameters
+#' p <- 250
+#'
+#' ## model function
+#' f <- function(theta) {
+#'   c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25)
+#' }
+#'
+#' ## jacobian function
+#' jac <- function(theta) {
+#'   rbind(diag(sqrt(1e-5), nrow = length(theta)), 2 * t(theta))
+#' }
+#'
+#' ## dense Levenberg-Marquadt
+#' gsl_nls_large(
+#'   fn = f,                       ## model
+#'   y = rep(0, p + 1),            ## (dummy) responses
+#'   start = 1:p,                  ## start values
+#'   algorithm = "lm",             ## algorithm
+#'   jac = jac,                    ## jacobian
+#'   control = list(maxiter = 250)
+#' )
+#'
+#' ## dense Steihaug-Toint conjugate gradient
+#' gsl_nls_large(
+#'   fn = f,                       ## model
+#'   y = rep(0, p + 1),            ## (dummy) responses
+#'   start = 1:p,                  ## start values
+#'   jac = jac,                    ## jacobian
+#'   algorithm = "cgst"            ## algorithm
+#' )
+#'
+#' ## sparse Jacobian function
+#' jacsp <- function(theta) {
+#'   rbind(Matrix::Diagonal(x = sqrt(1e-5), n = length(theta)), 2 * t(theta))
+#' }
+#'
+#' ## sparse Levenberg-Marquadt
+#' gsl_nls_large(
+#'   fn = f,                       ## model
+#'   y = rep(0, p + 1),            ## (dummy) responses
+#'   start = 1:p,                  ## start values
+#'   algorithm = "lm",             ## algorithm
+#'   jac = jacsp,                  ## sparse jacobian
+#'   control = list(maxiter = 250)
+#' )
+#'
+#' ## sparse Steihaug-Toint conjugate gradient
+#' gsl_nls_large(
+#'   fn = f,                       ## model
+#'   y = rep(0, p + 1),            ## (dummy) responses
+#'   start = 1:p,                  ## start values
+#'   jac = jacsp,                  ## sparse jacobian
+#'   algorithm = "cgst"            ## algorithm
+#' )
+#'
 #' @export
 gsl_nls_large <- function (fn, ...) {
   UseMethod("gsl_nls_large")
@@ -79,13 +116,13 @@ gsl_nls_large <- function (fn, ...) {
 #' In addition, a method \code{confintd} is available for inference of derived parameters.
 #' @export
 gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
-    algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
-    control = gsl_nls_control(), jac = NULL, fvv = NULL, trace = FALSE,
-    subset, weights, na.action, model = FALSE, ...) {
+                                  algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
+                                  control = gsl_nls_control(), jac, fvv = NULL, trace = FALSE,
+                                  subset, weights, na.action, model = FALSE, ...) {
 
   ## adapted from src/library/stats/nls.R
   formula <- as.formula(fn)
-  algorithm <- match.arg(algorithm, choices = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
+  algorithm <- match.arg(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
 
   if(!is.list(data) && !is.environment(data))
     stop("'data' must be a list or an environment")
@@ -104,23 +141,23 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
 
   ## get names of the parameters from the starting values or selfStart model
   pnames <-
-      if (missing(start)) {
-        if(!is.null(attr(data, "parameters"))) {
-          names(attr(data, "parameters"))
-        } else { ## try selfStart - like object
-          cll <- formula[[length(formula)]]
-          if(is.symbol(cll)) { ## replace  y ~ S   by   y ~ S + 0 :
-            ## formula[[length(formula)]] <-
-            cll <- substitute(S + 0, list(S = cll))
-          }
-          fn <- as.character(cll[[1L]])
-          if(is.null(func <- tryCatch(get(fn), error=function(e)NULL)))
-            func <- get(fn, envir=parent.frame()) ## trying "above"
-          if(!is.null(pn <- attr(func, "pnames")))
-            as.character(as.list(match.call(func, call = cll))[-1L][pn])
+    if (missing(start)) {
+      if(!is.null(attr(data, "parameters"))) {
+        names(attr(data, "parameters"))
+      } else { ## try selfStart - like object
+        cll <- formula[[length(formula)]]
+        if(is.symbol(cll)) { ## replace  y ~ S   by   y ~ S + 0 :
+          ## formula[[length(formula)]] <-
+          cll <- substitute(S + 0, list(S = cll))
         }
-      } else
-        names(start)
+        fn <- as.character(cll[[1L]])
+        if(is.null(func <- tryCatch(get(fn), error=function(e)NULL)))
+          func <- get(fn, envir=parent.frame()) ## trying "above"
+        if(!is.null(pn <- attr(func, "pnames")))
+          as.character(as.list(match.call(func, call = cll))[-1L][pn])
+      }
+    } else
+      names(start)
 
   if(!is.null(environment(formula))) {
     env <- environment(formula)
@@ -138,23 +175,23 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
   ## This aux.function needs to be as complicated because
   ## exists(var, data) does not work (with lists or dataframes):
   lenVar <- function(var) tryCatch(length(eval(as.name(var), data, env)),
-        error = function(e) -1L)
+                                   error = function(e) -1L)
   if(length(varNames)) {
     n <- vapply(varNames, lenVar, 0)
     if(any(not.there <- n == -1L)) {
       nnn <- names(n[not.there])
       if(missing(start)) {
         warning("No starting values specified for some parameters.\n",
-            "Initializing ", paste(sQuote(nnn), collapse=", "),
-            " to '1.'.\n",
-            "Consider specifying 'start' or using a selfStart model", domain = NA)
+                "Initializing ", paste(sQuote(nnn), collapse=", "),
+                " to '1.'.\n",
+                "Consider specifying 'start' or using a selfStart model", domain = NA)
         start <- setNames(rep_len(1., length(nnn)), nnn)
         varNames <- varNames[i <- is.na(match(varNames, nnn))]
         n <- n[i]
       }
       else                        # has 'start' but forgot some
         stop(gettextf("parameters without starting value in 'data': %s",
-                paste(nnn, collapse=", ")), domain = NA)
+                      paste(nnn, collapse=", ")), domain = NA)
     }
   }
   else { ## length(varNames) == 0
@@ -190,10 +227,10 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
       vNms <- varNames[varIndex]
       if(any(nEQ <- vNms != make.names(vNms))) vNms[nEQ] <- paste0("`", vNms[nEQ], "`")
       mf$formula <-  # replace by one-sided linear model formula
-          as.formula(paste("~", paste(vNms, collapse = "+")),
-              env = environment(formula))
+        as.formula(paste("~", paste(vNms, collapse = "+")),
+                   env = environment(formula))
       mf$start <- mf$control <- mf$algorithm <- mf$trace <- mf$model <-
-          mf$fn <- mf$jac <- mf$fvv <- NULL
+        mf$fn <- mf$jac <- mf$fvv <- NULL
       ## need stats:: for non-standard evaluation
       mf[[1L]] <- quote(stats::model.frame)
       mf <- eval.parent(mf)
@@ -216,8 +253,8 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
   varNamesRHS <- varNamesRHS[ varNamesRHS %in% varNames[varIndex] ]
 
   ## function call
-  fn <- function(par, .data = mf) eval(formula[[3L]], envir = c(as.list(par), .data))
-  .fcall <- tryCatch(fn(start), error = function(err) err)
+  .fn <- function(par, .data = mf) eval(formula[[3L]], envir = c(as.list(par), .data))
+  .fcall <- tryCatch(.fn(start), error = function(err) err)
 
   if(inherits(.fcall, "error"))
     stop(sprintf("failed to evaluate 'fn' at starting values: %s", .fcall$message))
@@ -229,61 +266,69 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
   .lhs <- eval(formula[[2L]], envir = mf)
 
   ## jac call
-  if(!is.function(jac) && !is.null(attr(.fcall, "gradient"))) {
-    jac <- function(par, .data = mf) attr(fn(par, .data), "gradient")
-  } else if(isTRUE(jac)) {
+  if(missing(jac)) {
     jac <- NULL
-    exprjac <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start)), error = function(err) err)
-    if(inherits(exprjac, "error")) {
-      warning(sprintf("failed to symbolically derive 'jac': %s", exprjac$message))
-    } else if(is.expression(exprjac)){
+  }
+  if(!is.function(jac) && !is.null(attr(.fcall, "gradient"))) {
+    jac <- function(par, .data = mf) attr(.fn(par, .data), "gradient")
+  } else if(isTRUE(jac)) {
+    .exprjac <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start)), error = function(err) err)
+    if(inherits(.exprjac, "error")) {
+      stop(sprintf("failed to symbolically derive 'jac': %s", .exprjac$message))
+    } else if(is.expression(.exprjac)){
       jac <- function(par, .data = mf) {
-        grad <- eval(exprjac, envir = c(as.list(par), .data))
+        grad <- eval(.exprjac, envir = c(as.list(par), .data))
         attr(grad, "gradient")
       }
     }
   }
+
   if(is.function(jac)) {
-    jac1 <- function(par) jac(par, ...)
-    .dfcall <- tryCatch(jac1(start), error = function(err) err)
+    .jac <- function(par) jac(par, ...)
+    .dfcall <- tryCatch(.jac(start), error = function(err) err)
     if(inherits(.dfcall, "error"))
       stop(sprintf("failed to evaluate 'jac' at starting values: %s", .dfcall$message))
-    if(!is.numeric(.dfcall) || !is.matrix(.dfcall) || !identical(dim(.dfcall), c(length(.lhs), length(start))))
-      stop("'jac' failed to return a numeric matrix of expected dimensions at starting values")
+    if(!identical(dim(.dfcall), c(length(.lhs), length(start))))
+      stop("'jac' failed to return a matrix of expected dimensions at starting values")
+    if(!((is.numeric(.dfcall) && is.matrix(.dfcall)) || (inherits(.dfcall, "dMatrix") && inherits(.dfcall, "generalMatrix"))))
+      stop("only \"matrix\", \"dgCMatrix\", \"dgRMatrix\", \"dgTMatrix\", and \"dgeMatrix\" classes are supported for 'jac'")
     if(any(is.na(.dfcall)))
       stop("missing values returned by 'jac' at starting values")
   } else {
-    jac1 <- NULL
+    stop("analytic Jacobian function 'jac' is required, but none is available")
   }
 
   ## fvv call
-  if(isTRUE(fvv)) {
-    fvv <- NULL
-    if(identical(algorithm, "lmaccel")) {
-      exprfvv <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start), hessian = TRUE), error = function(err) err)
-      if(inherits(exprfvv, "error")) {
-        warning(sprintf("failed to symbolically derive 'fvv': %s", exprfvv$message))
-      } else if(is.expression(exprfvv)){
+  .fvv <- NULL
+  if(identical(algorithm, "lmaccel")) {
+    if(!is.function(fvv) && !is.null(attr(.fcall, "hessian"))) {
+      fvv <- function(par, v) {
+        hess <- attr(.fn(par), "hessian")
+        c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))
+      }
+    } else if(isTRUE(fvv)) {
+      fvv <- NULL
+      .exprfvv <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start), hessian = TRUE), error = function(err) err)
+      if(inherits(.exprfvv, "error")) {
+        warning(sprintf("failed to symbolically derive 'fvv': %s", .exprfvv$message))
+      } else if(is.expression(.exprfvv)){
         fvv <- function(par, v) {
-          grad <- eval(exprfvv, envir = c(as.list(par), mf))
+          grad <- eval(.exprfvv, envir = c(as.list(par), mf))
           hess <- attr(grad, "hessian")
           c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))
         }
       }
     }
-  }
-
-  if(is.function(fvv)) {
-    fvv1 <- function(par, v) fvv(par, v, ...)
-    .fvvcall <- tryCatch(fvv1(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
-    if(inherits(.fvvcall, "error"))
-      stop(sprintf("failed to evaluate 'fvv' at starting values: %s", .fvvcall$message))
-    if(!is.numeric(.fvvcall) || !identical(length(.fvvcall), length(.lhs)))
-      stop("'fvv' failed to return a numeric vector equal in length to 'y' at starting values")
-    if(any(is.na(.fvvcall)))
-      stop("missing values returned by 'fvv' at starting values")
-  } else {
-    fvv1 <- NULL
+    if(is.function(fvv)) {
+      .fvv <- function(par, v) fvv(par, v, ...)
+      .fvvcall <- tryCatch(.fvv(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
+      if(inherits(.fvvcall, "error"))
+        stop(sprintf("failed to evaluate 'fvv' at starting values: %s", .fvvcall$message))
+      if(!is.numeric(.fvvcall) || !identical(length(.fvvcall), length(.lhs)))
+        stop("'fvv' failed to return a numeric vector equal in length to 'y' at starting values")
+      if(any(is.na(.fvvcall)))
+        stop("missing values returned by 'fvv' at starting values")
+    }
   }
 
   ## control arguments
@@ -293,44 +338,61 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
     control <- as.list(control)
     .ctrl[names(control)] <- control
   }
-  algorithm <- match.arg(algorithm)
   .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquadt"))
+  .ctrl$solver <- "cholesky"  ## fixed
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
   stopifnot(
-      is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter > 0,
-      is.numeric(.ctrl$factor_up), length(.ctrl$factor_up) == 1, .ctrl$factor_up > 0,
-      is.numeric(.ctrl$factor_down), length(.ctrl$factor_down) == 1, .ctrl$factor_down > 0,
-      is.numeric(.ctrl$avmax), length(.ctrl$avmax) == 1, .ctrl$avmax > 0,
-      is.numeric(.ctrl$h_df), length(.ctrl$h_df) == 1, .ctrl$h_df > 0,
-      is.numeric(.ctrl$h_fvv), length(.ctrl$h_fvv) == 1, .ctrl$h_fvv > 0,
-      is.numeric(.ctrl$xtol), length(.ctrl$xtol) == 1, .ctrl$xtol > 0,
-      is.numeric(.ctrl$ftol), length(.ctrl$ftol) == 1, .ctrl$ftol > 0,
-      is.numeric(.ctrl$gtol), length(.ctrl$gtol) == 1, .ctrl$gtol > 0
+    is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter > 0,
+    is.numeric(.ctrl$factor_up), length(.ctrl$factor_up) == 1, .ctrl$factor_up > 0,
+    is.numeric(.ctrl$factor_down), length(.ctrl$factor_down) == 1, .ctrl$factor_down > 0,
+    is.numeric(.ctrl$avmax), length(.ctrl$avmax) == 1, .ctrl$avmax > 0,
+    is.numeric(.ctrl$h_df), length(.ctrl$h_df) == 1, .ctrl$h_df > 0,
+    is.numeric(.ctrl$h_fvv), length(.ctrl$h_fvv) == 1, .ctrl$h_fvv > 0,
+    is.numeric(.ctrl$xtol), length(.ctrl$xtol) == 1, .ctrl$xtol > 0,
+    is.numeric(.ctrl$ftol), length(.ctrl$ftol) == 1, .ctrl$ftol > 0,
+    is.numeric(.ctrl$gtol), length(.ctrl$gtol) == 1, .ctrl$gtol > 0
   )
   .ctrl_int <- c(
-      as.integer(.ctrl$maxiter),
-      isTRUE(trace),
-      match(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D")) - 1L,
-      match(.ctrl$scale, c("more", "levenberg", "marquadt")) - 1L,
-      match(.ctrl$fdtype, c("forward", "center")) - 1L
+    maxiter = as.integer(.ctrl$maxiter),
+    trace = isTRUE(trace),
+    algorithm = match(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D")) - 1L,
+    scale = match(.ctrl$scale, c("more", "levenberg", "marquadt")) - 1L,
+    fdtype = match(.ctrl$fdtype, c("forward", "center")) - 1L,
+    jacclass = -2L,
+    jacnz = 0L
   )
+
+  ## sparse jacobian
+  if(inherits(.dfcall, "sparseMatrix")) {
+    .ctrl_int[7] <- as.integer(nnzero(.dfcall, na.counted = FALSE))
+  }
+  if(inherits(.dfcall, "dgTMatrix")) {
+    .ctrl_int[6] <- 0L
+  } else if(inherits(.dfcall, "dgCMatrix")) {
+    .ctrl_int[6] <- 1L
+  } else if(inherits(.dfcall, "dgRMatrix")) {
+    .ctrl_int[6] <- 2L
+  } else if(inherits(.dfcall, "dgeMatrix")) {
+    .ctrl_int[6] <- -1L
+  }
+
   .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol")])
   .ctrl_tol <- unlist(.ctrl[c("xtol", "ftol", "gtol")])
 
   ## optimize
-  cFit <- .Call(C_nls_large, fn, .lhs, jac1, fvv1, environment(), start, wts, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
+  cFit <- .Call(C_nls_large, .fn, .lhs, .jac, .fvv, environment(), start, wts, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
 
   ## convert to nls object
   m <- nlsModel(formula, mf, cFit$par, wts, jac)
 
   convInfo <- list(
-      isConv = as.logical(!cFit$conv),
-      finIter = cFit$niter,
-      finTol = cFit$ssrtol,
-      nEval = cFit$neval,
-      trsName = cFit$algorithm,
-      stopCode = cFit$conv,
-      stopMessage = cFit$status
+    isConv = as.logical(!cFit$conv),
+    finIter = cFit$niter,
+    finTol = cFit$ssrtol,
+    nEval = cFit$neval,
+    trsName = paste("multilarge", cFit$algorithm, sep = "/"),
+    stopCode = cFit$conv,
+    stopMessage = cFit$status
   )
 
   nls.out <- list(m = m, data = substitute(data), convInfo = convInfo, call = match.call())
@@ -367,9 +429,12 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
 #' is available for inference of derived parameters.
 #' @export
 gsl_nls_large.function <- function(fn, y, start,
-    algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
-    control = gsl_nls_control(), jac = NULL, fvv = NULL, trace = FALSE,
-    weights, ...) {
+                                   algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
+                                   control = gsl_nls_control(), jac, fvv = NULL, trace = FALSE,
+                                   weights, ...) {
+
+  ## algorithm
+  algorithm <- match.arg(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
 
   ## starting values
   if(missing(start)) {
@@ -380,8 +445,8 @@ gsl_nls_large.function <- function(fn, y, start,
   if(!is.numeric(y))
     stop("'y' should be a numeric response vector")
 
-  fn1 <- function(par) fn(par, ...)
-  .fcall <- tryCatch(fn1(start), error = function(err) err)
+  .fn <- function(par) fn(par, ...)
+  .fcall <- tryCatch(.fn(start), error = function(err) err)
   if(inherits(.fcall, "error"))
     stop(sprintf("failed to evaluate 'fn' at starting values: %s", .fcall$message))
   if(!is.numeric(.fcall) || !identical(length(.fcall), length(y)))
@@ -390,31 +455,46 @@ gsl_nls_large.function <- function(fn, y, start,
     stop("missing values returned by 'fn' at starting values")
 
   ## jac call
+  if(missing(jac)) {
+    jac <- NULL
+  }
+  if(!is.function(jac) && !is.null(attr(.fcall, "gradient"))) {
+    jac <- function(par, ...) attr(fn(par, ...), "gradient")
+  }
   if(is.function(jac)) {
-    jac1 <- function(par) jac(par, ...)
-    .dfcall <- tryCatch(jac1(start), error = function(err) err)
+    .jac <- function(par) jac(par, ...)
+    .dfcall <- tryCatch(.jac(start), error = function(err) err)
     if(inherits(.dfcall, "error"))
       stop(sprintf("failed to evaluate 'jac' at starting values: %s", .dfcall$message))
-    if(!is.numeric(.dfcall) || !is.matrix(.dfcall) || !identical(dim(.dfcall), c(length(y), length(start))))
-      stop("'jac' failed to return a numeric matrix of expected dimensions at starting values")
+    if(!identical(dim(.dfcall), c(length(y), length(start))))
+      stop("'jac' failed to return a matrix of expected dimensions at starting values")
+    if(!((is.numeric(.dfcall) && is.matrix(.dfcall)) || (inherits(.dfcall, "dMatrix") && inherits(.dfcall, "generalMatrix"))))
+      stop("only \"matrix\", \"dgCMatrix\", \"dgRMatrix\", \"dgTMatrix\", and \"dgeMatrix\" classes are supported for 'jac'")
     if(any(is.na(.dfcall)))
       stop("missing values returned by 'jac' at starting values")
   } else {
-    jac1 <- NULL
+    stop("analytic Jacobian function 'jac' is required, but none is available")
   }
 
   ## fvv call
-  if(is.function(fvv)) {
-    fvv1 <- function(par, v) fvv(par, v, ...)
-    .fvvcall <- tryCatch(fvv1(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
-    if(inherits(.fvvcall, "error"))
-      stop(sprintf("failed to evaluate 'fvv' at starting values: %s", .fvvcall$message))
-    if(!is.numeric(.fvvcall) || !identical(length(.fvvcall), length(y)))
-      stop("'fvv' failed to return a numeric vector equal in length to 'y' at starting values")
-    if(any(is.na(.fvvcall)))
-      stop("missing values returned by 'fvv' at starting values")
-  } else {
-    fvv1 <- NULL
+  .fvv <- NULL
+  if(identical(algorithm, "lmaccel")) {
+    if(!is.function(fvv) && !is.null(attr(.fcall, "hessian"))) {
+      fvv <- function(par, v, ...) {
+        hess <- attr(fn(par, ...), "hessian")
+        c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))
+      }
+    }
+    if(is.function(fvv)) {
+      .fvv <- function(par, v) fvv(par, v, ...)
+      .fvvcall <- tryCatch(.fvv(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
+      if(inherits(.fvvcall, "error"))
+        stop(sprintf("failed to evaluate 'fvv' at starting values: %s", .fvvcall$message))
+      if(!is.numeric(.fvvcall) || !identical(length(.fvvcall), length(y)))
+        stop("'fvv' failed to return a numeric vector equal in length to 'y' at starting values")
+      if(any(is.na(.fvvcall)))
+        stop("missing values returned by 'fvv' at starting values")
+    }
   }
 
   ## control arguments
@@ -424,29 +504,43 @@ gsl_nls_large.function <- function(fn, y, start,
     control <- as.list(control)
     .ctrl[names(control)] <- control
   }
-  algorithm <- match.arg(algorithm)
   .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquadt"))
-  .ctrl$solver <- match.arg(.ctrl$solver, c("qr", "svd", "cholesky"))
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
   stopifnot(
-      is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter > 0,
-      is.numeric(.ctrl$factor_up), length(.ctrl$factor_up) == 1, .ctrl$factor_up > 0,
-      is.numeric(.ctrl$factor_down), length(.ctrl$factor_down) == 1, .ctrl$factor_down > 0,
-      is.numeric(.ctrl$avmax), length(.ctrl$avmax) == 1, .ctrl$avmax > 0,
-      is.numeric(.ctrl$h_df), length(.ctrl$h_df) == 1, .ctrl$h_df > 0,
-      is.numeric(.ctrl$h_fvv), length(.ctrl$h_fvv) == 1, .ctrl$h_fvv > 0,
-      is.numeric(.ctrl$xtol), length(.ctrl$xtol) == 1, .ctrl$xtol > 0,
-      is.numeric(.ctrl$ftol), length(.ctrl$ftol) == 1, .ctrl$ftol > 0,
-      is.numeric(.ctrl$gtol), length(.ctrl$gtol) == 1, .ctrl$gtol > 0
+    is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter > 0,
+    is.numeric(.ctrl$factor_up), length(.ctrl$factor_up) == 1, .ctrl$factor_up > 0,
+    is.numeric(.ctrl$factor_down), length(.ctrl$factor_down) == 1, .ctrl$factor_down > 0,
+    is.numeric(.ctrl$avmax), length(.ctrl$avmax) == 1, .ctrl$avmax > 0,
+    is.numeric(.ctrl$h_df), length(.ctrl$h_df) == 1, .ctrl$h_df > 0,
+    is.numeric(.ctrl$h_fvv), length(.ctrl$h_fvv) == 1, .ctrl$h_fvv > 0,
+    is.numeric(.ctrl$xtol), length(.ctrl$xtol) == 1, .ctrl$xtol > 0,
+    is.numeric(.ctrl$ftol), length(.ctrl$ftol) == 1, .ctrl$ftol > 0,
+    is.numeric(.ctrl$gtol), length(.ctrl$gtol) == 1, .ctrl$gtol > 0
   )
   .ctrl_int <- c(
-      as.integer(.ctrl$maxiter),
-      isTRUE(trace),
-      match(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D")) - 1L,
-      match(.ctrl$scale, c("more", "levenberg", "marquadt")) - 1L,
-      match(.ctrl$solver, c("qr", "cholesky", "svd")) - 1L,
-      match(.ctrl$fdtype, c("forward", "center")) - 1L
+    maxiter = as.integer(.ctrl$maxiter),
+    trace = isTRUE(trace),
+    algorithm = match(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D")) - 1L,
+    scale = match(.ctrl$scale, c("more", "levenberg", "marquadt")) - 1L,
+    fdtype = match(.ctrl$fdtype, c("forward", "center")) - 1L,
+    jacclass = -2L,
+    jacnz = 0L
   )
+
+  ## sparse jacobian
+  if(inherits(.dfcall, "sparseMatrix")) {
+    .ctrl_int[7] <- as.integer(nnzero(.dfcall, na.counted = FALSE))
+  }
+  if(inherits(.dfcall, "dgTMatrix")) {
+    .ctrl_int[6] <- 0L
+  } else if(inherits(.dfcall, "dgCMatrix")) {
+    .ctrl_int[6] <- 1L
+  } else if(inherits(.dfcall, "dgRMatrix")) {
+    .ctrl_int[6] <- 2L
+  } else if(inherits(.dfcall, "dgeMatrix")) {
+    .ctrl_int[6] <- -1L
+  }
+
   .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol")])
   .ctrl_tol <- unlist(.ctrl[c("xtol", "ftol", "gtol")])
 
@@ -460,22 +554,20 @@ gsl_nls_large.function <- function(fn, y, start,
     weights <- NULL
   }
 
-  browser()
-
   ## optimize
-  cFit <- .Call(C_nls_large, fn1, y, jac1, fvv1, environment(), start, weights, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
+  cFit <- .Call(C_nls_large, .fn, y, .jac, .fvv, environment(), start, weights, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
 
   m <- gslModel(fn, y, cFit, start, weights, jac, ...)
 
   ## mimick nls object
   convInfo <- list(
-      isConv = as.logical(!cFit$conv),
-      finIter = cFit$niter,
-      finTol = cFit$ssrtol,
-      nEval = cFit$neval,
-      trsName = cFit$algorithm,
-      stopCode = cFit$conv,
-      stopMessage = cFit$status
+    isConv = as.logical(!cFit$conv),
+    finIter = cFit$niter,
+    finTol = cFit$ssrtol,
+    nEval = cFit$neval,
+    trsName = paste("multilarge", cFit$algorithm, sep = "/"),
+    stopCode = cFit$conv,
+    stopMessage = cFit$status
   )
 
   nls.out <- list(m = m, data = c(list(y = y), list(...)), convInfo = convInfo, call = match.call())
@@ -492,320 +584,4 @@ gsl_nls_large.function <- function(fn, y, start,
 
   return(nls.out)
 
-}
-
-#' Tunable NLS iteration parameters
-#'
-#' Allow the user to tune the characteristics of the \code{\link{gsl_nls}} nonlinear
-#' least squares algorithm.
-#'
-#' @param maxiter positive integer, termination occurs when the number of iterations reaches \code{maxiter}.
-#' @param scale character, scaling method or damping strategy determining the diagonal scaling matrix D. The following options
-#' are supported:
-#' \itemize{
-#' \item \code{"more"} Moré rescaling (default). This method makes the problem scale-invariant and has
-#' been proven effective on a large class of problems.
-#' \item \code{"levenberg"} Levenberg rescaling. This method has also proven effective on a large class of problems,
-#' but is not scale-invariant. It may perform better for problems susceptible to \emph{parameter evaporation} (parameters going to infinity).
-#' \item \code{"marquadt"} Marquadt rescaling. This method is scale-invariant, but it is generally
-#' considered inferior to both the Levenberg and Moré strategies.
-#' }
-#' @param solver character, method used to solve the linear least squares system resulting as a subproblem in each iteration.
-#' The following choices are supported:
-#' \itemize{
-#' \item \code{"qr"} QR decomposition of the Jacobian (default). This method will produce reliable solutions in cases
-#' where the Jacobian is rank deficient or near-singular but does require more operations than the Cholesky method.
-#' \item \code{"cholesky"} Cholesky decomposition of the Jacobian. This method is faster than the QR approach, however
-#' it is susceptible to numerical instabilities if the Jacobian matrix is rank deficient or near-singular.
-#' \item \code{"svd"} SVD decomposition of the Jacobian. This method will produce the most reliable solutions for
-#' ill-conditioned Jacobians but is also the slowest.
-#' }
-#' @param fdtype character, method used to numerically approximate the Jacobian, either \code{"forward"} for forward finite differencing
-#' or \code{"center"} for centered finite differencing. This is only used if no analytic Jacobian (\code{jac}) is specified in \code{\link{gsl_nls}}.
-#' @param factor_up numeric factor by which to increase the trust region radius when a search step is accepted.
-#' Too large values may destabilize the search, too small values slow down the search, defaults to 3.
-#' @param factor_down numeric factor by which to decrease the trust region radius when a search step is rejected.
-#' Too large values may destabilize the search, too small values slow down the search, defaults to 2.
-#' @param avmax numeric value, the ratio of the acceleration term to the velocity term when using geodesic acceleration to
-#' solve the nonlinear least squares problem. Any steps with a ratio larger than \code{avmax} are rejected, defaults to 0.75.
-#' For problems which experience difficulty converging, this threshold could be lowered.
-#' @param h_df numeric value, the step size for approximating the Jacobian matrix with finite differences, defaults to \code{sqrt(.Machine$double.eps)}.
-#' @param h_fvv numeric value, the step size for approximating the second directional derivative when geodesic acceleration
-#' is used to solve the nonlinear least squares problem, defaults to 0.02. This is only used if no analytic second
-#' directional derivative (\code{fvv}) is specified in \code{\link{gsl_nls}}.
-#' @param xtol numeric value, termination occurs when the relative change in parameters between iterations is \code{<= xtol}.
-#' A general guideline for selecting the step tolerance is to choose \code{xtol = 10^(-d)} where \code{d} is the number of accurate
-#' decimal digits desired in the parameters, defaults to \code{sqrt(.Machine$double.eps)}.
-#' @param ftol numeric value, termination occurs when the relative change in sum of squared residuals between iterations is \code{<= ftol},
-#' defaults to \code{sqrt(.Machine$double.eps)}.
-#' @param gtol numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
-#' indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}
-#' @importFrom stats nls.control
-#' @seealso \code{\link[stats]{nls.control}}
-#' @seealso \url{https://www.gnu.org/software/gsl/doc/html/nls.html#tunable-parameters}
-#' @note \code{ftol} is disabled in some versions of the GSL library.
-#' @examples
-#' ## default tuning parameters
-#' gsl_nls_control()
-#' @return A \code{list} with exactly twelve components:
-#' \itemize{
-#' \item maxiter
-#' \item scale
-#' \item solver
-#' \item fdtype
-#' \item factor_up
-#' \item factor_down
-#' \item avmax
-#' \item h_df
-#' \item h_fvv
-#' \item xtol
-#' \item ftol
-#' \item gtol
-#' }
-#' with meanings as explained under 'Arguments'.
-#' @references M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
-#' @export
-gsl_nls_control <- function(maxiter = 50, scale = "more", solver = "qr",
-    fdtype = "forward", factor_up = 3, factor_down = 2, avmax = 0.75,
-    h_df = sqrt(.Machine$double.eps), h_fvv = 0.02, xtol = sqrt(.Machine$double.eps),
-    ftol = sqrt(.Machine$double.eps), gtol = .Machine$double.eps^(1/3)) {
-
-  scale <- match.arg(scale, c("more", "levenberg", "marquadt"))
-  solver <- match.arg(solver, c("qr", "svd", "cholesky"))
-  fdtype <- match.arg(fdtype, c("forward", "center"))
-
-  stopifnot(
-      is.numeric(maxiter), length(maxiter) == 1, maxiter > 0,
-      is.numeric(factor_up), length(factor_up) == 1, factor_up > 0,
-      is.numeric(factor_down), length(factor_down) == 1, factor_down > 0,
-      is.numeric(avmax), length(avmax) == 1, avmax > 0,
-      is.numeric(h_df), length(h_df) == 1, h_df > 0,
-      is.numeric(h_fvv), length(h_fvv) == 1, h_fvv > 0,
-      is.numeric(xtol), length(xtol) == 1, xtol > 0,
-      is.numeric(ftol), length(ftol) == 1, ftol > 0,
-      is.numeric(gtol), length(gtol) == 1, gtol > 0
-  )
-
-  list(maxiter = as.integer(maxiter), scale = scale, solver = solver, fdtype = fdtype,
-      factor_up = factor_up, factor_down = factor_down, avmax = avmax,
-      h_df = h_df, h_fvv = h_fvv, xtol = xtol, ftol = ftol, gtol = gtol)
-
-}
-
-nlsModel <- function(form, data, start, wts, jac, upper=NULL) {
-  ## thisEnv <- environment() # shared by all functions in the 'm' list; variable no longer needed
-  env <- new.env(hash = TRUE, parent = environment(form))
-  for(i in names(data)) env[[i]] <- data[[i]]
-  ind <- as.list(start)
-  parLength <- 0L
-  for(i in names(ind) ) {
-    temp <- start[[i]]
-    storage.mode(temp) <- "double"
-    env[[i]] <- temp
-    ind[[i]] <- parLength + seq_along(temp)
-    parLength <- parLength + length(temp)
-  }
-  getPars.noVarying <- function() unlist(mget(names(ind), env))
-  getPars <- getPars.noVarying
-  internalPars <- getPars()
-
-  if(!is.null(upper)) upper <- rep_len(upper, parLength)
-  useParams <- rep_len(TRUE, parLength)
-  lhs <- eval(form[[2L]], envir = env)
-  rhs <- eval(form[[3L]], envir = env)
-  .swts <- if(!missing(wts) && length(wts)) sqrt(wts) else rep_len(1, length(rhs))
-  env$.swts <- .swts
-  resid <- .swts * (lhs - rhs)
-  dev <- sum(resid^2)
-  if(is.null(attr(rhs, "gradient"))) {
-    getRHS.noVarying <- function() numericDeriv(form[[3L]], names(ind), env)
-    getRHS <- getRHS.noVarying
-    rhs <- getRHS()
-  } else {
-    getRHS.noVarying <- function() eval(form[[3L]], envir = env)
-    getRHS <- getRHS.noVarying
-  }
-  dimGrad <- dim(attr(rhs, "gradient"))
-  marg <- length(dimGrad)
-  if(marg > 0L) {
-    gradSetArgs <- vector("list", marg + 1L)
-    for(i in 2L:marg)
-      gradSetArgs[[i]] <- rep_len(TRUE, dimGrad[i-1L])
-    useParams <- rep_len(TRUE, dimGrad[marg])
-  } else {
-    gradSetArgs <- vector("list", 2L)
-    useParams <- rep_len(TRUE, length(attr(rhs, "gradient")))
-  }
-  npar <- length(useParams)
-  gradSetArgs[[1L]] <- (~attr(ans, "gradient"))[[2L]]
-  gradCall <- switch(length(gradSetArgs) - 1L,
-      call("[", gradSetArgs[[1L]], gradSetArgs[[2L]], drop = FALSE),
-      call("[", gradSetArgs[[1L]], gradSetArgs[[2L]], gradSetArgs[[2L]],
-          drop = FALSE),
-      call("[", gradSetArgs[[1L]], gradSetArgs[[2L]], gradSetArgs[[2L]],
-          gradSetArgs[[3L]], drop = FALSE),
-      call("[", gradSetArgs[[1L]], gradSetArgs[[2L]], gradSetArgs[[2L]],
-          gradSetArgs[[3L]], gradSetArgs[[4L]], drop = FALSE))
-  getRHS.varying <- function() {
-    ans <- getRHS.noVarying()
-    attr(ans, "gradient") <- eval(gradCall)
-    ans
-  }
-  if(length(gr <- attr(rhs, "gradient")) == 1L)
-    attr(rhs, "gradient") <- gr <- as.vector(gr)
-  QR <- qr(.swts * gr)
-  qrDim <- min(dim(QR$qr))
-  if(QR$rank < qrDim)
-    stop("singular gradient matrix at parameter estimates")
-
-  getPars.varying <- function() unlist(mget(names(ind), env))[useParams]
-  setPars.noVarying <- function(newPars){
-    internalPars <<- newPars # envir = thisEnv
-    for(i in names(ind))
-      env[[i]] <- unname(newPars[ ind[[i]] ])
-  }
-  setPars.varying <- function(newPars) {
-    internalPars[useParams] <<- newPars
-    for(i in names(ind))
-      env[[i]] <- unname(internalPars[ ind[[i]] ])
-  }
-  setPars <- setPars.noVarying
-
-  convCrit <- function() {
-    if(npar == 0) return(0)
-    rr <- qr.qty(QR, c(resid)) # rotated residual vector
-    sqrt(sum(rr[1L:npar]^2) / sum(rr[-(1L:npar)]^2))
-  }
-  ## newdata gradient
-  if(is.function(jac)) {
-    gcall <- do.call(call, args = c(".jac", sapply(c(names(formals(jac)[1]),
-                    intersect(c(".data", names(data)), names(formals(jac)))), as.name)), quote = TRUE)
-    gcall[[2]] <- do.call(call, args = c(ifelse(is.list(start), "list", "c"),
-            sapply(names(start), as.name)), quote = TRUE)
-    env$.jac <- jac
-  } else {
-    gcall <- form[[3L]]
-  }
-  on.exit(remove(i, data, parLength, start, temp, m, gr,
-          marg, dimGrad, qrDim, gradSetArgs))
-  m <- list(resid = function() resid,
-      fitted = function() rhs,
-      formula = function() form,
-      deviance = function() dev,
-      lhs = function() lhs,
-      gradient = function() .swts * attr(rhs, "gradient"),
-      gradient1 = function(newdata = list()) {
-        rho <- new.env(hash = TRUE, parent = env)
-        for(i in names(newdata)) rho[[i]] <- newdata[[i]]
-        if(is.function(env$.jac)) {
-          rho$.data <- as.list(newdata)
-          grad <- eval(gcall, envir = rho)
-        } else {
-          drv <- stats::numericDeriv(form[[3L]], names(ind), rho = rho)
-          grad <- attr(drv, "gradient")
-          colnames(grad) <- names(ind)
-        }
-        grad
-      },
-      conv = function() convCrit(),
-      incr = function() qr.coef(QR, resid),
-      setVarying = function(vary = rep_len(TRUE, np)) {
-        np <- length(useParams)
-        useParams <<- useP <-
-            if(is.character(vary)) {
-              temp <- logical(np)
-              temp[unlist(ind[vary])] <- TRUE
-              temp
-            } else if(is.logical(vary) && length(vary) != np)
-              stop("setVarying : 'vary' length must match length of parameters")
-            else
-              vary # envir = thisEnv
-        gradCall[[length(gradCall) - 1L]] <<- useP
-        if(all(useP)) {
-          setPars <<- setPars.noVarying
-          getPars <<- getPars.noVarying
-          getRHS  <<-  getRHS.noVarying
-          npar    <<- length(useP)
-        } else {
-          setPars <<- setPars.varying
-          getPars <<- getPars.varying
-          getRHS  <<-  getRHS.varying
-          npar    <<- sum(useP)
-        }
-      },
-      setPars = function(newPars) {
-        setPars(newPars)
-        resid <<- .swts * (lhs - (rhs <<- getRHS())) # envir = thisEnv {2 x}
-        dev   <<- sum(resid^2) # envir = thisEnv
-        if(length(gr <- attr(rhs, "gradient")) == 1L) gr <- c(gr)
-        QR <<- qr(.swts * gr) # envir = thisEnv
-        (QR$rank < min(dim(QR$qr))) # to catch the singular gradient matrix
-      },
-      getPars = function() getPars(),
-      getAllPars = function() getPars(),
-      getEnv = function() env,
-      trace = function() {
-        cat(format(dev), ": ", format(getPars()))
-        cat("\n")
-      },
-      Rmat = function() qr.R(QR),
-      predict = function(newdata = list(), qr = FALSE)
-        eval(form[[3L]], envir = as.list(newdata), enclos = env)
-  )
-  class(m) <- "nlsModel"
-  m
-}
-
-gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
-  env <- new.env(hash = TRUE, parent = environment(fn))
-  env$fn <- fn
-  data <- list(...)
-  for(i in names(data)) env[[i]] <- data[[i]]
-  if(is.list(start)) {
-    pars <- as.list(cFit$par)
-  } else {
-    pars <- cFit$par
-  }
-  parName <- names(formals(fn)[1])
-  env[[parName]] <- pars
-  fcall <- do.call(call, args = c("fn", sapply(c(substitute(parName), names(data)), as.name)), quote = TRUE)
-  if(is.function(jac)) {
-    gcall <- do.call(call, args = c(".jac", sapply(c(substitute(names(formals(jac)[1])), names(data)), as.name)), quote = TRUE)
-    env$.jac <- jac
-  } else {
-    gcall <- fcall
-  }
-  gcall[[2]] <- do.call(call, args = c(ifelse(is.list(start), "list", "c"), sapply(names(start), as.name)), quote = TRUE)
-  QR <- qr(cFit$grad)
-  qrDim <- min(dim(QR$qr))
-  if(QR$rank < qrDim)
-    stop("singular gradient matrix at parameter estimates")
-  on.exit(remove(i, data, m, qrDim))
-  m <- list(resid = function() -cFit$resid,
-      fitted = function() eval(fcall, envir = env),
-      formula = function() fn,
-      deviance = function() cFit$ssr,
-      lhs = function() lhs,
-      gradient = function() cFit$grad,
-      gradient1 = function(newdata = list()) {
-        rho <- new.env(hash = TRUE, parent = env)
-        for(i in names(newdata)) rho[[i]] <- newdata[[i]]
-        for(i in names(pars)) rho[[i]] <- pars[[i]]
-        if(is.function(env$.jac)) {
-          grad <- eval(gcall, envir = rho)
-        } else {
-          drv <- stats::numericDeriv(gcall, names(pars), rho = rho)
-          grad <- attr(drv, "gradient")
-          colnames(grad) <- names(pars)
-        }
-        grad
-      },
-      getPars = function() unlist(pars),
-      getAllPars = function() unlist(pars),
-      getEnv = function() env,
-      Rmat = function() qr.R(QR),
-      predict = function(newdata = list())
-        eval(fcall, envir = as.list(newdata), enclos = env)
-  )
-  m
 }

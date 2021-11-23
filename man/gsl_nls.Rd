@@ -107,6 +107,7 @@ This argument is only used if \code{fn} is defined as a \link{formula}.}
 
 \item{...}{additional arguments passed to the calls of \code{fn}, \code{jac} and \code{fvv} if
 defined as functions.}
+
 }
 \value{
 If \code{fn} is a \code{formula} returns a list object of class \code{nls}.
@@ -115,8 +116,9 @@ See the individual method descriptions for the structures of the returned lists 
 applicable to objects of both classes.
 }
 \description{
-Determine the nonlinear (weighted) least-squares estimates of the parameters of a
-nonlinear model using the GNU Scientific Library (GSL).
+Determine the nonlinear least-squares estimates of the parameters of a
+nonlinear model using the \code{gsl_multifit_nlinear} module present in
+the GNU Scientific Library (GSL).
 }
 \section{Methods (by class)}{
 \itemize{

@@ -1,10 +1,6 @@
-## CRAN package version 1.0.2
+## CRAN package version 1.1.0
 
 * System requirements: GSL (>= 2.2)
-
-### Changes
-
-* Added Makevars.ucrt to fix installation error r-devel-windows-x86_64-gcc10-UCRT
 
 ### Test environments
 

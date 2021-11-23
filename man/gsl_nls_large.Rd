@@ -14,7 +14,7 @@ gsl_nls_large(fn, ...)
   start,
   algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
   control = gsl_nls_control(),
-  jac = NULL,
+  jac,
   fvv = NULL,
   trace = FALSE,
   subset,
@@ -30,7 +30,7 @@ gsl_nls_large(fn, ...)
   start,
   algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
   control = gsl_nls_control(),
-  jac = NULL,
+  jac,
   fvv = NULL,
   trace = FALSE,
   weights,
@@ -54,7 +54,11 @@ is a \code{formula}, a naive guess for \code{start} is tried, but this should no
 
 \item{algorithm}{character string specifying the algorithm to use. The following choices are supported:
 \itemize{
-\item \code{"lm"} Levenberg-Marquadt algorithm (default)
+\item \code{"cgst"} Steihaug-Toint Conjugate Gradient algorithm (default), a generalization of the dogleg algorithm
+that avoids solving for the Gauss-Newton step directly, instead using an iterative conjugate gradient algorithm.
+The method performs well at points where the Jacobian is singular, and is also suitable for large-scale problems
+where factoring the Jacobian matrix is prohibitively expensive.
+\item \code{"lm"} Levenberg-Marquadt algorithm
 \item \code{"lmaccel"} Levenberg-Marquadt algorithm with geodesic acceleration.
 Can be faster than \code{"lm"} but less stable. Stability is controlled by the
 \code{avmax} parameter in \code{control}, setting \code{avmax} to zero is analogous
@@ -71,12 +75,12 @@ on some problems.
 \item{control}{an optional list of control parameters to tune the least squares iterations.
 See \code{\link{gsl_nls_control}} for the available control parameters and their default values.}
 
-\item{jac}{either \code{NULL} (default) or a \link{function} returning the \code{n} by \code{p} dimensional Jacobian matrix of
+\item{jac}{a \link{function} returning the \code{n} by \code{p} dimensional Jacobian matrix of
 the nonlinear model \code{fn}, where \code{n} is the number of observations and \code{p} the
-number of parameters. If a function, the first argument must be the vector of parameters of length \code{p}.
-If \code{NULL}, the Jacobian is computed internally using a finite difference approximations.
+number of parameters. The first argument must be the vector of parameters of length \code{p}.
 Can also be \code{TRUE}, in which case \code{jac} is derived symbolically with \code{\link[stats]{deriv}},
-this only works if \code{fn} is defined as a (non-selfstarting) formula.}
+this only works if \code{fn} is defined as a (non-selfstarting) formula. If \code{fn} is a \code{\link{selfStart}} model,
+the Jacobian specified in the \code{"gradient"} attribute of the self-start model is used instead.}
 
 \item{fvv}{either \code{NULL} (default) or a \link{function} returning an \code{n} dimensional vector containing
 the second directional derivatives of the nonlinear model \code{fn}, with \code{n} the number of observations.
@@ -84,10 +88,13 @@ This argument is only used if geodesic acceleration is enabled (\code{algorithm 
 If a function, the first argument must be the vector of parameters of length \code{p} and the second argument must be the velocity vector
 also of length \code{p}. If \code{NULL}, the second directional derivative vector is computed internal
 using a finite difference approximation. Can also be \code{TRUE}, in which case \code{fvv} is derived
-symbolically with \code{\link[stats]{deriv}}, this only works if \code{fn} is defined as a (non-selfstarting) formula.}
+symbolically with \code{\link[stats]{deriv}}, this only works if \code{fn} is defined as a (non-selfstarting) formula.
+If the model \link{function} in \code{fn} also returns a \code{"hessian"} attribute (similar to the \code{"gradient"} attribute
+in a \code{selfStart} model), this Hessian matrix is used to evaluate the second directional derivatives instead.}
 
 \item{trace}{logical value indicating if a trace of the iteration progress should be printed.
-Default is \code{FALSE}. If \code{TRUE}, the residual (weighted) sum-of-squares and the current parameter estimates
+Default is \code{FALSE}. If \code{TRUE}, the residual (weighted) sum-of-squares,
+the squared (Euclidean) norm of the current parameter estimates and the condition number of the Jacobian
 are printed after each iteration.}
 
 \item{subset}{an optional vector specifying a subset of observations to be used in the fitting process.
@@ -114,8 +121,9 @@ See the individual method descriptions for the structures of the returned lists 
 applicable to objects of both classes.
 }
 \description{
-Determine the nonlinear (weighted) least-squares estimates of the parameters of a
-nonlinear model using the GNU Scientific Library (GSL).
+Determine the nonlinear least-squares estimates of the parameters of a large
+nonlinear model system using the \code{gsl_multilarge_nlinear} module present in
+the GNU Scientific Library (GSL).
 }
 \section{Methods (by class)}{
 \itemize{
@@ -137,11 +145,72 @@ applicable for an object of class \code{gsl_nls}: \code{anova}, \code{coef}, \co
 is available for inference of derived parameters.
 }}
 
+\examples{
+# Large NLS example
+# (https://www.gnu.org/software/gsl/doc/html/nls.html#large-nonlinear-least-squares-example)
+
+## number of parameters
+p <- 250
+
+## model function
+f <- function(theta) {
+  c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25)
+}
+
+## jacobian function
+jac <- function(theta) {
+  rbind(diag(sqrt(1e-5), nrow = length(theta)), 2 * t(theta))
+}
+
+## dense Levenberg-Marquadt
+gsl_nls_large(
+  fn = f,                       ## model
+  y = rep(0, p + 1),            ## (dummy) responses
+  start = 1:p,                  ## start values
+  algorithm = "lm",             ## algorithm
+  jac = jac,                    ## jacobian
+  control = list(maxiter = 250)
+)
+
+## dense Steihaug-Toint conjugate gradient
+gsl_nls_large(
+  fn = f,                       ## model
+  y = rep(0, p + 1),            ## (dummy) responses
+  start = 1:p,                  ## start values
+  jac = jac,                    ## jacobian
+  algorithm = "cgst"            ## algorithm
+)
+
+## sparse Jacobian function
+jacsp <- function(theta) {
+  rbind(Matrix::Diagonal(x = sqrt(1e-5), n = length(theta)), 2 * t(theta))
+}
+
+## sparse Levenberg-Marquadt
+gsl_nls_large(
+  fn = f,                       ## model
+  y = rep(0, p + 1),            ## (dummy) responses
+  start = 1:p,                  ## start values
+  algorithm = "lm",             ## algorithm
+  jac = jacsp,                  ## sparse jacobian
+  control = list(maxiter = 250)
+)
+
+## sparse Steihaug-Toint conjugate gradient
+gsl_nls_large(
+  fn = f,                       ## model
+  y = rep(0, p + 1),            ## (dummy) responses
+  start = 1:p,                  ## start values
+  jac = jacsp,                  ## sparse jacobian
+  algorithm = "cgst"            ## algorithm
+)
+
+}
 \references{
 M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
 }
 \seealso{
-\code{\link[stats]{nls}}
+\code{\link{gsl_nls}}
 
 \url{https://www.gnu.org/software/gsl/doc/html/nls.html}
 }

@@ -159,7 +159,7 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
 
     /* compute initial cost function */
     double chisq_init = GSL_POSINF;
-    multifit_nlinear_residual(w);
+    gsl_vector *resid = gsl_multifit_nlinear_residual(w);
     gsl_blas_ddot(resid, resid, &chisq_init);
     double chisq0 = chisq_init;
     double chisq1 = chisq_init;
@@ -167,7 +167,7 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
 
     /* solve the system  */
     int info = GSL_CONTINUE;
-    int status = gsl_multifit_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback : NULL, verbose ? &params : NULL, &info, &chisq1, w);
+    int status = gsl_multifit_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback : NULL, verbose ? &params : NULL, &info, &chisq0, &chisq1, w);
     R_len_t iter = gsl_multifit_nlinear_niter(w);
 
     /* compute covariance and cost at best fit parameters */
@@ -183,15 +183,15 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
     if (verbose)
     {
         /* print summary statistics*/
-        Rprintf("*******************\nsummary from method '%s/%s'\n", gsl_multifit_nlinear_name(w), gsl_multifit_nlinear_trs_name(w));
+        Rprintf("*******************\nsummary from method 'multifit/%s'\n", gsl_multifit_nlinear_trs_name(w));
         Rprintf("number of iterations: %d\n", iter);
         Rprintf("reason for stopping: %s\n", gsl_strerror(info));
-        Rprintf("initial ssr = %g\n", chisq0);
+        Rprintf("initial ssr = %g\n", chisq_init);
         Rprintf("final ssr = %g\n", chisq1);
         Rprintf("ssr/dof = %g\n", chisq1 / (n - p));
         Rprintf("ssr achieved tolerance = %g\n", chisq0 - chisq1);
         Rprintf("function evaluations: %d\n", fdf.nevalf);
-        Rprintf("Jacobian evaluations: %d\n", fdf.nevaldf);
+        Rprintf("jacobian evaluations: %d\n", fdf.nevaldf);
         Rprintf("fvv evaluations: %d\n", fdf.nevalfvv);
         Rprintf("status = %s\n*******************\n", gsl_strerror(status));
     }
@@ -380,7 +380,8 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
                                                   const gsl_multifit_nlinear_workspace *w),
                                  void *callback_params,
                                  int *info,
-                                 double *chisq,
+                                 double *chisq0,
+                                 double *chisq1,
                                  gsl_multifit_nlinear_workspace *w)
 {
     int status = GSL_CONTINUE;
@@ -394,14 +395,14 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
 
     do
     {
+        /* current ssr */
+        chisq0[0] = chisq1[0];
+
         status = gsl_multifit_nlinear_iterate(w);
 
         /* new ssr */
         f = gsl_multifit_nlinear_residual(w);
-        gsl_blas_ddot(f, f, chisq);
-
-        if(callback)
-            ((fdata *)callback_params)->chisq = chisq[0];
+        gsl_blas_ddot(f, f, chisq1);
 
         if(callback)
             ((fdata *)callback_params)->chisq = chisq1[0];

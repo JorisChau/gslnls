@@ -1,14 +1,13 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# {gslnls}: GSL nonlinear least-squares fitting in R
+# {gslnls}: GSL Nonlinear Least-Squares Fitting in R
 
 <!-- badges: start -->
 
 [![CRAN
 version](http://www.r-pkg.org/badges/version/gslnls)](https://cran.r-project.org/package=gslnls)
 [![R-CMD-check](https://github.com/JorisChau/gslnls/workflows/R-CMD-check/badge.svg)](https://github.com/JorisChau/gslnls/actions)
-[![status](https://tinyverse.netlify.com/badge/gslnls)](https://CRAN.R-project.org/package=gslnls)
 [![Total
 Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gslnls)](https://cran.r-project.org/package=gslnls)
 <!-- badges: end -->
@@ -16,9 +15,17 @@ Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gslnls)](https://cran.r
 The {gslnls}-package provides R bindings to nonlinear least-squares
 optimization with the [GNU Scientific Library
 (GSL)](https://www.gnu.org/software/gsl/) based on the
-`gsl_multifit_nlinear` interface. The following trust region methods to
-solve nonlinear least-squares problems are currently made available in
-R:
+`gsl_multifit_nlinear` and `gsl_multilarge_nlinear` interfaces. The
+function `gsl_nls()` solves small to moderate sized nonlinear
+least-squares problems with the `gsl_multifit_nlinear` interface. For
+large systems, where factoring the full Jacobian matrix becomes
+prohibitively expensive, the `gsl_nls_large()` function can be used to
+solve the nonlinear least-squares problem with the
+`gsl_multilarge_nlinear` interface. The `gsl_nls_large()` function is
+also appropriate for systems with sparse structure in the Jacobian
+matrix. The following trust region methods to solve nonlinear
+least-squares problems are available in `gsl_nls()` (resp.
+`gsl_nls_large()`):
 
 -   [Levenberg-Marquadt](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt)
 -   [Levenberg-Marquadt with geodesic
@@ -28,17 +35,20 @@ R:
     dogleg](https://www.gnu.org/software/gsl/doc/html/nls.html#double-dogleg)
 -   [Two Dimensional
     Subspace](https://www.gnu.org/software/gsl/doc/html/nls.html#two-dimensional-subspace)
+-   [Steihaug-Toint Conjugate
+    Gradient](https://www.gnu.org/software/gsl/doc/html/nls.html#steihaug-toint-conjugate-gradient)
+    (only available in `gsl_nls_large()`)
 
 The [Tunable
 parameters](https://www.gnu.org/software/gsl/doc/html/nls.html#tunable-parameters)
-available in the `gsl_multifit_nlinear` interface for the trust method
-algorithms can be modified from R in order to help accelerating
-convergence for a specific problem at hand.
+available for the trust method algorithms can be modified from R in
+order to help accelerating convergence for a specific problem at hand.
 
-The GSL Nonlinear Least-Squares Fitting
-[webpage](https://www.gnu.org/software/gsl/doc/html/nls.html#nonlinear-least-squares-fitting)
-contains a comprehensive overview of the `gsl_multifit_nlinear`
-interface and the relevant mathematical background.
+See the [Nonlinear Least-Squares
+Fitting](https://www.gnu.org/software/gsl/doc/html/nls.html#nonlinear-least-squares-fitting)
+chapter in the GSL reference manual for a comprehensive overview of the
+`gsl_multifit_nlinear` and `gsl_multilarge_nlinear` interfaces and the
+relevant mathematical background.
 
 ## Installation from source
 
@@ -174,15 +184,15 @@ ex1_fit
 #> 4.9905 1.4564 0.9968 
 #>  residual sum-of-squares: 2.104
 #> 
-#> Algorithm: levenberg-marquardt, (scaling: more, solver: qr)
+#> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 8 
 #> Achieved convergence tolerance: 9.503e-11
 ```
 
 Here, the nonlinear least squares problem has been solved with the
-Levenberg-Marquadt algorithm (default) using the following `control`
-parameters:
+Levenberg-Marquadt algorithm (default) in the `gsl_multifit_nlinear`
+interface using the following `control` parameters:
 
 ``` r
 ## default control parameters
@@ -341,7 +351,7 @@ gsl_nls(
 #> 4.9905 1.4564 0.9968 
 #>  residual sum-of-squares: 2.104
 #> 
-#> Algorithm: levenberg-marquardt, (scaling: more, solver: qr)
+#> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 8 
 #> Achieved convergence tolerance: 9.496e-11
@@ -367,7 +377,7 @@ gsl_nls(
 #> 4.9905 1.4564 0.9968 
 #>  residual sum-of-squares: 2.104
 #> 
-#> Algorithm: levenberg-marquardt, (scaling: more, solver: qr)
+#> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 8 
 #> Achieved convergence tolerance: 9.496e-11
@@ -392,7 +402,7 @@ ss_fit
 #> 0.9968 5.9873 0.3760 
 #>  residual sum-of-squares: 2.104
 #> 
-#> Algorithm: levenberg-marquardt, (scaling: more, solver: qr)
+#> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 1 
 #> Achieved convergence tolerance: 1.831e-12
@@ -507,7 +517,7 @@ ex2a_fit <- gsl_nls(
 #> iter  25: ssr = 16.3468, par = (4.95655, 0.398225, -0.151532)
 #> iter  26: ssr = 16.3468, par = (4.95655, 0.398225, -0.151532)
 #> *******************
-#> summary from method 'trust-region/levenberg-marquardt'
+#> summary from method 'multifit/levenberg-marquardt'
 #> number of iterations: 26
 #> reason for stopping: output range error
 #> initial ssr = 1192.49
@@ -515,7 +525,7 @@ ex2a_fit <- gsl_nls(
 #> ssr/dof = 0.0550398
 #> ssr achieved tolerance = 7.61702e-12
 #> function evaluations: 126
-#> Jacobian evaluations: 0
+#> jacobian evaluations: 0
 #> fvv evaluations: 0
 #> status = success
 #> *******************
@@ -528,7 +538,7 @@ ex2a_fit
 #>  4.9565  0.3982 -0.1515 
 #>  residual sum-of-squares: 16.35
 #> 
-#> Algorithm: levenberg-marquardt, (scaling: more, solver: qr)
+#> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 26 
 #> Achieved convergence tolerance: 7.617e-12
@@ -562,7 +572,7 @@ ex2b_fit <- gsl_nls(
 #> iter   9: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
 #> iter  10: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
 #> *******************
-#> summary from method 'trust-region/levenberg-marquardt+accel'
+#> summary from method 'multifit/levenberg-marquardt+accel'
 #> number of iterations: 10
 #> reason for stopping: output range error
 #> initial ssr = 1192.49
@@ -570,7 +580,7 @@ ex2b_fit <- gsl_nls(
 #> ssr/dof = 0.0550398
 #> ssr achieved tolerance = 4.29523e-11
 #> function evaluations: 66
-#> Jacobian evaluations: 0
+#> jacobian evaluations: 0
 #> fvv evaluations: 0
 #> status = success
 #> *******************
@@ -583,7 +593,7 @@ ex2b_fit
 #> 4.9565 0.3982 0.1515 
 #>  residual sum-of-squares: 16.35
 #> 
-#> Algorithm: levenberg-marquardt+accel, (scaling: more, solver: qr)
+#> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 10 
 #> Achieved convergence tolerance: 4.295e-11
@@ -711,7 +721,7 @@ gsl_nls(
 #> iter   9: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
 #> iter  10: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
 #> *******************
-#> summary from method 'trust-region/levenberg-marquardt+accel'
+#> summary from method 'multifit/levenberg-marquardt+accel'
 #> number of iterations: 10
 #> reason for stopping: output range error
 #> initial ssr = 1192.49
@@ -719,7 +729,7 @@ gsl_nls(
 #> ssr/dof = 0.0550398
 #> ssr achieved tolerance = 5.1692e-11
 #> function evaluations: 50
-#> Jacobian evaluations: 0
+#> jacobian evaluations: 0
 #> fvv evaluations: 16
 #> status = success
 #> *******************
@@ -730,7 +740,7 @@ gsl_nls(
 #> 4.9565 0.3982 0.1515 
 #>  residual sum-of-squares: 16.35
 #> 
-#> Algorithm: levenberg-marquardt+accel, (scaling: more, solver: qr)
+#> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 10 
 #> Achieved convergence tolerance: 5.169e-11
@@ -764,7 +774,7 @@ gsl_nls(
 #> iter   9: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
 #> iter  10: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
 #> *******************
-#> summary from method 'trust-region/levenberg-marquardt+accel'
+#> summary from method 'multifit/levenberg-marquardt+accel'
 #> number of iterations: 10
 #> reason for stopping: output range error
 #> initial ssr = 1192.49
@@ -772,7 +782,7 @@ gsl_nls(
 #> ssr/dof = 0.0550398
 #> ssr achieved tolerance = 5.1692e-11
 #> function evaluations: 50
-#> Jacobian evaluations: 0
+#> jacobian evaluations: 0
 #> fvv evaluations: 16
 #> status = success
 #> *******************
@@ -783,7 +793,7 @@ gsl_nls(
 #> 4.9565 0.3982 0.1515 
 #>  residual sum-of-squares: 16.35
 #> 
-#> Algorithm: levenberg-marquardt+accel, (scaling: more, solver: qr)
+#> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 10 
 #> Achieved convergence tolerance: 5.169e-11
@@ -873,7 +883,7 @@ ex3_fit
 #> -3.142 12.275 
 #>  residual sum-of-squares: 0.3979
 #> 
-#> Algorithm: levenberg-marquardt, (scaling: more, solver: qr)
+#> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 17 
 #> Achieved convergence tolerance: 1.989e-12
@@ -910,7 +920,189 @@ without geodesic acceleration converges to the minimum at
 all other methods converge to the minimum at
 ![(\\pi, 2.275)](https://latex.codecogs.com/png.latex?%28%5Cpi%2C%202.275%29 "(\pi, 2.275)").
 
-## Other R-packages
+### Example 4: Large NLS example
+
+As an illustration of a large nonlinear least squares system solved with
+`gsl_nls_large()`, we reproduce the large NLS example
+(<https://www.gnu.org/software/gsl/doc/html/nls.html#large-nonlinear-least-squares-example>)
+from the GSL reference manual. The nonlinear least squares model is
+defined as:
+
+![
+\\left\\{
+\\begin{aligned}
+f_i & \\ = \\sqrt{\\alpha}(\\theta_i + 1), \\quad i = 1,\\ldots,p \\\\
+f\_{p + 1} & \\ = \\Vert \\boldsymbol{\\theta} \\Vert^2  - \\frac{1}{4}
+\\end{aligned}
+\\right.
+](https://latex.codecogs.com/png.latex?%0A%5Cleft%5C%7B%0A%5Cbegin%7Baligned%7D%0Af_i%20%26%20%5C%20%3D%20%5Csqrt%7B%5Calpha%7D%28%5Ctheta_i%20%2B%201%29%2C%20%5Cquad%20i%20%3D%201%2C%5Cldots%2Cp%20%5C%5C%0Af_%7Bp%20%2B%201%7D%20%26%20%5C%20%3D%20%5CVert%20%5Cboldsymbol%7B%5Ctheta%7D%20%5CVert%5E2%20%20-%20%5Cfrac%7B1%7D%7B4%7D%0A%5Cend%7Baligned%7D%0A%5Cright.%0A "
+\left\{
+\begin{aligned}
+f_i & \ = \sqrt{\alpha}(\theta_i + 1), \quad i = 1,\ldots,p \\
+f_{p + 1} & \ = \Vert \boldsymbol{\theta} \Vert^2  - \frac{1}{4}
+\end{aligned}
+\right.
+")
+
+with given constant
+![\\alpha = 10^{-5}](https://latex.codecogs.com/png.latex?%5Calpha%20%3D%2010%5E%7B-5%7D "\alpha = 10^{-5}")
+and unknown parameters
+![\\theta_1,\\ldots, \\theta_p](https://latex.codecogs.com/png.latex?%5Ctheta_1%2C%5Cldots%2C%20%5Ctheta_p "\theta_1,\ldots, \theta_p").
+The residual
+![f\_{p + 1}](https://latex.codecogs.com/png.latex?f_%7Bp%20%2B%201%7D "f_{p + 1}")
+adds an
+![L_2](https://latex.codecogs.com/png.latex?L_2 "L_2")-regularization
+constraint on the parameter vector and makes the model nonlinear. The
+![(p + 1) \\times p](https://latex.codecogs.com/png.latex?%28p%20%2B%201%29%20%5Ctimes%20p "(p + 1) \times p")-dimensional
+Jacobian matrix is given by:
+
+![
+\\boldsymbol{J}(\\boldsymbol{\\theta}) \\ = \\ 
+\\left\[ \\begin{matrix} 
+\\frac{\\partial f_1}{\\partial \\theta_1} & \\ldots & \\frac{\\partial f_1}{\\partial \\theta_p} \\\\
+\\vdots & \\ddots & \\vdots \\\\
+\\frac{\\partial f\_{p+1}}{\\partial \\theta_1} & \\ldots & \\frac{\\partial f\_{p+1}}{\\partial \\theta_p}
+\\end{matrix} \\right\] \\ = 
+\\left\[ \\begin{matrix}
+\\sqrt{\\alpha} \\boldsymbol{I}\_{p \\times p} \\\\
+2 \\boldsymbol{\\theta}'
+\\end{matrix} \\right\]
+](https://latex.codecogs.com/png.latex?%0A%5Cboldsymbol%7BJ%7D%28%5Cboldsymbol%7B%5Ctheta%7D%29%20%5C%20%3D%20%5C%20%0A%5Cleft%5B%20%5Cbegin%7Bmatrix%7D%20%0A%5Cfrac%7B%5Cpartial%20f_1%7D%7B%5Cpartial%20%5Ctheta_1%7D%20%26%20%5Cldots%20%26%20%5Cfrac%7B%5Cpartial%20f_1%7D%7B%5Cpartial%20%5Ctheta_p%7D%20%5C%5C%0A%5Cvdots%20%26%20%5Cddots%20%26%20%5Cvdots%20%5C%5C%0A%5Cfrac%7B%5Cpartial%20f_%7Bp%2B1%7D%7D%7B%5Cpartial%20%5Ctheta_1%7D%20%26%20%5Cldots%20%26%20%5Cfrac%7B%5Cpartial%20f_%7Bp%2B1%7D%7D%7B%5Cpartial%20%5Ctheta_p%7D%0A%5Cend%7Bmatrix%7D%20%5Cright%5D%20%5C%20%3D%20%0A%5Cleft%5B%20%5Cbegin%7Bmatrix%7D%0A%5Csqrt%7B%5Calpha%7D%20%5Cboldsymbol%7BI%7D_%7Bp%20%5Ctimes%20p%7D%20%5C%5C%0A2%20%5Cboldsymbol%7B%5Ctheta%7D%27%0A%5Cend%7Bmatrix%7D%20%5Cright%5D%0A "
+\boldsymbol{J}(\boldsymbol{\theta}) \ = \ 
+\left[ \begin{matrix} 
+\frac{\partial f_1}{\partial \theta_1} & \ldots & \frac{\partial f_1}{\partial \theta_p} \\
+\vdots & \ddots & \vdots \\
+\frac{\partial f_{p+1}}{\partial \theta_1} & \ldots & \frac{\partial f_{p+1}}{\partial \theta_p}
+\end{matrix} \right] \ = 
+\left[ \begin{matrix}
+\sqrt{\alpha} \boldsymbol{I}_{p \times p} \\
+2 \boldsymbol{\theta}'
+\end{matrix} \right]
+")
+
+with
+![\\boldsymbol{I}\_{p \\times p}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BI%7D_%7Bp%20%5Ctimes%20p%7D "\boldsymbol{I}_{p \times p}")
+the
+![(p \\times p)](https://latex.codecogs.com/png.latex?%28p%20%5Ctimes%20p%29 "(p \times p)")-dimensional
+identity matrix.
+
+The function below evaluates the model residuals and Jacobian matrix for
+a given parameter vector
+![\\boldsymbol{\\theta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Ctheta%7D "\boldsymbol{\theta}").
+Here, the Jacobian is returned in the `"gradient"` attribute of the
+evaluated vector (as in a `selfStart` model) from which it is detected
+automatically by `gsl_nls()` or `gsl_nls_large()`.
+
+``` r
+## model and jacobiant
+f <- function(theta) {
+  val <- c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25)
+  attr(val, "gradient") <- rbind(diag(sqrt(1e-5), nrow = length(theta)), 2 * t(theta))
+  return(val)
+}
+```
+
+First, we minimize the least squares objective with a call to
+`gsl_nls()` using the default Levenberg-Marquadt algorithm analogous to
+the previous example by passing the nonlinear model as a `function` and
+setting the response vector `y` to a vector of zeros. The number of
+parameters is set to
+![p = 500](https://latex.codecogs.com/png.latex?p%20%3D%20500 "p = 500")
+and as starting values we use
+![\\theta_1 = 1, \\ldots, \\theta_p = p](https://latex.codecogs.com/png.latex?%5Ctheta_1%20%3D%201%2C%20%5Cldots%2C%20%5Ctheta_p%20%3D%20p "\theta_1 = 1, \ldots, \theta_p = p")
+equivalent to the example in the GSL reference manual.
+
+``` r
+## number of parameters
+p <- 500
+
+## standard Levenberg-Marquadt
+system.time({ 
+  ex4_fit_lm <- gsl_nls(
+    fn = f,
+    y = rep(0, p + 1),
+    start = 1:p,
+    control = list(maxiter = 500)
+  )
+})
+#>    user  system elapsed 
+#>  29.891   0.380  30.310
+
+cat("Residual sum-of-squares:", deviance(ex4_fit_lm), "\n")
+#> Residual sum-of-squares: 0.00477904
+```
+
+Next, we fit the same model with a call to `gsl_nls_large()` using the
+Steihaug-Toint Conjugate Gradient algorithm, which results in a much
+smaller runtime than the previous call:
+
+``` r
+## large-scale Steihaug-Toint 
+system.time({ 
+  ex4_fit_cgst <- gsl_nls_large(
+    fn = f,
+    y = rep(0, p + 1),
+    start = 1:p,
+    algorithm = "cgst",
+    control = list(maxiter = 500)
+  )
+})
+#>    user  system elapsed 
+#>   1.822   0.140   1.962
+
+cat("Residual sum-of-squares:", deviance(ex4_fit_cgst), "\n")
+#> Residual sum-of-squares: 0.00477885
+```
+
+#### Sparse Jacobian matrix
+
+The Jacobian matrix
+![\\boldsymbol{J}(\\boldsymbol{\\theta})](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BJ%7D%28%5Cboldsymbol%7B%5Ctheta%7D%29 "\boldsymbol{J}(\boldsymbol{\theta})")
+in the current example is very sparse in the sense that it contains only
+a small number of nonzero entries. Ideally, this sparse structure should
+be exploited to further reduce the runtime and (potentially
+significantly) reduce the required amount of allocated memory.
+
+The `gsl_nls_large()` function accepts the calculated Jacobian as a
+sparse matrix of class `"dgCMatrix"`, `"dgRMatrix"` or `"dgTMatrix"`
+available in the
+[Matrix](https://cran.r-project.org/web/packages/Matrix/Matrix.pdf)
+package in R-base. The following updated model function returns the
+sparse Jacobian as a `"dgCMatrix"` instead of a dense numeric matrix:
+
+``` r
+## model and sparse Jacobian
+fsp <- function(theta) {
+  val <- c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25)
+  attr(val, "gradient") <- rbind(Matrix::Diagonal(x = sqrt(1e-5), n = length(theta)), 2 * t(theta))
+  return(val)
+}
+```
+
+As seen from the benchmarks below, besides a slight improvement in
+runtimes, the required memory allocations are much smaller for the model
+functions returning a sparse instead of a dense Jacobian matrix.
+
+``` r
+## computation times and allocated memory
+bench::mark(
+  "Dense LM" = gsl_nls_large(fn = f, y = rep(0, p + 1), start = 1:p, algorithm = "lm", control = list(maxiter = 500)),
+  "Dense CGST" = gsl_nls_large(fn = f, y = rep(0, p + 1), start = 1:p, algorithm = "cgst"),
+  "Sparse LM" = gsl_nls_large(fn = fsp, y = rep(0, p + 1), start = 1:p, algorithm = "lm", control = list(maxiter = 500)),
+  "Sparse CGST" = gsl_nls_large(fn = fsp, y = rep(0, p + 1), start = 1:p, algorithm = "cgst"),
+  check = FALSE,
+  min_iterations = 5
+)
+#> # A tibble: 4 × 6
+#>   expression       min   median `itr/sec` mem_alloc `gc/sec`
+#>   <bch:expr>  <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl>
+#> 1 Dense LM       4.86s    4.87s     0.204    1.32GB    5.66 
+#> 2 Dense CGST     1.55s    1.66s     0.596    1.21GB   15.4  
+#> 3 Sparse LM      4.25s    4.48s     0.223   29.47MB    0.491
+#> 4 Sparse CGST 516.82ms 550.07ms     1.77     27.1MB    3.18
+```
+
+## More R-packages
 
 Other CRAN R-packages interfacing with GSL that served as inspiration
 for this package include:

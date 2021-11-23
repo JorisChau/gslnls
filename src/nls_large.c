@@ -1,6 +1,43 @@
 #define R_NO_REMAP
 
+#include <string.h>
 #include "gsl_nls.h"
+
+/* helper to match sparse matrix class */
+static int match_dg_class(SEXP obj)
+{
+    int matclass = -2;
+    SEXP klass = PROTECT(Rf_getAttrib(obj, R_ClassSymbol));
+    R_len_t n = Rf_length(klass);
+    if (n > 0)
+    {
+        for (R_len_t i = 0; i < n; i++)
+        {
+            if (strcmp(CHAR(STRING_ELT(klass, i)), "dgTMatrix") == 0)
+            {
+                matclass = 0;
+                break;
+            }
+            if (strcmp(CHAR(STRING_ELT(klass, i)), "dgCMatrix") == 0)
+            {
+                matclass = 1;
+                break;
+            }
+            if (strcmp(CHAR(STRING_ELT(klass, i)), "dgRMatrix") == 0)
+            {
+                matclass = 2;
+                break;
+            }
+            if (strcmp(CHAR(STRING_ELT(klass, i)), "dgeMatrix") == 0)
+            {
+                matclass = -1;
+                break;
+            }
+        }
+    }
+    UNPROTECT(1);
+    return matclass;
+}
 
 SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl)
 {
@@ -23,7 +60,7 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     {
     case 1:
         fdf_params.trs = gsl_multilarge_nlinear_trs_lm;
-	break;
+        break;
     case 2:
         fdf_params.trs = gsl_multilarge_nlinear_trs_lmaccel;
         break;
@@ -73,7 +110,7 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     SEXP parnames = PROTECT(Rf_getAttrib(start, R_NamesSymbol));
     nprotect += 3;
 
-    fdata params;
+    fdata_large params;
     params.n = n;
     params.p = p;
     params.f = fcall;
@@ -82,10 +119,22 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     params.y = y;
     params.rho = env;
     params.start = start;
+    params.matclass = INTEGER_ELT(control_int, 5);
+    params.J = NULL;
+    params.Jsp = NULL;
 
-    /* allocate matrix to store jacobian */
-    gsl_matrix *J = gsl_matrix_alloc(n, p);
-    params.J = J;
+    /* allocate matrix to store Jacobian */
+    if (params.matclass < 0)
+    {
+        gsl_matrix *J = gsl_matrix_alloc(n, p);
+        params.J = J;
+    }
+    else
+    {
+        R_len_t nzmax = INTEGER_ELT(control_int, 6);
+        gsl_spmatrix *Jsp = gsl_spmatrix_alloc_nzmax(n, p, nzmax, GSL_SPMATRIX_TRIPLET);
+        params.Jsp = Jsp;
+    }
 
     if (verbose)
     {
@@ -97,21 +146,21 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     /* define the function to be minimized */
     gsl_multilarge_nlinear_fdf fdf;
     fdf.f = gsl_f;
-    fdf.df = gsl_df_large;  
-    fdf.fvv = NULL; // finite differencing
+    fdf.df = gsl_df_large;
+    fdf.fvv = NULL; // not using geodesic acceleration
     fdf.n = n;
     fdf.p = p;
     fdf.params = &params;
 
     /* use acceleration function */
-    // if (!Rf_isNull(fvv))
-    // {
-    //     SEXP vpar = Rf_install("v");
-    //     SEXP fvvcall = PROTECT(Rf_lang3(fvv, xpar, vpar));
-    //     params.fvv = fvvcall;
-    //     fdf.fvv = gsl_fvv;
-    //     nprotect++;
-    // }
+    if (!Rf_isNull(fvv))
+    {
+        SEXP vpar = Rf_install("v");
+        SEXP fvvcall = PROTECT(Rf_lang3(fvv, xpar, vpar));
+        params.fvv = fvvcall;
+        fdf.fvv = gsl_fvv;
+        nprotect++;
+    }
 
     /* set nls optimization parameters */
     double *start1 = (double *)S_alloc(p, sizeof(double));
@@ -127,31 +176,30 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     w = gsl_multilarge_nlinear_alloc(T, &fdf_params, n, p);
 
     /* initialize solver with starting point and weights */
-    gsl_multilarge_nlinear_init(&par.vector, &fdf, w);
-
-    // if (!Rf_isNull(swts))
-    // {
-    //     double *swts1 = (double *)S_alloc(n, sizeof(double));
-    //     for (R_len_t i = 0; i < n; i++)
-    //         swts1[i] = REAL_ELT(swts, i);
-    //     gsl_vector_view wts = gsl_vector_view_array(swts1, n);
-    //     gsl_multifit_nlinear_winit(&par.vector, &wts.vector, &fdf, w);
-    // }
-    // else
-    // {
-    //     gsl_multifit_nlinear_init(&par.vector, &fdf, w);
-    // }
+    if (!Rf_isNull(swts))
+    {
+        double *swts1 = (double *)S_alloc(n, sizeof(double));
+        for (R_len_t i = 0; i < n; i++)
+            swts1[i] = REAL_ELT(swts, i);
+        gsl_vector_view wts = gsl_vector_view_array(swts1, n);
+        gsl_multilarge_nlinear_winit(&par.vector, &wts.vector, &fdf, w);
+    }
+    else
+    {
+        gsl_multilarge_nlinear_init(&par.vector, &fdf, w);
+    }
 
     /* compute initial cost function */
-    double chisq_init = 0.0;
+    double chisq_init = GSL_POSINF;
     gsl_vector *resid = gsl_multilarge_nlinear_residual(w);
     gsl_blas_ddot(resid, resid, &chisq_init);
     double chisq0 = chisq_init;
     double chisq1 = chisq_init;
+    params.chisq = chisq_init;
 
     /* solve the system  */
     int info = GSL_CONTINUE;
-    int status = gsl_multilarge_nlinear_driver2(niter, xtol, gtol, ftol, NULL, NULL, &info, w);
+    int status = gsl_multilarge_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback_large : NULL, verbose ? &params : NULL, &info, &chisq0, &chisq1, w);
     R_len_t iter = gsl_multilarge_nlinear_niter(w);
 
     /* compute covariance and cost at best fit parameters */
@@ -162,36 +210,37 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
         gsl_multilarge_nlinear_covar(cov, w);
     }
 
-    // if (verbose)
-    // {
-    //     /* print summary statistics*/
-    //     Rprintf("*******************\nsummary from method '%s/%s'\n", gsl_multifit_nlinear_name(w), gsl_multifit_nlinear_trs_name(w));
-    //     Rprintf("number of iterations: %d\n", iter);
-    //     Rprintf("reason for stopping: %s\n", gsl_strerror(info));
-    //     Rprintf("initial ssr = %g\n", chisq_init);
-    //     Rprintf("final ssr = %g\n", chisq1);
-    //     Rprintf("ssr/dof = %g\n", chisq1 / (n - p));
-    //     Rprintf("ssr achieved tolerance = %g\n", chisq0 - chisq1);
-    //     Rprintf("function evaluations: %d\n", fdf.nevalf);
-    //     Rprintf("Jacobian evaluations: %d\n", fdf.nevaldf);
-    //     Rprintf("fvv evaluations: %d\n", fdf.nevalfvv);
-    //     Rprintf("status = %s\n*******************\n", gsl_strerror(status));
-    // }
+    if (verbose)
+    {
+        /* print summary statistics*/
+        Rprintf("*******************\nsummary from method 'multilarge/%s'\n", gsl_multilarge_nlinear_trs_name(w));
+        Rprintf("number of iterations: %d\n", iter);
+        Rprintf("reason for stopping: %s\n", gsl_strerror(info));
+        Rprintf("initial ssr = %g\n", chisq_init);
+        Rprintf("final ssr = %g\n", chisq1);
+        Rprintf("ssr/dof = %g\n", chisq1 / (n - p));
+        Rprintf("ssr achieved tolerance = %g\n", chisq0 - chisq1);
+        Rprintf("function evaluations: %d\n", fdf.nevalf);
+        Rprintf("jacobian-vector product evaluations: %d\n", fdf.nevaldfu);
+        Rprintf("jacobian-jacobian product evaluations: %d\n", fdf.nevaldf2);
+        Rprintf("fvv evaluations: %d\n", fdf.nevalfvv);
+        Rprintf("status = %s\n*******************\n", gsl_strerror(status));
+    }
 
     /* initialize result */
     SEXP ans = NULL;
-    // if (verbose)
-    // {
-    //     const char *ansnms[] = {"par", "covar", "resid", "grad", "niter", "status", "conv", "ssr", "ssrtol",
-    //                             "algorithm", "neval", "partrace", "ssrtrace", ""};
-    //     ans = PROTECT(Rf_mkNamed(VECSXP, ansnms));
-    // }
-    // else
-    // {
+    if (verbose)
+    {
+        const char *ansnms[] = {"par", "covar", "resid", "grad", "niter", "status", "conv", "ssr", "ssrtol",
+                                "algorithm", "neval", "partrace", "ssrtrace", ""};
+        ans = PROTECT(Rf_mkNamed(VECSXP, ansnms));
+    }
+    else
+    {
         const char *ansnms[] = {"par", "covar", "resid", "grad", "niter", "status", "conv", "ssr", "ssrtol",
                                 "algorithm", "neval", ""};
         ans = PROTECT(Rf_mkNamed(VECSXP, ansnms));
-    // }
+    }
     nprotect++;
 
     /* estimated parameters */
@@ -261,19 +310,24 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     double *jacptr = REAL(ansjac);
     if (status == GSL_SUCCESS || status == GSL_EMAXITER)
     {
-        for (R_len_t i = 0; i < n; i++)
+        if (params.matclass < 0) // dense Jacobian
         {
-            for (R_len_t k = 0; k < p; k++)
-                jacptr[i + n * k] = gsl_matrix_get(J, i, k);
+            for (R_len_t i = 0; i < n; i++)
+                for (R_len_t k = 0; k < p; k++)
+                    jacptr[i + n * k] = gsl_matrix_get(params.J, i, k);
+        }
+        else // sparse Jacobian
+        {
+            for (R_len_t i = 0; i < n; i++)
+                for (R_len_t k = 0; k < p; k++)
+                    jacptr[i + n * k] = gsl_spmatrix_get(params.Jsp, i, k);
         }
     }
     else
     {
         for (R_len_t i = 0; i < n; i++)
-        {
             for (R_len_t k = 0; k < p; k++)
                 jacptr[i + n * k] = NA_REAL;
-        }
     }
     if (!Rf_isNull(parnames))
     {
@@ -302,24 +356,27 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     SET_VECTOR_ELT(ans, 10, ansneval);
     UNPROTECT(1);
 
-    // if (verbose)
-    // {
-    //     if (!Rf_isNull(parnames))
-    //     {
-    //         SEXP dimnames = PROTECT(Rf_allocVector(VECSXP, 2));
-    //         SET_VECTOR_ELT(dimnames, 0, R_NilValue);
-    //         SET_VECTOR_ELT(dimnames, 1, parnames);
-    //         Rf_setAttrib(params.partrace, R_DimNamesSymbol, dimnames);
-    //         UNPROTECT(1);
-    //     }
-    //     SET_VECTOR_ELT(ans, 11, params.partrace);
-    //     SET_VECTOR_ELT(ans, 12, params.ssrtrace);
-    // }
+    if (verbose)
+    {
+        if (!Rf_isNull(parnames))
+        {
+            SEXP dimnames = PROTECT(Rf_allocVector(VECSXP, 2));
+            SET_VECTOR_ELT(dimnames, 0, R_NilValue);
+            SET_VECTOR_ELT(dimnames, 1, parnames);
+            Rf_setAttrib(params.partrace, R_DimNamesSymbol, dimnames);
+            UNPROTECT(1);
+        }
+        SET_VECTOR_ELT(ans, 11, params.partrace);
+        SET_VECTOR_ELT(ans, 12, params.ssrtrace);
+    }
 
     /* free memory */
     UNPROTECT(nprotect);
     gsl_multilarge_nlinear_free(w);
-    gsl_matrix_free(J);
+    if (params.matclass < 0)
+        gsl_matrix_free(params.J);
+    else
+        gsl_spmatrix_free(params.Jsp);
     if (status == GSL_SUCCESS || status == GSL_EMAXITER)
         gsl_matrix_free(cov);
 
@@ -327,8 +384,8 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
 }
 
 /*
-gsl_multilarge_nlinear_driver()
-  Iterate the nonlinear least squares solver until completion
+gsl_multilarge_nlinear_driver2()
+  Iterate the large-scale nonlinear least squares solver until completion
 
 Inputs: maxiter  - maximum iterations to allow
         xtol     - tolerance in step x
@@ -336,6 +393,8 @@ Inputs: maxiter  - maximum iterations to allow
         ftol     - tolerance in ||f||
         callback - callback function to call each iteration
         callback_params - parameters to pass to callback function
+        chisq0   - ssr previous iteration
+        chisq1   - ssr current iteration
         info     - (output) info flag on why iteration terminated
                    1 = stopped due to small step size ||dx|
                    2 = stopped due to small gradient
@@ -350,21 +409,25 @@ Inputs: maxiter  - maximum iterations to allow
 
 Return:
 GSL_SUCCESS if converged
+GSL_EBADFUNC if function evaluation failed 
 GSL_MAXITER if maxiter exceeded without converging
 GSL_ENOPROG if no accepted step found on first iteration
 */
 int gsl_multilarge_nlinear_driver2(const size_t maxiter,
-                                  const double xtol,
-                                  const double gtol,
-                                  const double ftol,
-                                  void (*callback)(const size_t iter, void *params,
-                                                   const gsl_multilarge_nlinear_workspace *w),
-                                  void *callback_params,
-                                  int *info,
-                                  gsl_multilarge_nlinear_workspace *w)
+                                   const double xtol,
+                                   const double gtol,
+                                   const double ftol,
+                                   void (*callback)(const size_t iter, void *params,
+                                                    const gsl_multilarge_nlinear_workspace *w),
+                                   void *callback_params,
+                                   int *info,
+                                   double *chisq0,
+                                   double *chisq1,
+                                   gsl_multilarge_nlinear_workspace *w)
 {
     int status = GSL_CONTINUE;
     size_t iter = 0;
+    gsl_vector *f = NULL;
 
     /* call user callback function prior to any iterations
    * with initial system state */
@@ -373,7 +436,17 @@ int gsl_multilarge_nlinear_driver2(const size_t maxiter,
 
     do
     {
+        /* current ssr */
+        chisq0[0] = chisq1[0];
+
         status = gsl_multilarge_nlinear_iterate(w);
+
+        /* new ssr */
+        f = gsl_multilarge_nlinear_residual(w);
+        gsl_blas_ddot(f, f, chisq1);
+
+        if (callback)
+            ((fdata_large *)callback_params)->chisq = chisq1[0];
 
         /*
        * If the solver reports no progress on the first iteration,
@@ -418,11 +491,14 @@ int gsl_multilarge_nlinear_driver2(const size_t maxiter,
     return status;
 } /* gsl_multilarge_nlinear_driver() */
 
-int gsl_df_large(CBLAS_TRANSPOSE_t TransJ, const gsl_vector *x, const gsl_vector *u, void *params, gsl_vector *v, gsl_matrix *JTJ) {
+int gsl_df_large(CBLAS_TRANSPOSE_t TransJ, const gsl_vector *x, const gsl_vector *u, void *params, gsl_vector *v, gsl_matrix *JTJ)
+{
     /* construct parameter vector */
+    int nprotect = 2;
     SEXP par = NULL;
-    R_len_t p = ((fdata *)params)->p;
-    SEXP start = ((fdata *)params)->start;
+    R_len_t p = ((fdata_large *)params)->p;
+    R_len_t n = ((fdata_large *)params)->n;
+    SEXP start = ((fdata_large *)params)->start;
     if (Rf_isNumeric(start))
     {
         par = PROTECT(Rf_allocVector(REALSXP, p));
@@ -438,61 +514,186 @@ int gsl_df_large(CBLAS_TRANSPOSE_t TransJ, const gsl_vector *x, const gsl_vector
     Rf_setAttrib(par, R_NamesSymbol, Rf_getAttrib(start, R_NamesSymbol));
 
     /* evaluate Jacobian function */
-    SETCADR(((fdata *)params)->df, par);
-    SEXP dfval = PROTECT(Rf_eval(((fdata *)params)->df, ((fdata *)params)->rho));
+    SETCADR(((fdata_large *)params)->df, par);
+    SEXP dfval = PROTECT(Rf_eval(((fdata_large *)params)->df, ((fdata_large *)params)->rho));
 
-    /* Jacobian checks */
-    R_len_t n = ((fdata *)params)->n;
-    if (TYPEOF(dfval) != REALSXP || !Rf_isMatrix(dfval) || Rf_ncols(dfval) != p || Rf_nrows(dfval) != n)
+    /* populate Jacobian */
+    int jacclass = ((fdata_large *)params)->matclass;
+    int dgclass = -2;
+
+    if (jacclass == -2) // dense numeric matrix
     {
-        Rf_warning("Evaluating jac does not return numeric matrix of dimensions n x p");
-        UNPROTECT(2);
-        return GSL_EBADFUNC;
-    }
+        /* Jacobian checks */
+        if (TYPEOF(dfval) != REALSXP || !Rf_isMatrix(dfval) || Rf_ncols(dfval) != p || Rf_nrows(dfval) != n)
+        {
+            Rf_warning("Evaluating jac does not return numeric matrix of size n x p");
+            UNPROTECT(nprotect);
+            return GSL_EBADFUNC;
+        }
 
-    double *jacptr = REAL(dfval);
-    for (R_len_t i = 0; i < n; i++)
-        for (R_len_t k = 0; k < p; k++)
-            if (R_IsNaN(jacptr[i + n * k]) || !R_finite(jacptr[i + n * k]))
+        double *jacptr = REAL(dfval);
+        for (R_len_t i = 0; i < n; i++)
+            for (R_len_t k = 0; k < p; k++)
+                if (R_IsNaN(jacptr[i + n * k]) || !R_finite(jacptr[i + n * k]))
+                {
+                    Rf_warning("Missing/infinite values not allowed when evaluating jac");
+                    UNPROTECT(nprotect);
+                    return GSL_EBADFUNC;
+                }
+
+        for (R_len_t i = 0; i < n; i++)
+            for (R_len_t k = 0; k < p; k++)
+                gsl_matrix_set(((fdata_large *)params)->J, i, k, jacptr[i + n * k]);
+    }
+    else
+    {
+        if (!Rf_isS4(dfval) || !R_has_slot(dfval, Rf_install("x")) || !R_has_slot(dfval, Rf_install("Dim")))
+        {
+            Rf_warning("Evaluating jac does not return a \"dgCMatrix\", \"dgRMatrix\", \"dgTMatrix\", or \"dgeMatrix\"");
+            UNPROTECT(nprotect);
+            return GSL_EBADFUNC;
+        }
+
+        SEXP dfdim = PROTECT(R_do_slot(dfval, Rf_install("Dim")));
+        nprotect++;
+
+        if (INTEGER_ELT(dfdim, 0) != n || INTEGER_ELT(dfdim, 1) != p)
+        {
+            Rf_warning("Evaluating jac does not return matrix of size n x p");
+            UNPROTECT(nprotect);
+            return GSL_EBADFUNC;
+        }
+
+        SEXP dfx = PROTECT(R_do_slot(dfval, Rf_install("x")));
+        R_len_t nz = Rf_length(dfx);
+        double *xptr = REAL(dfx);
+        nprotect++;
+
+        for (R_len_t m = 0; m < nz; m++)
+            if (R_IsNaN(xptr[m]) || !R_finite(xptr[m]))
             {
                 Rf_warning("Missing/infinite values not allowed when evaluating jac");
-                UNPROTECT(2);
+                UNPROTECT(nprotect);
                 return GSL_EBADFUNC;
             }
 
-    /* set gsl jacobian matrix */
-    for (R_len_t i = 0; i < n; i++)
-        for (R_len_t k = 0; k < p; k++)
-            gsl_matrix_set(((fdata *)params)->J, i, k, jacptr[i + n * k]);
+        /* re-detect sparse matrix class */
+        dgclass = match_dg_class(dfval);
 
-    /* calculate J * u or J' * u and return in v */
-    if(v)
-        gsl_blas_dgemv(TransJ, 1.0, ((fdata *)params)->J, u, 0.0, v);
+        if (dgclass == -2)
+        {
+            Rf_warning("Evaluating jac does not return a \"dgCMatrix\", \"dgRMatrix\", \"dgTMatrix\", or \"dgeMatrix\"");
+            UNPROTECT(nprotect);
+            return GSL_EBADFUNC;
+        }
+        else if (dgclass == -1) // dgeMatrix
+        {
+            for (R_len_t i = 0; i < n; i++)
+                for (R_len_t k = 0; k < p; k++)
+                    gsl_matrix_set(((fdata_large *)params)->J, i, k, xptr[i + n * k]);
+        }
+        else if (dgclass == 0) // dgTMatrix
+        {
+            SEXP dfi = PROTECT(R_do_slot(dfval, Rf_install("i")));
+            SEXP dfj = PROTECT(R_do_slot(dfval, Rf_install("j")));
+            R_len_t *iptr = INTEGER(dfi);
+            R_len_t *jptr = INTEGER(dfj);
+            gsl_spmatrix_set_zero(((fdata_large *)params)->Jsp);
 
-    /* calculate J'J and return in JTJ */
-    if(JTJ)
-        gsl_blas_dsyrk(CblasLower, CblasTrans, 1.0, ((fdata *)params)->J, 0.0, JTJ);
+            for (R_len_t m = 0; m < nz; m++)
+            {
+                gsl_spmatrix_set(((fdata_large *)params)->Jsp, iptr[m], jptr[m], xptr[m]);
+            }
+            nprotect += 2;
+        }
+        else if (dgclass == 1) // dgCMatrix
+        {
+            SEXP dfi = PROTECT(R_do_slot(dfval, Rf_install("i")));
+            SEXP dfp = PROTECT(R_do_slot(dfval, Rf_install("p")));
+            R_len_t *iptr = INTEGER(dfi);
+            R_len_t *pptr = INTEGER(dfp);
+            gsl_spmatrix_set_zero(((fdata_large *)params)->Jsp);
 
-    UNPROTECT(2);
+            R_len_t j = 0;
+            for (R_len_t m = 0; m < nz; m++)
+            {
+                while (pptr[j] <= m)
+                    j += 1;
+                gsl_spmatrix_set(((fdata_large *)params)->Jsp, iptr[m], j - 1, xptr[m]);
+            }
+            nprotect += 2;
+        }
+        else if (dgclass == 2) // dgRMatrix
+        {
+            SEXP dfp = PROTECT(R_do_slot(dfval, Rf_install("p")));
+            SEXP dfj = PROTECT(R_do_slot(dfval, Rf_install("j")));
+            R_len_t *pptr = INTEGER(dfp);
+            R_len_t *jptr = INTEGER(dfj);
+            gsl_spmatrix_set_zero(((fdata_large *)params)->Jsp);
+
+            R_len_t i = 0;
+            for (R_len_t m = 0; m < nz; m++)
+            {
+                while (pptr[i] <= m)
+                    i += 1;
+                gsl_spmatrix_set(((fdata_large *)params)->Jsp, i - 1, jptr[m], xptr[m]);
+            }
+            nprotect += 2;
+        }
+    }
+
+    if (jacclass == -2 || dgclass == -1) // non-sparse jacobian
+    {
+        /* calculate J * u or J' * u and return in v */
+        if (v)
+            gsl_blas_dgemv(TransJ, 1.0, ((fdata_large *)params)->J, u, 0.0, v);
+
+        /* calculate J'J and return in JTJ */
+        if (JTJ)
+            gsl_blas_dsyrk(CblasLower, CblasTrans, 1.0, ((fdata_large *)params)->J, 0.0, JTJ);
+    }
+    else // sparse jacobian
+    {
+        /* calculate J * u or J' * u and return in v */
+        if (v)
+            gsl_spblas_dgemv(TransJ, 1.0, ((fdata_large *)params)->Jsp, u, 0.0, v);
+
+        /* calculate J'J and return in JTJ */
+        if (JTJ)
+        {
+            gsl_matrix *J = gsl_matrix_alloc(n, p);
+            gsl_spmatrix_sp2d(J, ((fdata_large *)params)->Jsp);
+            gsl_blas_dsyrk(CblasLower, CblasTrans, 1.0, J, 0.0, JTJ);
+            gsl_matrix_free(J);
+        }
+    }
+
+    UNPROTECT(nprotect);
     return GSL_SUCCESS;
 }
 
-// void callback_large(const size_t iter, void *params, const gsl_multilarge_nlinear_workspace *w)
-// {
-//     gsl_vector *f = gsl_multilarge_nlinear_residual(w);
-//     double chisq = 0.0;
-//     gsl_blas_ddot(f, f, &chisq); // current ssr
+void callback_large(const size_t iter, void *params, const gsl_multilarge_nlinear_workspace *w)
+{
+    /* ssr trace */
+    double chisq = ((fdata_large *)params)->chisq;
+    SET_REAL_ELT(((fdata_large *)params)->ssrtrace, (R_len_t)iter, chisq);
 
-//     /* update traces */
-//     SET_REAL_ELT(((fdata *)params)->ssrtrace, (R_len_t)iter, chisq);
-//     R_len_t p = ((fdata *)params)->p;
-//     R_len_t n = (R_len_t)Rf_nrows(((fdata *)params)->partrace);
-//     double *parptr = REAL(((fdata *)params)->partrace);
-//     for (R_len_t k = 0; k < p; k++)
-//         parptr[iter + n * k] = gsl_vector_get(w->x, k);
+    /* parameter trace */
+    R_len_t p = ((fdata_large *)params)->p;
+    R_len_t n = (R_len_t)Rf_nrows(((fdata_large *)params)->partrace);
+    double *parptr = REAL(((fdata_large *)params)->partrace);
+    gsl_vector *x = gsl_multilarge_nlinear_position(w);
+    for (R_len_t k = 0; k < p; k++)
+        parptr[iter + n * k] = gsl_vector_get(x, k);
 
-//     /* print trace */
-//     Rprintf("iter %3d: ssr = %g, par = (", iter, chisq);
-//     for (R_len_t k = 0; k < p; k++)
-//         Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", parptr[iter + n * k]);
-// }
+    /* parameter norm */
+    double xsq;
+    gsl_blas_ddot(x, x, &xsq);
+
+    /* cond(J) */
+    double rcond;
+    gsl_multilarge_nlinear_rcond(&rcond, w);
+
+    /* print trace */
+    Rprintf("iter %3d: ssr = %g, |x|^2 = %g, cond(J) = %g\n", iter, chisq, xsq, 1.0 / rcond);
+}
