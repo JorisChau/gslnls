@@ -24,8 +24,7 @@ solve the nonlinear least-squares problem with the
 `gsl_multilarge_nlinear` interface. The `gsl_nls_large()` function is
 also appropriate for systems with sparse structure in the Jacobian
 matrix. The following trust region methods to solve nonlinear
-least-squares problems are available in `gsl_nls()` (resp.
-`gsl_nls_large()`):
+least-squares problems are available in `gsl_nls()` and `gsl_nls_large()`:
 
 -   [Levenberg-Marquadt](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt)
 -   [Levenberg-Marquadt with geodesic
@@ -994,7 +993,7 @@ evaluated vector (as in a `selfStart` model) from which it is detected
 automatically by `gsl_nls()` or `gsl_nls_large()`.
 
 ``` r
-## model and jacobiant
+## model and Jacobian
 f <- function(theta) {
   val <- c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25)
   attr(val, "gradient") <- rbind(diag(sqrt(1e-5), nrow = length(theta)), 2 * t(theta))
