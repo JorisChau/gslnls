@@ -13,7 +13,7 @@ gsl_nls_large(fn, ...)
   algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
   control = gsl_nls_control(),
   jac,
-  fvv = NULL,
+  fvv,
   trace = FALSE,
   subset,
   weights,
@@ -29,7 +29,7 @@ gsl_nls_large(fn, ...)
   algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
   control = gsl_nls_control(),
   jac,
-  fvv = NULL,
+  fvv,
   trace = FALSE,
   weights,
   ...
@@ -80,12 +80,11 @@ Can also be \code{TRUE}, in which case \code{jac} is derived symbolically with \
 this only works if \code{fn} is defined as a (non-selfstarting) formula. If \code{fn} is a \code{\link{selfStart}} model,
 the Jacobian specified in the \code{"gradient"} attribute of the self-start model is used instead.}
 
-\item{fvv}{either \code{NULL} (default) or a \link{function} returning an \code{n} dimensional vector containing
+\item{fvv}{a \link{function} returning an \code{n} dimensional vector containing
 the second directional derivatives of the nonlinear model \code{fn}, with \code{n} the number of observations.
 This argument is only used if geodesic acceleration is enabled (\code{algorithm = "lmaccel"}).
-If a function, the first argument must be the vector of parameters of length \code{p} and the second argument must be the velocity vector
-also of length \code{p}. If \code{NULL}, the second directional derivative vector is computed internal
-using a finite difference approximation. Can also be \code{TRUE}, in which case \code{fvv} is derived
+The first argument must be the vector of parameters of length \code{p} and the second argument must be the velocity vector
+also of length \code{p}. Can also be \code{TRUE}, in which case \code{fvv} is derived
 symbolically with \code{\link[stats]{deriv}}, this only works if \code{fn} is defined as a (non-selfstarting) formula.
 If the model \link{function} in \code{fn} also returns a \code{"hessian"} attribute (similar to the \code{"gradient"} attribute
 in a \code{selfStart} model), this Hessian matrix is used to evaluate the second directional derivatives instead.}

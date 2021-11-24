@@ -30,6 +30,14 @@
 #' Can also be \code{TRUE}, in which case \code{jac} is derived symbolically with \code{\link[stats]{deriv}},
 #' this only works if \code{fn} is defined as a (non-selfstarting) formula. If \code{fn} is a \code{\link{selfStart}} model,
 #' the Jacobian specified in the \code{"gradient"} attribute of the self-start model is used instead.
+#' @param fvv a \link{function} returning an \code{n} dimensional vector containing
+#' the second directional derivatives of the nonlinear model \code{fn}, with \code{n} the number of observations.
+#' This argument is only used if geodesic acceleration is enabled (\code{algorithm = "lmaccel"}).
+#' The first argument must be the vector of parameters of length \code{p} and the second argument must be the velocity vector
+#' also of length \code{p}. Can also be \code{TRUE}, in which case \code{fvv} is derived
+#' symbolically with \code{\link[stats]{deriv}}, this only works if \code{fn} is defined as a (non-selfstarting) formula.
+#' If the model \link{function} in \code{fn} also returns a \code{"hessian"} attribute (similar to the \code{"gradient"} attribute
+#' in a \code{selfStart} model), this Hessian matrix is used to evaluate the second directional derivatives instead.
 #' @param trace logical value indicating if a trace of the iteration progress should be printed.
 #' Default is \code{FALSE}. If \code{TRUE}, the residual (weighted) sum-of-squares,
 #' the squared (Euclidean) norm of the current parameter estimates and the condition number of the Jacobian
@@ -117,7 +125,7 @@ gsl_nls_large <- function (fn, ...) {
 #' @export
 gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
                                   algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
-                                  control = gsl_nls_control(), jac, fvv = NULL, trace = FALSE,
+                                  control = gsl_nls_control(), jac, fvv, trace = FALSE,
                                   subset, weights, na.action, model = FALSE, ...) {
 
   ## adapted from src/library/stats/nls.R
@@ -299,18 +307,19 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
   }
 
   ## fvv call
-  .fvv <- NULL
   if(identical(algorithm, "lmaccel")) {
+    if(missing(fvv)) {
+      fvv <- NULL
+    }
     if(!is.function(fvv) && !is.null(attr(.fcall, "hessian"))) {
       fvv <- function(par, v) {
         hess <- attr(.fn(par), "hessian")
         c(matrix(hess, nrow = nrow(hess), ncol = ncol(hess) * ncol(hess)) %*% c(outer(v, v)))
       }
     } else if(isTRUE(fvv)) {
-      fvv <- NULL
       .exprfvv <- tryCatch(stats::deriv(formula[[3L]], namevec = names(start), hessian = TRUE), error = function(err) err)
       if(inherits(.exprfvv, "error")) {
-        warning(sprintf("failed to symbolically derive 'fvv': %s", .exprfvv$message))
+        stop(sprintf("failed to symbolically derive 'fvv': %s", .exprfvv$message))
       } else if(is.expression(.exprfvv)){
         fvv <- function(par, v) {
           grad <- eval(.exprfvv, envir = c(as.list(par), mf))
@@ -328,7 +337,11 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
         stop("'fvv' failed to return a numeric vector equal in length to 'y' at starting values")
       if(any(is.na(.fvvcall)))
         stop("missing values returned by 'fvv' at starting values")
+    } else {
+      stop("analytic second derivative function 'fvv' is required, but none is available")
     }
+  } else {
+    .fvv <- NULL
   }
 
   ## control arguments
@@ -401,8 +414,8 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
   nls.out$call$control <- nls.control() ## needed for profiler
   nls.out$call$trace <- trace
   if(trace) {
-    nls.out$partrace <- cFit$partrace[seq_len(cFit$niter) + 1L, , drop = FALSE]
-    nls.out$devtrace <- cFit$ssrtrace[seq_len(cFit$niter) + 1L]
+    nls.out$partrace <- cFit$partrace[seq_len(cFit$niter + 1L), , drop = FALSE]
+    nls.out$devtrace <- cFit$ssrtrace[seq_len(cFit$niter + 1L)]
   }
   nls.out$dataClasses <- attr(attr(mf, "terms"), "dataClasses")[varNamesRHS]
   nls.out$control <- .ctrl
@@ -430,7 +443,7 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
 #' @export
 gsl_nls_large.function <- function(fn, y, start,
                                    algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
-                                   control = gsl_nls_control(), jac, fvv = NULL, trace = FALSE,
+                                   control = gsl_nls_control(), jac, fvv, trace = FALSE,
                                    weights, ...) {
 
   ## algorithm
@@ -477,8 +490,10 @@ gsl_nls_large.function <- function(fn, y, start,
   }
 
   ## fvv call
-  .fvv <- NULL
   if(identical(algorithm, "lmaccel")) {
+    if(missing(fvv)) {
+      fvv <- NULL
+    }
     if(!is.function(fvv) && !is.null(attr(.fcall, "hessian"))) {
       fvv <- function(par, v, ...) {
         hess <- attr(fn(par, ...), "hessian")
@@ -494,7 +509,11 @@ gsl_nls_large.function <- function(fn, y, start,
         stop("'fvv' failed to return a numeric vector equal in length to 'y' at starting values")
       if(any(is.na(.fvvcall)))
         stop("missing values returned by 'fvv' at starting values")
+    } else {
+      stop("analytic second derivative function 'fvv' is required, but none is available")
     }
+  } else {
+    .fvv <- NULL
   }
 
   ## control arguments
@@ -574,8 +593,8 @@ gsl_nls_large.function <- function(fn, y, start,
   nls.out$call$algorithm <- algorithm
   nls.out$call$trace <- trace
   if(trace) {
-    nls.out$partrace <- cFit$partrace[seq_len(cFit$niter) + 1L, , drop = FALSE]
-    nls.out$devtrace <- cFit$ssrtrace[seq_len(cFit$niter) + 1L]
+    nls.out$partrace <- cFit$partrace[seq_len(cFit$niter + 1L), , drop = FALSE]
+    nls.out$devtrace <- cFit$ssrtrace[seq_len(cFit$niter + 1L)]
   }
   nls.out$control <- .ctrl
   if(!is.null(weights))

@@ -197,6 +197,14 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     double chisq1 = chisq_init;
     params.chisq = chisq_init;
 
+    if(verbose) 
+    {
+        SET_REAL_ELT(params.ssrtrace, 0, chisq_init);
+        double *parptr = REAL(params.partrace);
+        for (R_len_t k = 0; k < p; k++)
+            parptr[(niter + 1) * k] = start1[k];
+    }
+
     /* solve the system  */
     int info = GSL_CONTINUE;
     int status = gsl_multilarge_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback_large : NULL, verbose ? &params : NULL, &info, &chisq0, &chisq1, w);
@@ -428,12 +436,7 @@ int gsl_multilarge_nlinear_driver2(const size_t maxiter,
     int status = GSL_CONTINUE;
     size_t iter = 0;
     gsl_vector *f = NULL;
-
-    /* call user callback function prior to any iterations
-   * with initial system state */
-    if (callback)
-        callback(iter, callback_params, w);
-
+ 
     do
     {
         /* current ssr */
