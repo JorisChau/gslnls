@@ -14,17 +14,17 @@ Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gslnls)](https://cran.r
 
 The {gslnls}-package provides R bindings to nonlinear least-squares
 optimization with the [GNU Scientific Library
-(GSL)](https://www.gnu.org/software/gsl/) based on the
-`gsl_multifit_nlinear` and `gsl_multilarge_nlinear` interfaces. The
-function `gsl_nls()` solves small to moderate sized nonlinear
-least-squares problems with the `gsl_multifit_nlinear` interface. For
-large systems, where factoring the full Jacobian matrix becomes
-prohibitively expensive, the `gsl_nls_large()` function can be used to
-solve the nonlinear least-squares problem with the
+(GSL)](https://www.gnu.org/software/gsl/). The function `gsl_nls()`
+solves small to moderate sized nonlinear least-squares problems with the
+`gsl_multifit_nlinear` interface. For large problems, where factoring
+the full Jacobian matrix becomes prohibitively expensive, the
+`gsl_nls_large()` function can be used to solve the system with the
 `gsl_multilarge_nlinear` interface. The `gsl_nls_large()` function is
 also appropriate for systems with sparse structure in the Jacobian
-matrix. The following trust region methods to solve nonlinear
-least-squares problems are available in `gsl_nls()` and `gsl_nls_large()`:
+matrix.
+
+The following trust region methods to solve nonlinear least-squares
+problems are available in `gsl_nls()` (and `gsl_nls_large()`):
 
 -   [Levenberg-Marquadt](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt)
 -   [Levenberg-Marquadt with geodesic
@@ -293,10 +293,10 @@ predict(ex1_fit, interval = "prediction", level = 0.95)
 
 <img src="README/fig-2-1.png" width="100%" style="display: block; margin: auto;" />
 
-In addition, the new `confintd` method can be used to evaluate
-asymptotic confidence intervals of derived (or transformed) parameters
-based on the delta method, i.e. a first-order (Taylor) approximation of
-the function of the parameters:
+The new `confintd` method can be used to evaluate asymptotic confidence
+intervals of derived (or transformed) parameters based on the delta
+method, i.e. a first-order (Taylor) approximation of the function of the
+parameters:
 
 ``` r
 ## delta method confidence intervals
@@ -488,7 +488,6 @@ ex2a_fit <- gsl_nls(
   start = c(a = 1, b = 0, c = 1),           ## starting values
   trace = TRUE                              ## verbose output
 )
-#> iter   0: ssr = 1192.49, par = (1, 0, 1)
 #> iter   1: ssr = 997.455, par = (2.07301, 3.44185, -4.13269)
 #> iter   2: ssr = 969.039, par = (1.85608, 2.96819, -5.64562)
 #> iter   3: ssr = 954.562, par = (1.92691, 2.49884, -6.31566)
@@ -559,7 +558,6 @@ ex2b_fit <- gsl_nls(
   algorithm = "lmaccel",                    ## algorithm
   trace = TRUE                              ## verbose output
 )
-#> iter   0: ssr = 1192.49, par = (1, 0, 1)
 #> iter   1: ssr = 902.787, par = (1.5621, 0.512233, 0.527845)
 #> iter   2: ssr = 726.988, par = (1.7993, 0.369273, 0.417081)
 #> iter   3: ssr = 444.339, par = (2.42399, 0.393548, 0.278246)
@@ -708,7 +706,6 @@ gsl_nls(
   fvv = fvv,                                ## analytic function
   x = x                                     ## argument passed to fvv
 )
-#> iter   0: ssr = 1192.49, par = (1, 0, 1)
 #> iter   1: ssr = 903.32, par = (1.56127, 0.512413, 0.528849)
 #> iter   2: ssr = 730.345, par = (1.79301, 0.370435, 0.419517)
 #> iter   3: ssr = 450.157, par = (2.40709, 0.392981, 0.279519)
@@ -761,7 +758,6 @@ gsl_nls(
   trace = TRUE,                             ## verbose output
   fvv = TRUE                                ## automatic derivation
 )
-#> iter   0: ssr = 1192.49, par = (1, 0, 1)
 #> iter   1: ssr = 903.32, par = (1.56127, 0.512413, 0.528849)
 #> iter   2: ssr = 730.345, par = (1.79301, 0.370435, 0.419517)
 #> iter   3: ssr = 450.157, par = (2.40709, 0.392981, 0.279519)
@@ -921,8 +917,8 @@ all other methods converge to the minimum at
 
 ### Example 4: Large NLS example
 
-As an illustration of a large nonlinear least squares system solved with
-`gsl_nls_large()`, we reproduce the large NLS example
+To illustrate the use of `gsl_nls_large()`, we reproduce the large
+nonlinear least-squares example
 (<https://www.gnu.org/software/gsl/doc/html/nls.html#large-nonlinear-least-squares-example>)
 from the GSL reference manual. The nonlinear least squares model is
 defined as:
@@ -985,15 +981,13 @@ the
 ![(p \\times p)](https://latex.codecogs.com/png.latex?%28p%20%5Ctimes%20p%29 "(p \times p)")-dimensional
 identity matrix.
 
-The function below evaluates the model residuals and Jacobian matrix for
-a given parameter vector
-![\\boldsymbol{\\theta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Ctheta%7D "\boldsymbol{\theta}").
-Here, the Jacobian is returned in the `"gradient"` attribute of the
-evaluated vector (as in a `selfStart` model) from which it is detected
-automatically by `gsl_nls()` or `gsl_nls_large()`.
+The model residuals and Jacobian matrix can be written as a function of
+the parameter vector
+![\\boldsymbol{\\theta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Ctheta%7D "\boldsymbol{\theta}")
+as,
 
 ``` r
-## model and Jacobian
+## model and jacobiant
 f <- function(theta) {
   val <- c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25)
   attr(val, "gradient") <- rbind(diag(sqrt(1e-5), nrow = length(theta)), 2 * t(theta))
@@ -1001,11 +995,14 @@ f <- function(theta) {
 }
 ```
 
-First, we minimize the least squares objective with a call to
-`gsl_nls()` using the default Levenberg-Marquadt algorithm analogous to
-the previous example by passing the nonlinear model as a `function` and
-setting the response vector `y` to a vector of zeros. The number of
-parameters is set to
+Here, the Jacobian is returned in the `"gradient"` attribute of the
+evaluated vector (as in a `selfStart` model) from which it is detected
+automatically by `gsl_nls()` or `gsl_nls_large()`.
+
+First, the least squares objective is minimized with a call to
+`gsl_nls()` analogous to the previous example by passing the nonlinear
+model as a `function` and setting the response vector `y` to a vector of
+zeros. The number of parameters is set to
 ![p = 500](https://latex.codecogs.com/png.latex?p%20%3D%20500 "p = 500")
 and as starting values we use
 ![\\theta_1 = 1, \\ldots, \\theta_p = p](https://latex.codecogs.com/png.latex?%5Ctheta_1%20%3D%201%2C%20%5Cldots%2C%20%5Ctheta_p%20%3D%20p "\theta_1 = 1, \ldots, \theta_p = p")
@@ -1025,15 +1022,15 @@ system.time({
   )
 })
 #>    user  system elapsed 
-#>  29.891   0.380  30.310
+#>  25.333   0.203  25.538
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_lm), "\n")
 #> Residual sum-of-squares: 0.00477904
 ```
 
-Next, we fit the same model with a call to `gsl_nls_large()` using the
-Steihaug-Toint Conjugate Gradient algorithm, which results in a much
-smaller runtime than the previous call:
+Second, the same model is fitted with a call to `gsl_nls_large()` using
+the Steihaug-Toint Conjugate Gradient algorithm, which results in a much
+smaller runtime:
 
 ``` r
 ## large-scale Steihaug-Toint 
@@ -1047,7 +1044,7 @@ system.time({
   )
 })
 #>    user  system elapsed 
-#>   1.822   0.140   1.962
+#>   1.516   0.088   1.604
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_cgst), "\n")
 #> Residual sum-of-squares: 0.00477885
@@ -1057,17 +1054,13 @@ cat("Residual sum-of-squares:", deviance(ex4_fit_cgst), "\n")
 
 The Jacobian matrix
 ![\\boldsymbol{J}(\\boldsymbol{\\theta})](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BJ%7D%28%5Cboldsymbol%7B%5Ctheta%7D%29 "\boldsymbol{J}(\boldsymbol{\theta})")
-in the current example is very sparse in the sense that it contains only
-a small number of nonzero entries. Ideally, this sparse structure should
-be exploited to further reduce the runtime and (potentially
-significantly) reduce the required amount of allocated memory.
-
-The `gsl_nls_large()` function accepts the calculated Jacobian as a
-sparse matrix of class `"dgCMatrix"`, `"dgRMatrix"` or `"dgTMatrix"`
-available in the
+is very sparse in the sense that it contains only a small number of
+nonzero entries. The `gsl_nls_large()` function also accepts the
+calculated Jacobian as a sparse matrix of class `"dgCMatrix"`,
+`"dgRMatrix"` or `"dgTMatrix"` (see the
 [Matrix](https://cran.r-project.org/web/packages/Matrix/Matrix.pdf)
-package in R-base. The following updated model function returns the
-sparse Jacobian as a `"dgCMatrix"` instead of a dense numeric matrix:
+package). The following updated model function returns the sparse
+Jacobian as a `"dgCMatrix"` instead of a dense numeric matrix:
 
 ``` r
 ## model and sparse Jacobian
@@ -1078,9 +1071,10 @@ fsp <- function(theta) {
 }
 ```
 
-As seen from the benchmarks below, besides a slight improvement in
-runtimes, the required memory allocations are much smaller for the model
-functions returning a sparse instead of a dense Jacobian matrix.
+As illustrated by the benchmarks below, besides a slight improvement in
+runtimes, the required amount of memory is significantly smaller for the
+model functions returning a sparse Jacobian than the model functions
+returning a dense Jacobian:
 
 ``` r
 ## computation times and allocated memory
@@ -1095,13 +1089,13 @@ bench::mark(
 #> # A tibble: 4 × 6
 #>   expression       min   median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>  <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl>
-#> 1 Dense LM       4.86s    4.87s     0.204    1.32GB    5.66 
-#> 2 Dense CGST     1.55s    1.66s     0.596    1.21GB   15.4  
-#> 3 Sparse LM      4.25s    4.48s     0.223   29.47MB    0.491
-#> 4 Sparse CGST 516.82ms 550.07ms     1.77     27.1MB    3.18
+#> 1 Dense LM        4.5s    4.56s     0.216    1.32GB    6.71 
+#> 2 Dense CGST     1.42s    1.45s     0.669    1.21GB   16.9  
+#> 3 Sparse LM      3.87s    3.91s     0.256   29.47MB    0.563
+#> 4 Sparse CGST 500.25ms 502.31ms     1.99     27.1MB    3.58
 ```
 
-## More R-packages
+## Other R-packages
 
 Other CRAN R-packages interfacing with GSL that served as inspiration
 for this package include:
