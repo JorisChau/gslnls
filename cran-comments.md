@@ -24,6 +24,5 @@
 ### Notes
 
 * Possibly mis-spelled words in DESCRIPTION:
-    GSL (3:8, 7:101)
-    Levenberg (7:154)
-    Marquadt (7:164)
+    Steihaug (7:275)
+    Toint (7:284)
