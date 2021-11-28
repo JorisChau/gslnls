@@ -273,6 +273,11 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
 
   .lhs <- eval(formula[[2L]], envir = mf)
 
+  ## n > p
+  if(length(.lhs) < length(start)) {
+    stop("zero or less residual degrees of freedom, cannot fit a model with less observations than parameters")
+  }
+
   ## jac call
   if(missing(jac)) {
     jac <- NULL
@@ -457,6 +462,11 @@ gsl_nls_large.function <- function(fn, y, start,
   ## function call
   if(!is.numeric(y))
     stop("'y' should be a numeric response vector")
+
+  ## n > p
+  if(length(y) < length(start)) {
+    stop("zero or less residual degrees of freedom, cannot fit a model with less observations than parameters")
+  }
 
   .fn <- function(par) fn(par, ...)
   .fcall <- tryCatch(.fn(start), error = function(err) err)
