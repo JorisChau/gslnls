@@ -59,22 +59,22 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     switch (INTEGER_ELT(control_int, 2))
     {
     case 1:
-        fdf_params.trs = gsl_multilarge_nlinear_trs_lm;
-        break;
-    case 2:
         fdf_params.trs = gsl_multilarge_nlinear_trs_lmaccel;
         break;
-    case 3:
+    case 2:
         fdf_params.trs = gsl_multilarge_nlinear_trs_dogleg;
         break;
-    case 4:
+    case 3:
         fdf_params.trs = gsl_multilarge_nlinear_trs_ddogleg;
         break;
-    case 5:
+    case 4:
         fdf_params.trs = gsl_multilarge_nlinear_trs_subspace2D;
         break;
-    default:
+    case 5:
         fdf_params.trs = gsl_multilarge_nlinear_trs_cgst;
+        break;
+    default:
+        fdf_params.trs = gsl_multilarge_nlinear_trs_lm;
     }
 
     /* scaling method */

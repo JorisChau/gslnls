@@ -7,11 +7,7 @@
 #' @inheritParams gsl_nls
 #' @param algorithm character string specifying the algorithm to use. The following choices are supported:
 #' \itemize{
-#' \item \code{"cgst"} Steihaug-Toint Conjugate Gradient algorithm (default), a generalization of the dogleg algorithm
-#' that avoids solving for the Gauss-Newton step directly, instead using an iterative conjugate gradient algorithm.
-#' The method performs well at points where the Jacobian is singular, and is also suitable for large-scale problems
-#' where factoring the Jacobian matrix is prohibitively expensive.
-#' \item \code{"lm"} Levenberg-Marquadt algorithm
+#' \item \code{"lm"} Levenberg-Marquadt algorithm (default)
 #' \item \code{"lmaccel"} Levenberg-Marquadt algorithm with geodesic acceleration.
 #' Can be faster than \code{"lm"} but less stable. Stability is controlled by the
 #' \code{avmax} parameter in \code{control}, setting \code{avmax} to zero is analogous
@@ -23,6 +19,10 @@
 #' \item \code{"subspace2D"} 2D generalization of the dogleg algorithm. This method
 #' searches a larger subspace for a solution, it can converge more quickly than \code{"dogleg"}
 #' on some problems.
+#' \item \code{"cgst"} Steihaug-Toint Conjugate Gradient algorithm, a generalization of the dogleg algorithm
+#' that avoids solving for the Gauss-Newton step directly, instead using an iterative conjugate gradient algorithm.
+#' The method performs well at points where the Jacobian is singular, and is also suitable for large-scale problems
+#' where factoring the Jacobian matrix is prohibitively expensive.
 #' }
 #' @param jac a \link{function} returning the \code{n} by \code{p} dimensional Jacobian matrix of
 #' the nonlinear model \code{fn}, where \code{n} is the number of observations and \code{p} the
@@ -124,13 +124,13 @@ gsl_nls_large <- function (fn, ...) {
 #' In addition, a method \code{confintd} is available for inference of derived parameters.
 #' @export
 gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
-                                  algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
+                                  algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst"),
                                   control = gsl_nls_control(), jac, fvv, trace = FALSE,
                                   subset, weights, na.action, model = FALSE, ...) {
 
   ## adapted from src/library/stats/nls.R
   formula <- as.formula(fn)
-  algorithm <- match.arg(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
+  algorithm <- match.arg(algorithm, c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst"))
 
   if(!is.list(data) && !is.environment(data))
     stop("'data' must be a list or an environment")
@@ -373,7 +373,7 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
   .ctrl_int <- c(
     maxiter = as.integer(.ctrl$maxiter),
     trace = isTRUE(trace),
-    algorithm = match(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D")) - 1L,
+    algorithm = match(algorithm, c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst")) - 1L,
     scale = match(.ctrl$scale, c("more", "levenberg", "marquadt")) - 1L,
     fdtype = match(.ctrl$fdtype, c("forward", "center")) - 1L,
     jacclass = -2L,
@@ -447,12 +447,12 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
 #' is available for inference of derived parameters.
 #' @export
 gsl_nls_large.function <- function(fn, y, start,
-                                   algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
+                                   algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst"),
                                    control = gsl_nls_control(), jac, fvv, trace = FALSE,
                                    weights, ...) {
 
   ## algorithm
-  algorithm <- match.arg(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
+  algorithm <- match.arg(algorithm, c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst"))
 
   ## starting values
   if(missing(start)) {
@@ -534,6 +534,7 @@ gsl_nls_large.function <- function(fn, y, start,
     .ctrl[names(control)] <- control
   }
   .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquadt"))
+  .ctrl$solver <- "cholesky"  ## fixed
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
   stopifnot(
     is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter > 0,
@@ -549,7 +550,7 @@ gsl_nls_large.function <- function(fn, y, start,
   .ctrl_int <- c(
     maxiter = as.integer(.ctrl$maxiter),
     trace = isTRUE(trace),
-    algorithm = match(algorithm, c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D")) - 1L,
+    algorithm = match(algorithm, c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst")) - 1L,
     scale = match(.ctrl$scale, c("more", "levenberg", "marquadt")) - 1L,
     fdtype = match(.ctrl$fdtype, c("forward", "center")) - 1L,
     jacclass = -2L,

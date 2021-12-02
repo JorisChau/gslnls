@@ -10,7 +10,7 @@ gsl_nls_large(fn, ...)
   fn,
   data = parent.frame(),
   start,
-  algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
+  algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst"),
   control = gsl_nls_control(),
   jac,
   fvv,
@@ -26,7 +26,7 @@ gsl_nls_large(fn, ...)
   fn,
   y,
   start,
-  algorithm = c("cgst", "lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
+  algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst"),
   control = gsl_nls_control(),
   jac,
   fvv,
@@ -52,11 +52,7 @@ is a \code{formula}, a naive guess for \code{start} is tried, but this should no
 
 \item{algorithm}{character string specifying the algorithm to use. The following choices are supported:
 \itemize{
-\item \code{"cgst"} Steihaug-Toint Conjugate Gradient algorithm (default), a generalization of the dogleg algorithm
-that avoids solving for the Gauss-Newton step directly, instead using an iterative conjugate gradient algorithm.
-The method performs well at points where the Jacobian is singular, and is also suitable for large-scale problems
-where factoring the Jacobian matrix is prohibitively expensive.
-\item \code{"lm"} Levenberg-Marquadt algorithm
+\item \code{"lm"} Levenberg-Marquadt algorithm (default)
 \item \code{"lmaccel"} Levenberg-Marquadt algorithm with geodesic acceleration.
 Can be faster than \code{"lm"} but less stable. Stability is controlled by the
 \code{avmax} parameter in \code{control}, setting \code{avmax} to zero is analogous
@@ -68,6 +64,10 @@ far from the minimum.
 \item \code{"subspace2D"} 2D generalization of the dogleg algorithm. This method
 searches a larger subspace for a solution, it can converge more quickly than \code{"dogleg"}
 on some problems.
+\item \code{"cgst"} Steihaug-Toint Conjugate Gradient algorithm, a generalization of the dogleg algorithm
+that avoids solving for the Gauss-Newton step directly, instead using an iterative conjugate gradient algorithm.
+The method performs well at points where the Jacobian is singular, and is also suitable for large-scale problems
+where factoring the Jacobian matrix is prohibitively expensive.
 }}
 
 \item{control}{an optional list of control parameters to tune the least squares iterations.
