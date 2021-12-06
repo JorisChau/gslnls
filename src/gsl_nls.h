@@ -17,6 +17,20 @@
 /* nls.c */
 typedef struct
 {
+    SEXP fn;           // model function
+    SEXP y;            // response vector
+    SEXP jac;          // jacobian function
+    SEXP fvv;          // fvv function
+    SEXP env;          // function environment
+    SEXP start;        // start parameter values
+    SEXP swts;         // weights
+    SEXP control_int;  // integer control paramaters
+    SEXP control_dbl;  // double control paramaters
+    gsl_multifit_nlinear_workspace *w;   // workspace 
+} pdata;
+
+typedef struct
+{
     R_len_t p;     // number of parameters
     R_len_t n;     // number of observations
     double chisq;  // current ssr
@@ -50,9 +64,27 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
                                  double *chisq1,
                                  gsl_multifit_nlinear_workspace *w);
 
-SEXP C_nls(SEXP f, SEXP y, SEXP df, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl);
+SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl);
+
+SEXP C_nls_internal(void *data);
 
 /* nls_large.c */
+typedef struct
+{
+    SEXP fn;                           // model function
+    SEXP y;                            // response vector
+    SEXP jac;                          // jacobian function
+    SEXP fvv;                          // fvv function
+    SEXP env;                          // function environment
+    SEXP start;                        // start parameter values
+    SEXP swts;                         // weights
+    SEXP control_int;                  // integer control paramaters
+    SEXP control_dbl;                  // double control paramaters
+    gsl_multilarge_nlinear_workspace *w; // workspace
+    gsl_matrix *J;                     // jacobian matrix
+    gsl_spmatrix *Jsp;                 // sparse jacobian matrix
+} pdata_large;
+
 typedef struct
 {
     R_len_t p;         // number of parameters
@@ -87,6 +119,8 @@ int gsl_multilarge_nlinear_driver2(const size_t maxiter,
                                    double *chisq1,
                                    gsl_multilarge_nlinear_workspace *w);
 
-SEXP C_nls_large(SEXP f, SEXP y, SEXP df, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl);
+SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl);
+
+SEXP C_nls_large_internal(void *data);
 
 #endif

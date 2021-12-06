@@ -39,24 +39,53 @@ static int match_dg_class(SEXP obj)
     return matclass;
 }
 
+/* cleanup memory */
+static void C_nls_large_cleanup(void *data)
+{
+    pdata_large *pars = data;
+
+    /* free memory */
+    if (pars->w)
+        gsl_multilarge_nlinear_free(pars->w);
+    if (pars->J)
+        gsl_matrix_free(pars->J);
+    if (pars->Jsp)
+        gsl_spmatrix_free(pars->Jsp);
+};
+
+/* function call w/ cleanup */
 SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl)
+{
+    /* function arguments */
+    pdata_large pars = {fn, y, jac, fvv, env, start, swts, control_int, control_dbl, NULL, NULL, NULL};
+
+    /* safe function call */
+    SEXP ans = R_ExecWithCleanup(C_nls_large_internal, &pars, C_nls_large_cleanup, &pars);
+
+    return ans;
+}
+
+SEXP C_nls_large_internal(void *data)
 {
     /* turn off error handler to avoid aborting on errors */
     gsl_set_error_handler_off();
 
+    /* function arguments */
+    pdata_large *pars = data;
+
     /* initialize parameters */
     int nprotect = 1;
-    SEXP startvec = PROTECT(Rf_coerceVector(start, REALSXP));
+    SEXP startvec = PROTECT(Rf_coerceVector(pars->start, REALSXP));
     R_len_t p = Rf_length(startvec);
-    R_len_t n = Rf_length(y);
-    R_len_t niter = INTEGER_ELT(control_int, 0);
-    int verbose = INTEGER_ELT(control_int, 1);
+    R_len_t n = Rf_length(pars->y);
+    R_len_t niter = INTEGER_ELT(pars->control_int, 0);
+    int verbose = INTEGER_ELT(pars->control_int, 1);
 
     /* control parameters */
     gsl_multilarge_nlinear_parameters fdf_params = gsl_multilarge_nlinear_default_parameters();
 
     /* minimization algorithm */
-    switch (INTEGER_ELT(control_int, 2))
+    switch (INTEGER_ELT(pars->control_int, 2))
     {
     case 1:
         fdf_params.trs = gsl_multilarge_nlinear_trs_lmaccel;
@@ -78,7 +107,7 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     }
 
     /* scaling method */
-    switch (INTEGER_ELT(control_int, 3))
+    switch (INTEGER_ELT(pars->control_int, 3))
     {
     case 1:
         fdf_params.scale = gsl_multilarge_nlinear_scale_levenberg;
@@ -91,23 +120,23 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     }
 
     /* finite differencing type */
-    fdf_params.fdtype = INTEGER_ELT(control_int, 4) ? GSL_MULTILARGE_NLINEAR_CTRDIFF : GSL_MULTILARGE_NLINEAR_FWDIFF;
+    fdf_params.fdtype = INTEGER_ELT(pars->control_int, 4) ? GSL_MULTILARGE_NLINEAR_CTRDIFF : GSL_MULTILARGE_NLINEAR_FWDIFF;
 
     /* miscellaneous parameters */
-    fdf_params.factor_up = REAL_ELT(control_dbl, 0);
-    fdf_params.factor_down = REAL_ELT(control_dbl, 1);
-    fdf_params.avmax = REAL_ELT(control_dbl, 2);
-    fdf_params.h_df = REAL_ELT(control_dbl, 3);
-    fdf_params.h_fvv = REAL_ELT(control_dbl, 4);
-    double xtol = REAL_ELT(control_dbl, 5);
-    double ftol = REAL_ELT(control_dbl, 6);
-    double gtol = REAL_ELT(control_dbl, 7);
+    fdf_params.factor_up = REAL_ELT(pars->control_dbl, 0);
+    fdf_params.factor_down = REAL_ELT(pars->control_dbl, 1);
+    fdf_params.avmax = REAL_ELT(pars->control_dbl, 2);
+    fdf_params.h_df = REAL_ELT(pars->control_dbl, 3);
+    fdf_params.h_fvv = REAL_ELT(pars->control_dbl, 4);
+    double xtol = REAL_ELT(pars->control_dbl, 5);
+    double ftol = REAL_ELT(pars->control_dbl, 6);
+    double gtol = REAL_ELT(pars->control_dbl, 7);
 
     /* initialize data */
     SEXP xpar = Rf_install("par");
-    SEXP fcall = PROTECT(Rf_lang2(fn, xpar));
-    SEXP dfcall = PROTECT(Rf_lang2(jac, xpar));
-    SEXP parnames = PROTECT(Rf_getAttrib(start, R_NamesSymbol));
+    SEXP fcall = PROTECT(Rf_lang2(pars->fn, xpar));
+    SEXP dfcall = PROTECT(Rf_lang2(pars->jac, xpar));
+    SEXP parnames = PROTECT(Rf_getAttrib(pars->start, R_NamesSymbol));
     nprotect += 3;
 
     fdata_large params;
@@ -116,24 +145,24 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     params.f = fcall;
     params.df = dfcall;
     params.fvv = NULL;
-    params.y = y;
-    params.rho = env;
-    params.start = start;
-    params.matclass = INTEGER_ELT(control_int, 5);
+    params.y = pars->y;
+    params.rho = pars->env;
+    params.start = pars->start;
+    params.matclass = INTEGER_ELT(pars->control_int, 5);
     params.J = NULL;
     params.Jsp = NULL;
 
     /* allocate matrix to store Jacobian */
     if (params.matclass < 0)
     {
-        gsl_matrix *J = gsl_matrix_alloc(n, p);
-        params.J = J;
+        pars->J = gsl_matrix_alloc(n, p);
+        params.J = pars->J;
     }
     else
     {
-        R_len_t nzmax = INTEGER_ELT(control_int, 6);
-        gsl_spmatrix *Jsp = gsl_spmatrix_alloc_nzmax(n, p, nzmax, GSL_SPMATRIX_TRIPLET);
-        params.Jsp = Jsp;
+        R_len_t nzmax = INTEGER_ELT(pars->control_int, 6);
+        pars->Jsp = gsl_spmatrix_alloc_nzmax(n, p, nzmax, GSL_SPMATRIX_TRIPLET);
+        params.Jsp = pars->Jsp;
     }
 
     if (verbose)
@@ -153,10 +182,10 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     fdf.params = &params;
 
     /* use acceleration function */
-    if (!Rf_isNull(fvv))
+    if (!Rf_isNull(pars->fvv))
     {
         SEXP vpar = Rf_install("v");
-        SEXP fvvcall = PROTECT(Rf_lang3(fvv, xpar, vpar));
+        SEXP fvvcall = PROTECT(Rf_lang3(pars->fvv, xpar, vpar));
         params.fvv = fvvcall;
         fdf.fvv = gsl_fvv;
         nprotect++;
@@ -170,34 +199,33 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
 
     /* initialize solver */
     const gsl_multilarge_nlinear_type *T = gsl_multilarge_nlinear_trust;
-    gsl_multilarge_nlinear_workspace *w;
 
     /* allocate workspace with default parameters */
-    w = gsl_multilarge_nlinear_alloc(T, &fdf_params, n, p);
+    pars->w = gsl_multilarge_nlinear_alloc(T, &fdf_params, n, p);
 
     /* initialize solver with starting point and weights */
-    if (!Rf_isNull(swts))
+    if (!Rf_isNull(pars->swts))
     {
         double *swts1 = (double *)S_alloc(n, sizeof(double));
         for (R_len_t i = 0; i < n; i++)
-            swts1[i] = REAL_ELT(swts, i);
+            swts1[i] = REAL_ELT(pars->swts, i);
         gsl_vector_view wts = gsl_vector_view_array(swts1, n);
-        gsl_multilarge_nlinear_winit(&par.vector, &wts.vector, &fdf, w);
+        gsl_multilarge_nlinear_winit(&par.vector, &wts.vector, &fdf, pars->w);
     }
     else
     {
-        gsl_multilarge_nlinear_init(&par.vector, &fdf, w);
+        gsl_multilarge_nlinear_init(&par.vector, &fdf, pars->w);
     }
 
     /* compute initial cost function */
     double chisq_init = GSL_POSINF;
-    gsl_vector *resid = gsl_multilarge_nlinear_residual(w);
+    gsl_vector *resid = gsl_multilarge_nlinear_residual(pars->w);
     gsl_blas_ddot(resid, resid, &chisq_init);
     double chisq0 = chisq_init;
     double chisq1 = chisq_init;
     params.chisq = chisq_init;
 
-    if(verbose) 
+    if (verbose)
     {
         SET_REAL_ELT(params.ssrtrace, 0, chisq_init);
         double *parptr = REAL(params.partrace);
@@ -207,21 +235,21 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
 
     /* solve the system  */
     int info = GSL_CONTINUE;
-    int status = gsl_multilarge_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback_large : NULL, verbose ? &params : NULL, &info, &chisq0, &chisq1, w);
-    R_len_t iter = gsl_multilarge_nlinear_niter(w);
+    int status = gsl_multilarge_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback_large : NULL, verbose ? &params : NULL, &info, &chisq0, &chisq1, pars->w);
+    R_len_t iter = gsl_multilarge_nlinear_niter(pars->w);
 
     /* compute covariance and cost at best fit parameters */
     gsl_matrix *cov = NULL;
     if (status == GSL_SUCCESS || status == GSL_EMAXITER)
     {
         cov = gsl_matrix_alloc(p, p);
-        gsl_multilarge_nlinear_covar(cov, w);
+        gsl_multilarge_nlinear_covar(cov, pars->w);
     }
 
     if (verbose)
     {
         /* print summary statistics*/
-        Rprintf("*******************\nsummary from method 'multilarge/%s'\n", gsl_multilarge_nlinear_trs_name(w));
+        Rprintf("*******************\nsummary from method 'multilarge/%s'\n", gsl_multilarge_nlinear_trs_name(pars->w));
         Rprintf("number of iterations: %d\n", iter);
         Rprintf("reason for stopping: %s\n", gsl_strerror(info));
         Rprintf("initial ssr = %g\n", chisq_init);
@@ -256,7 +284,7 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     if (status == GSL_SUCCESS || status == GSL_EMAXITER)
     {
         for (R_len_t k = 0; k < p; k++)
-            SET_REAL_ELT(anspar, k, gsl_vector_get(w->x, k));
+            SET_REAL_ELT(anspar, k, gsl_vector_get(pars->w->x, k));
     }
     else
     {
@@ -353,7 +381,7 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     SET_VECTOR_ELT(ans, 6, Rf_ScalarInteger(status));
     SET_VECTOR_ELT(ans, 7, Rf_ScalarReal(chisq1));
     SET_VECTOR_ELT(ans, 8, Rf_ScalarReal(chisq0 - chisq1));
-    SET_VECTOR_ELT(ans, 9, Rf_ScalarString(Rf_mkChar(gsl_multilarge_nlinear_trs_name(w))));
+    SET_VECTOR_ELT(ans, 9, Rf_ScalarString(Rf_mkChar(gsl_multilarge_nlinear_trs_name(pars->w))));
 
     const char *nms[] = {"f", "dfu", "df2", "fvv", ""};
     SEXP ansneval = PROTECT(Rf_mkNamed(INTSXP, nms));
@@ -379,15 +407,10 @@ SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP
     }
 
     /* free memory */
-    UNPROTECT(nprotect);
-    gsl_multilarge_nlinear_free(w);
-    if (params.matclass < 0)
-        gsl_matrix_free(params.J);
-    else
-        gsl_spmatrix_free(params.Jsp);
     if (status == GSL_SUCCESS || status == GSL_EMAXITER)
         gsl_matrix_free(cov);
 
+    UNPROTECT(nprotect);
     return ans;
 }
 
@@ -436,7 +459,7 @@ int gsl_multilarge_nlinear_driver2(const size_t maxiter,
     int status = GSL_CONTINUE;
     size_t iter = 0;
     gsl_vector *f = NULL;
- 
+
     do
     {
         /* current ssr */
