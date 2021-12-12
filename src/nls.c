@@ -11,7 +11,7 @@ static void C_nls_cleanup(void *data)
     if (pars->w)
         gsl_multifit_nlinear_free(pars->w);
 
-};
+}
 
 /* function call w/ cleanup */
 SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl)

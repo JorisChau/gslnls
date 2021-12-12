@@ -51,7 +51,7 @@ static void C_nls_large_cleanup(void *data)
         gsl_matrix_free(pars->J);
     if (pars->Jsp)
         gsl_spmatrix_free(pars->Jsp);
-};
+}
 
 /* function call w/ cleanup */
 SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl)
