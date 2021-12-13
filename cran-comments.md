@@ -12,17 +12,10 @@
 * macos-highsierra R-release (rhub)
 * solaris10 gcc R-release/GSL-2.4 (local vm)
 * solaris10 ods R-release/GSL-2.4 (local vm)
-* win-builder R-release, R-devel, R-old-release (see below)
-* windows-ucrt gcc R-devel (local install)
+* win-builder R-release, R-devel, R-devel (UCRT), R-old-release 
 
 ### Compiled code checks
 
 * ubuntu-rchk
-* ubuntu clang R-release --use-valgrind 
-* ubuntu clang R-release --use-gct
-
-### Notes
-
-* Possibly mis-spelled words in DESCRIPTION:
-    Steihaug (7:275)
-    Toint (7:284)
+* ubuntu gcc R-release --use-valgrind 
+* ubuntu gcc R-release --use-gct
