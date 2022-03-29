@@ -26,8 +26,8 @@ matrix.
 The following trust region methods to solve nonlinear least-squares
 problems are available in `gsl_nls()` (and `gsl_nls_large()`):
 
--   [Levenberg-Marquadt](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt)
--   [Levenberg-Marquadt with geodesic
+-   [Levenberg-Marquardt](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt)
+-   [Levenberg-Marquardt with geodesic
     acceleration](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt-with-geodesic-acceleration)
 -   [Dogleg](https://www.gnu.org/software/gsl/doc/html/nls.html#dogleg)
 -   [Double
@@ -190,7 +190,7 @@ ex1_fit
 ```
 
 Here, the nonlinear least squares problem has been solved with the
-Levenberg-Marquadt algorithm (default) in the `gsl_multifit_nlinear`
+Levenberg-Marquardt algorithm (default) in the `gsl_multifit_nlinear`
 interface using the following `control` parameters:
 
 ``` r
@@ -473,7 +473,7 @@ y <- f(a = 5, b = 0.4, c = 0.15, x) * rnorm(n, mean = 1, sd = 0.1)
 #### Model fit
 
 Using the default
-[Levenberg-Marquadt](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt)
+[Levenberg-Marquardt](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt)
 algorithm (without geodesic acceleration), the nonlinear Gaussian model
 can be fitted with a call to `gsl_nls()` analogous to the previous
 example. Here, the `trace` argument is activated in order to trace the
@@ -481,7 +481,7 @@ sum of squared residuals (`ssr`) and parameter estimates (`par`) at each
 iteration of the algorithm.
 
 ``` r
-## Levenberg-Marquadt (default)
+## Levenberg-Marquardt (default)
 ex2a_fit <- gsl_nls(
   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)), ## model formula
   data = data.frame(x = x, y = y),          ## model fit data
@@ -544,13 +544,13 @@ ex2a_fit
 
 #### Geodesic acceleration
 
-The nonlinear model can also be fitted using the Levenberg-Marquadt
+The nonlinear model can also be fitted using the Levenberg-Marquardt
 algorithm with [geodesic
 acceleration](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt-with-geodesic-acceleration)
 by changing the default `algorithm = "lm"` to `algorithm = "lmaccel"`.
 
 ``` r
-## Levenberg-Marquadt w/ geodesic acceleration
+## Levenberg-Marquardt w/ geodesic acceleration
 ex2b_fit <- gsl_nls(
   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)), ## model formula
   data = data.frame(x = x, y = y),          ## model fit data
@@ -863,7 +863,7 @@ branin <- function(x) {
   c(f1, f2)
 }
 
-## Levenberg-Marquadt minimization
+## Levenberg-Marquardt minimization
 ex3_fit <- gsl_nls(
   fn = branin,                   ## model function      
   y = c(0, 0),                   ## response vector 
@@ -909,7 +909,7 @@ followed by each method.
 
 Analogous to the
 [example](https://www.gnu.org/software/gsl/doc/html/nls.html#comparing-trs-methods-example)
-in the GSL reference manual, the standard Levenberg-Marquadt method
+in the GSL reference manual, the standard Levenberg-Marquardt method
 without geodesic acceleration converges to the minimum at
 ![(-\\pi, 12.275)](https://latex.codecogs.com/png.latex?%28-%5Cpi%2C%2012.275%29 "(-\pi, 12.275)"),
 all other methods converge to the minimum at
@@ -1012,7 +1012,7 @@ equivalent to the example in the GSL reference manual.
 ## number of parameters
 p <- 500
 
-## standard Levenberg-Marquadt
+## standard Levenberg-Marquardt
 system.time({ 
   ex4_fit_lm <- gsl_nls(
     fn = f,

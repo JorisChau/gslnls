@@ -29,7 +29,7 @@ are supported:
 been proven effective on a large class of problems.
 \item \code{"levenberg"} Levenberg rescaling. This method has also proven effective on a large class of problems,
 but is not scale-invariant. It may perform better for problems susceptible to \emph{parameter evaporation} (parameters going to infinity).
-\item \code{"marquadt"} Marquadt rescaling. This method is scale-invariant, but it is generally
+\item \code{"marquardt"} Marquardt rescaling. This method is scale-invariant, but it is generally
 considered inferior to both the Levenberg and Moré strategies.
 }}
 

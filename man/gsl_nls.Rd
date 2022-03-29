@@ -52,8 +52,8 @@ is a \code{formula}, a naive guess for \code{start} is tried, but this should no
 
 \item{algorithm}{character string specifying the algorithm to use. The following choices are supported:
 \itemize{
-\item \code{"lm"} Levenberg-Marquadt algorithm (default)
-\item \code{"lmaccel"} Levenberg-Marquadt algorithm with geodesic acceleration.
+\item \code{"lm"} Levenberg-Marquardt algorithm (default)
+\item \code{"lmaccel"} Levenberg-Marquardt algorithm with geodesic acceleration.
 Can be faster than \code{"lm"} but less stable. Stability is controlled by the
 \code{avmax} parameter in \code{control}, setting \code{avmax} to zero is analogous
 to not using geodesic acceleration.
@@ -194,7 +194,7 @@ x <- seq_len(n) / n
 f <- function(a, b, c, x) a * exp(-(x - b)^2 / (2 * c^2))
 y <- f(a = 5, b = 0.4, c = 0.15, x) * rnorm(n, mean = 1, sd = 0.1)
 
-## Levenberg-Marquadt (default)
+## Levenberg-Marquardt (default)
 gsl_nls(
   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)),             ## model formula
   data = data.frame(x = x, y = y),                      ## model fit data
@@ -202,7 +202,7 @@ gsl_nls(
   trace = TRUE                                          ## verbose output
 )
 
-## Levenberg-Marquadt w/ geodesic acceleration 1
+## Levenberg-Marquardt w/ geodesic acceleration 1
 gsl_nls(
   fn = y ~ a * exp(-(x - b)^2 / (2 * c^2)),             ## model formula
   data = data.frame(x = x, y = y),                      ## model fit data
@@ -211,7 +211,7 @@ gsl_nls(
   trace = TRUE                                          ## verbose output
 )
 
-## Levenberg-Marquadt w/ geodesic acceleration 2
+## Levenberg-Marquardt w/ geodesic acceleration 2
 ## second directional derivative
 fvv <- function(par, v, x) {
   with(as.list(par), {

@@ -52,8 +52,8 @@ is a \code{formula}, a naive guess for \code{start} is tried, but this should no
 
 \item{algorithm}{character string specifying the algorithm to use. The following choices are supported:
 \itemize{
-\item \code{"lm"} Levenberg-Marquadt algorithm (default)
-\item \code{"lmaccel"} Levenberg-Marquadt algorithm with geodesic acceleration.
+\item \code{"lm"} Levenberg-Marquardt algorithm (default)
+\item \code{"lmaccel"} Levenberg-Marquardt algorithm with geodesic acceleration.
 Can be faster than \code{"lm"} but less stable. Stability is controlled by the
 \code{avmax} parameter in \code{control}, setting \code{avmax} to zero is analogous
 to not using geodesic acceleration.
@@ -160,7 +160,7 @@ jac <- function(theta) {
   rbind(diag(sqrt(1e-5), nrow = length(theta)), 2 * t(theta))
 }
 
-## dense Levenberg-Marquadt
+## dense Levenberg-Marquardt
 gsl_nls_large(
   fn = f,                       ## model
   y = rep(0, p + 1),            ## (dummy) responses
@@ -184,7 +184,7 @@ jacsp <- function(theta) {
   rbind(Matrix::Diagonal(x = sqrt(1e-5), n = length(theta)), 2 * t(theta))
 }
 
-## sparse Levenberg-Marquadt
+## sparse Levenberg-Marquardt
 gsl_nls_large(
   fn = f,                       ## model
   y = rep(0, p + 1),            ## (dummy) responses

@@ -7,8 +7,8 @@
 #' @inheritParams gsl_nls
 #' @param algorithm character string specifying the algorithm to use. The following choices are supported:
 #' \itemize{
-#' \item \code{"lm"} Levenberg-Marquadt algorithm (default)
-#' \item \code{"lmaccel"} Levenberg-Marquadt algorithm with geodesic acceleration.
+#' \item \code{"lm"} Levenberg-Marquardt algorithm (default)
+#' \item \code{"lmaccel"} Levenberg-Marquardt algorithm with geodesic acceleration.
 #' Can be faster than \code{"lm"} but less stable. Stability is controlled by the
 #' \code{avmax} parameter in \code{control}, setting \code{avmax} to zero is analogous
 #' to not using geodesic acceleration.
@@ -68,7 +68,7 @@
 #'   rbind(diag(sqrt(1e-5), nrow = length(theta)), 2 * t(theta))
 #' }
 #'
-#' ## dense Levenberg-Marquadt
+#' ## dense Levenberg-Marquardt
 #' gsl_nls_large(
 #'   fn = f,                       ## model
 #'   y = rep(0, p + 1),            ## (dummy) responses
@@ -92,7 +92,7 @@
 #'   rbind(Matrix::Diagonal(x = sqrt(1e-5), n = length(theta)), 2 * t(theta))
 #' }
 #'
-#' ## sparse Levenberg-Marquadt
+#' ## sparse Levenberg-Marquardt
 #' gsl_nls_large(
 #'   fn = f,                       ## model
 #'   y = rep(0, p + 1),            ## (dummy) responses
@@ -356,7 +356,7 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
     control <- as.list(control)
     .ctrl[names(control)] <- control
   }
-  .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquadt"))
+  .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquardt"))
   .ctrl$solver <- "cholesky"  ## fixed
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
   stopifnot(
@@ -374,7 +374,7 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
     maxiter = as.integer(.ctrl$maxiter),
     trace = isTRUE(trace),
     algorithm = match(algorithm, c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst")) - 1L,
-    scale = match(.ctrl$scale, c("more", "levenberg", "marquadt")) - 1L,
+    scale = match(.ctrl$scale, c("more", "levenberg", "marquardt")) - 1L,
     fdtype = match(.ctrl$fdtype, c("forward", "center")) - 1L,
     jacclass = -2L,
     jacnz = 0L
@@ -533,7 +533,7 @@ gsl_nls_large.function <- function(fn, y, start,
     control <- as.list(control)
     .ctrl[names(control)] <- control
   }
-  .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquadt"))
+  .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquardt"))
   .ctrl$solver <- "cholesky"  ## fixed
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
   stopifnot(
@@ -551,7 +551,7 @@ gsl_nls_large.function <- function(fn, y, start,
     maxiter = as.integer(.ctrl$maxiter),
     trace = isTRUE(trace),
     algorithm = match(algorithm, c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst")) - 1L,
-    scale = match(.ctrl$scale, c("more", "levenberg", "marquadt")) - 1L,
+    scale = match(.ctrl$scale, c("more", "levenberg", "marquardt")) - 1L,
     fdtype = match(.ctrl$fdtype, c("forward", "center")) - 1L,
     jacclass = -2L,
     jacnz = 0L
