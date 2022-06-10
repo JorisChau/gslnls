@@ -400,7 +400,7 @@ Inputs: maxiter  - maximum iterations to allow
 
 Return:
 GSL_SUCCESS if converged
-GSL_EBADFUNC if function evaluation failed 
+GSL_EBADFUNC if function evaluation failed
 GSL_MAXITER if maxiter exceeded without converging
 GSL_ENOPROG if no accepted step found on first iteration
 */
@@ -650,7 +650,7 @@ void callback(const size_t iter, void *params, const gsl_multifit_nlinear_worksp
 
     /* print trace */
     Rprintf("iter %3d: ssr = %g, par = (", iter, chisq);
-    for (R_len_t k = 0; k < p; k++) 
+    for (R_len_t k = 0; k < p; k++)
         Rprintf((k < (p -1)) ? "%g, " : "%g)\n", parptr[iter + n * k]);
 
 }

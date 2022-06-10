@@ -681,9 +681,9 @@ gsl_nls.function <- function(fn, y, start,
 #' approximation of the Jacobian matrix is not available and this parameter is only used to numerically approximate
 #' the second-order derivatives (if geodesic acceleration is used).
 #' @param factor_up numeric factor by which to increase the trust region radius when a search step is accepted.
-#' Too large values may destabilize the search, too small values slow down the search, defaults to 3.
-#' @param factor_down numeric factor by which to decrease the trust region radius when a search step is rejected.
 #' Too large values may destabilize the search, too small values slow down the search, defaults to 2.
+#' @param factor_down numeric factor by which to decrease the trust region radius when a search step is rejected.
+#' Too large values may destabilize the search, too small values slow down the search, defaults to 3.
 #' @param avmax numeric value, the ratio of the acceleration term to the velocity term when using geodesic acceleration to
 #' solve the nonlinear least squares problem. Any steps with a ratio larger than \code{avmax} are rejected, defaults to 0.75.
 #' For problems which experience difficulty converging, this threshold could be lowered.
@@ -724,7 +724,7 @@ gsl_nls.function <- function(fn, y, start,
 #' @references M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
 #' @export
 gsl_nls_control <- function(maxiter = 50, scale = "more", solver = "qr",
-    fdtype = "forward", factor_up = 3, factor_down = 2, avmax = 0.75,
+    fdtype = "forward", factor_up = 2, factor_down = 3, avmax = 0.75,
     h_df = sqrt(.Machine$double.eps), h_fvv = 0.02, xtol = sqrt(.Machine$double.eps),
     ftol = sqrt(.Machine$double.eps), gtol = .Machine$double.eps^(1/3)) {
 
