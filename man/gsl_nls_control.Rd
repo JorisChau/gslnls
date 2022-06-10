@@ -9,8 +9,8 @@ gsl_nls_control(
   scale = "more",
   solver = "qr",
   fdtype = "forward",
-  factor_up = 3,
-  factor_down = 2,
+  factor_up = 2,
+  factor_down = 3,
   avmax = 0.75,
   h_df = sqrt(.Machine$double.eps),
   h_fvv = 0.02,
@@ -52,10 +52,10 @@ approximation of the Jacobian matrix is not available and this parameter is only
 the second-order derivatives (if geodesic acceleration is used).}
 
 \item{factor_up}{numeric factor by which to increase the trust region radius when a search step is accepted.
-Too large values may destabilize the search, too small values slow down the search, defaults to 3.}
+Too large values may destabilize the search, too small values slow down the search, defaults to 2.}
 
 \item{factor_down}{numeric factor by which to decrease the trust region radius when a search step is rejected.
-Too large values may destabilize the search, too small values slow down the search, defaults to 2.}
+Too large values may destabilize the search, too small values slow down the search, defaults to 3.}
 
 \item{avmax}{numeric value, the ratio of the acceleration term to the velocity term when using geodesic acceleration to
 solve the nonlinear least squares problem. Any steps with a ratio larger than \code{avmax} are rejected, defaults to 0.75.
