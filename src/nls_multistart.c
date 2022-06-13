@@ -220,9 +220,6 @@ SEXP C_nls_multistart(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start,
         }
         else
             SET_REAL_ELT(chisqtestvec, i, NA_REAL);
-
-        /* for testing */
-        Rprintf("global iter: %d, ssr: %g\n", i, chisqtest);
     }
 
     /* order ssr vector */
@@ -270,9 +267,6 @@ SEXP C_nls_multistart(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start,
             chisqopt = chisqseed;
             gsl_vector_memcpy(seedparopt, w->x);
         }
-
-        /* for testing */
-        Rprintf("local iter: %d, status: %d, ssr: %g, ssr opt: %g, p0: %g, p1: %g\n", i, seedstatus, chisqseed, chisqopt, gsl_vector_get(w->x, 0), gsl_vector_get(w->x, 1));
     }
 
     /* re-execute local search at optimal parameters */
