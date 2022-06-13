@@ -11,22 +11,23 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_spblas.h>
 #include <gsl/gsl_nan.h>
+#include <gsl/gsl_qrng.h>
 #include <gsl/gsl_multifit_nlinear.h>
 #include <gsl/gsl_multilarge_nlinear.h>
 
 /* nls.c */
 typedef struct
 {
-    SEXP fn;           // model function
-    SEXP y;            // response vector
-    SEXP jac;          // jacobian function
-    SEXP fvv;          // fvv function
-    SEXP env;          // function environment
-    SEXP start;        // start parameter values
-    SEXP swts;         // weights
-    SEXP control_int;  // integer control paramaters
-    SEXP control_dbl;  // double control paramaters
-    gsl_multifit_nlinear_workspace *w;   // workspace 
+    SEXP fn;                           // model function
+    SEXP y;                            // response vector
+    SEXP jac;                          // jacobian function
+    SEXP fvv;                          // fvv function
+    SEXP env;                          // function environment
+    SEXP start;                        // start parameter values
+    SEXP swts;                         // weights
+    SEXP control_int;                  // integer control paramaters
+    SEXP control_dbl;                  // double control paramaters
+    gsl_multifit_nlinear_workspace *w; // workspace
 } pdata;
 
 typedef struct
@@ -42,6 +43,7 @@ typedef struct
     SEXP start;    // start parameter values
     SEXP partrace; // parameter trace
     SEXP ssrtrace; // ssr trace
+    Rboolean warn; // print R warnings
 } fdata;
 
 int gsl_f(const gsl_vector *x, void *params, gsl_vector *f);
@@ -68,21 +70,23 @@ SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts,
 
 SEXP C_nls_internal(void *data);
 
+SEXP C_nls_multistart(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl);
+
 /* nls_large.c */
 typedef struct
 {
-    SEXP fn;                           // model function
-    SEXP y;                            // response vector
-    SEXP jac;                          // jacobian function
-    SEXP fvv;                          // fvv function
-    SEXP env;                          // function environment
-    SEXP start;                        // start parameter values
-    SEXP swts;                         // weights
-    SEXP control_int;                  // integer control paramaters
-    SEXP control_dbl;                  // double control paramaters
+    SEXP fn;                             // model function
+    SEXP y;                              // response vector
+    SEXP jac;                            // jacobian function
+    SEXP fvv;                            // fvv function
+    SEXP env;                            // function environment
+    SEXP start;                          // start parameter values
+    SEXP swts;                           // weights
+    SEXP control_int;                    // integer control paramaters
+    SEXP control_dbl;                    // double control paramaters
     gsl_multilarge_nlinear_workspace *w; // workspace
-    gsl_matrix *J;                     // jacobian matrix
-    gsl_spmatrix *Jsp;                 // sparse jacobian matrix
+    gsl_matrix *J;                       // jacobian matrix
+    gsl_spmatrix *Jsp;                   // sparse jacobian matrix
 } pdata_large;
 
 typedef struct

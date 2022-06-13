@@ -16,7 +16,9 @@ gsl_nls_control(
   h_fvv = 0.02,
   xtol = sqrt(.Machine$double.eps),
   ftol = sqrt(.Machine$double.eps),
-  gtol = .Machine$double.eps^(1/3)
+  gtol = .Machine$double.eps^(1/3),
+  ntest = 50,
+  nseed = 0.05
 )
 }
 \arguments{
@@ -76,9 +78,14 @@ defaults to \code{sqrt(.Machine$double.eps)}.}
 
 \item{gtol}{numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
 indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}}
+
+\item{ntest}{numeric value larger than one, this factor multiplied by the number of parameters is the number of times the
+function is evaluated in the pre-testing phase of the multistart algorithm.}
+
+\item{nseed}{numeric value between zero and one, fraction of seed points kept in the pre-testing phase of the multistart algorithm.}
 }
 \value{
-A \code{list} with exactly twelve components:
+A \code{list} with exactly fourteen components:
 \itemize{
 \item maxiter
 \item scale
@@ -92,6 +99,8 @@ A \code{list} with exactly twelve components:
 \item xtol
 \item ftol
 \item gtol
+\item ntest
+\item nseed
 }
 with meanings as explained under 'Arguments'.
 }

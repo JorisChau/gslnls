@@ -10,7 +10,6 @@ static void C_nls_cleanup(void *data)
     /* free memory */
     if (pars->w)
         gsl_multifit_nlinear_free(pars->w);
-
 }
 
 /* function call w/ cleanup */
@@ -117,6 +116,7 @@ SEXP C_nls_internal(void *data)
     params.y = pars->y;
     params.rho = pars->env;
     params.start = pars->start;
+    params.warn = TRUE;
 
     if (verbose)
     {
@@ -431,19 +431,19 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
         f = gsl_multifit_nlinear_residual(w);
         gsl_blas_ddot(f, f, chisq1);
 
-        if(callback)
+        if (callback)
             ((fdata *)callback_params)->chisq = chisq1[0];
 
         /*
-       * If the solver reports no progress on the first iteration,
-       * then it didn't find a single step to reduce the
-       * cost function and more iterations won't help so return.
-       *
-       * If we get a no progress flag on subsequent iterations,
-       * it means we did find a good step in a previous iteration,
-       * so continue iterating since the solver has now reset
-       * mu to its initial value.
-       */
+         * If the solver reports no progress on the first iteration,
+         * then it didn't find a single step to reduce the
+         * cost function and more iterations won't help so return.
+         *
+         * If we get a no progress flag on subsequent iterations,
+         * it means we did find a good step in a previous iteration,
+         * so continue iterating since the solver has now reset
+         * mu to its initial value.
+         */
         if (status == GSL_EBADFUNC || (status == GSL_ENOPROG && iter == 0))
         {
             *info = status;
@@ -460,10 +460,10 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
     } while (status == GSL_CONTINUE && iter < maxiter);
 
     /*
-   * the following error codes mean that the solution has converged
-   * to within machine precision, so record the error code in info
-   * and return success
-   */
+     * the following error codes mean that the solution has converged
+     * to within machine precision, so record the error code in info
+     * and return success
+     */
     if (status == GSL_ETOLF || status == GSL_ETOLX || status == GSL_ETOLG)
     {
         *info = status;
@@ -505,7 +505,8 @@ int gsl_f(const gsl_vector *x, void *params, gsl_vector *f)
     R_len_t n = ((fdata *)params)->n;
     if (TYPEOF(fval) != REALSXP || Rf_length(fval) != n)
     {
-        Rf_warning("Evaluating fn does not return numeric vector of expected length n");
+        if (((fdata *)params)->warn)
+            Rf_warning("Evaluating fn does not return numeric vector of expected length n");
         UNPROTECT(2);
         return GSL_EBADFUNC;
     }
@@ -553,7 +554,8 @@ int gsl_df(const gsl_vector *x, void *params, gsl_matrix *J)
     R_len_t n = ((fdata *)params)->n;
     if (TYPEOF(dfval) != REALSXP || !Rf_isMatrix(dfval) || Rf_ncols(dfval) != p || Rf_nrows(dfval) != n)
     {
-        Rf_warning("Evaluating jac does not return numeric matrix of dimensions n x p");
+        if (((fdata *)params)->warn)
+            Rf_warning("Evaluating jac does not return numeric matrix of dimensions n x p");
         UNPROTECT(2);
         return GSL_EBADFUNC;
     }
@@ -563,7 +565,8 @@ int gsl_df(const gsl_vector *x, void *params, gsl_matrix *J)
         for (R_len_t k = 0; k < p; k++)
             if (R_IsNaN(jacptr[i + n * k]) || !R_finite(jacptr[i + n * k]))
             {
-                Rf_warning("Missing/infinite values not allowed when evaluating jac");
+                if (((fdata *)params)->warn)
+                    Rf_warning("Missing/infinite values not allowed when evaluating jac");
                 UNPROTECT(2);
                 return GSL_EBADFUNC;
             }
@@ -613,7 +616,8 @@ int gsl_fvv(const gsl_vector *x, const gsl_vector *v, void *params, gsl_vector *
     R_len_t n = ((fdata *)params)->n;
     if (TYPEOF(fvvval) != REALSXP || Rf_length(fvvval) != n)
     {
-        Rf_warning("Evaluating fvv does not return numeric vector of expected length n");
+        if (((fdata *)params)->warn)
+            Rf_warning("Evaluating fvv does not return numeric vector of expected length n");
         UNPROTECT(4);
         return GSL_EBADFUNC;
     }
@@ -623,7 +627,8 @@ int gsl_fvv(const gsl_vector *x, const gsl_vector *v, void *params, gsl_vector *
     {
         if (R_IsNaN(fvvvalptr[i]) || !R_finite(fvvvalptr[i]))
         {
-            Rf_warning("Missing/infinite values not allowed when evaluating fvv");
+            if (((fdata *)params)->warn)
+                Rf_warning("Missing/infinite values not allowed when evaluating fvv");
             UNPROTECT(4);
             return GSL_EBADFUNC;
         }
@@ -651,8 +656,5 @@ void callback(const size_t iter, void *params, const gsl_multifit_nlinear_worksp
     /* print trace */
     Rprintf("iter %3d: ssr = %g, par = (", iter, chisq);
     for (R_len_t k = 0; k < p; k++)
-        Rprintf((k < (p -1)) ? "%g, " : "%g)\n", parptr[iter + n * k]);
-
+        Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", parptr[iter + n * k]);
 }
-
-
