@@ -665,8 +665,8 @@ gsl_nls.function <- function(fn, y, start,
     match(.ctrl$scale, c("more", "levenberg", "marquardt")) - 1L,
     match(.ctrl$solver, c("qr", "cholesky", "svd")) - 1L,
     match(.ctrl$fdtype, c("forward", "center")) - 1L,
-    as.integer(.ctrl$mstart_m1 * length(p)),
-    as.integer(.ctrl$mstart_m1 * length(p) * .ctrl$mstart_m2),
+    as.integer(.ctrl$mstart_m1 * p),
+    as.integer(.ctrl$mstart_m1 * p * .ctrl$mstart_m2),
     as.integer(.ctrl$mstart_maxiter)
   )
   .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol")])

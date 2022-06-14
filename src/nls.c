@@ -210,7 +210,7 @@ SEXP C_nls_internal(void *data)
             pars->q = gsl_qrng_alloc(gsl_qrng_halton, p);
 
         /* initialize multistart parameters */
-        int mstatus;
+        int mstatus, iprint = -1;
         double mchisq;
         double *mpall = (double *)R_alloc(mstart_ntest * p, sizeof(double));
         double *mp = (double *)R_alloc(p, sizeof(double));
@@ -224,6 +224,11 @@ SEXP C_nls_internal(void *data)
 
         /* update fdf params */
         params.start = mpar;
+
+        if(verbose)
+        {
+            Rprintf("multi-start: initialization stage\n");
+        }
 
         /* global stage: evaluate f at each test parameter vector */
         for (R_len_t i = 0; i < mstart_ntest; i++)
@@ -245,6 +250,12 @@ SEXP C_nls_internal(void *data)
             }
             else
                 SET_REAL_ELT(mchisqall, i, NA_REAL);
+
+            if(verbose && (i * 100 / mstart_ntest) > iprint)
+            {
+                iprint++;
+                Rprintf(iprint < 99 ? "." : ".\n");
+            }
         }
 
         /* order ssr vector */
@@ -253,16 +264,12 @@ SEXP C_nls_internal(void *data)
 
         if (verbose)
         {
-            double nprint = mstart_ntest > 10 ? 10 : mstart_ntest;
-            Rprintf("multi-start: initialization stage\n");
-            for (R_len_t i = 0; i < nprint; i++)
+            for (R_len_t i = 0; i < mstart_nseed; i++)
             {
                 Rprintf("mstart index %d/%d:, ssr = %g, par = (", mchisqidx[i] + 1, mstart_ntest, REAL_ELT(mchisqall, mchisqidx[i]));
                 for (R_len_t k = 0; k < p; k++)
                     Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", mpall[mchisqidx[i] * p + k]);
             }
-            if (mstart_ntest > 10)
-                Rprintf("...\n");
             Rprintf("*******************\nmulti-start: local optimization stages\n");
         }
 
