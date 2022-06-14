@@ -28,6 +28,11 @@ typedef struct
     SEXP control_int;                  // integer control paramaters
     SEXP control_dbl;                  // double control paramaters
     gsl_multifit_nlinear_workspace *w; // workspace
+    gsl_vector *wts;                   // weights vector
+    gsl_qrng *q;                       // qrng workspace
+    gsl_vector *mf;                    // multistart f vector
+    gsl_vector *mpi;                   // multistart parameter vector
+    gsl_vector *mpopt;                 // multistart optimal parameter vector
 } pdata;
 
 typedef struct
@@ -47,6 +52,8 @@ typedef struct
 } fdata;
 
 int gsl_f(const gsl_vector *x, void *params, gsl_vector *f);
+
+int gsl_evalf(SEXP par, fdata *params, gsl_vector *f);
 
 int gsl_df(const gsl_vector *x, void *params, gsl_matrix *J);
 
@@ -69,8 +76,6 @@ int gsl_multifit_nlinear_driver2(const size_t maxiter,
 SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl);
 
 SEXP C_nls_internal(void *data);
-
-SEXP C_nls_multistart(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl);
 
 /* nls_large.c */
 typedef struct

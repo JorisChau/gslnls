@@ -17,8 +17,9 @@ gsl_nls_control(
   xtol = sqrt(.Machine$double.eps),
   ftol = sqrt(.Machine$double.eps),
   gtol = .Machine$double.eps^(1/3),
-  ntest = 50,
-  nseed = 0.05
+  mstart_m1 = 100,
+  mstart_m2 = 0.02,
+  mstart_maxiter = maxiter\%/\%2
 )
 }
 \arguments{
@@ -79,13 +80,15 @@ defaults to \code{sqrt(.Machine$double.eps)}.}
 \item{gtol}{numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
 indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}}
 
-\item{ntest}{numeric value larger than one, this factor multiplied by the number of parameters is the number of times the
-function is evaluated in the pre-testing phase of the multistart algorithm.}
+\item{mstart_m1}{numeric value larger than one, this value multiplied by the parameter dimension is the number of evaluated start
+parameter vectors in the multi-start initialization stage, defaults to 100.}
 
-\item{nseed}{numeric value between zero and one, fraction of seed points kept in the pre-testing phase of the multistart algorithm.}
+\item{mstart_m2}{numeric value between zero and one, fraction of start parameter vectors kept in the multi-start initialization stage, defaults to 0.02.}
+
+\item{mstart_maxiter}{positive integer, maximum number of iterations in the multi-start local optimization stages, defaults to \code{maxiter \%/\% 2}.}
 }
 \value{
-A \code{list} with exactly fourteen components:
+A \code{list} with exactly fifteen components:
 \itemize{
 \item maxiter
 \item scale
@@ -99,8 +102,9 @@ A \code{list} with exactly fourteen components:
 \item xtol
 \item ftol
 \item gtol
-\item ntest
-\item nseed
+\item mstart_m1
+\item mstart_m2
+\item mstart_maxiter
 }
 with meanings as explained under 'Arguments'.
 }

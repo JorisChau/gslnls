@@ -1,5 +1,6 @@
 #define R_NO_REMAP
 
+#include <math.h>
 #include "gsl_nls.h"
 
 /* cleanup memory */
@@ -10,13 +11,23 @@ static void C_nls_cleanup(void *data)
     /* free memory */
     if (pars->w)
         gsl_multifit_nlinear_free(pars->w);
+    if (pars->q)
+        gsl_qrng_free(pars->q);
+    if (pars->wts)
+        gsl_vector_free(pars->wts);
+    if (pars->mf)
+        gsl_vector_free(pars->mf);
+    if (pars->mpi)
+        gsl_vector_free(pars->mpi);
+    if (pars->mpopt)
+        gsl_vector_free(pars->mpopt);
 }
 
 /* function call w/ cleanup */
 SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl)
 {
     /* function arguments */
-    pdata pars = {fn, y, jac, fvv, env, start, swts, control_int, control_dbl, NULL};
+    pdata pars = {fn, y, jac, fvv, env, start, swts, control_int, control_dbl, NULL, NULL, NULL, NULL, NULL, NULL};
 
     /* safe function call */
     SEXP ans = R_ExecWithCleanup(C_nls_internal, &pars, C_nls_cleanup, &pars);
@@ -33,12 +44,26 @@ SEXP C_nls_internal(void *data)
     pdata *pars = data;
 
     /* initialize parameters */
-    int nprotect = 1;
-    SEXP startvec = PROTECT(Rf_coerceVector(pars->start, REALSXP));
-    R_len_t p = Rf_length(startvec);
+    int nprotect = 0;
     R_len_t n = Rf_length(pars->y);
     R_len_t niter = INTEGER_ELT(pars->control_int, 0);
     int verbose = INTEGER_ELT(pars->control_int, 1);
+    Rboolean mstart = Rf_isMatrix(pars->start);
+    SEXP startvec = NULL;
+    R_len_t p, mstart_ntest, mstart_nseed, mstart_niter;
+    if (!mstart)
+    {
+        startvec = PROTECT(Rf_coerceVector(pars->start, REALSXP));
+        p = Rf_length(startvec);
+        nprotect++;
+    }
+    else
+    {
+        p = Rf_nrows(pars->start);
+        mstart_ntest = INTEGER_ELT(pars->control_int, 6);
+        mstart_nseed = INTEGER_ELT(pars->control_int, 7);
+        mstart_niter = INTEGER_ELT(pars->control_int, 8);
+    }
 
     /* control parameters */
     gsl_multifit_nlinear_parameters fdf_params = gsl_multifit_nlinear_default_parameters();
@@ -104,7 +129,11 @@ SEXP C_nls_internal(void *data)
     /* initialize data */
     SEXP xpar = Rf_install("par");
     SEXP fcall = PROTECT(Rf_lang2(pars->fn, xpar));
-    SEXP parnames = PROTECT(Rf_getAttrib(pars->start, R_NamesSymbol));
+    SEXP parnames = NULL;
+    if (!mstart)
+        parnames = PROTECT(Rf_getAttrib(pars->start, R_NamesSymbol));
+    else
+        parnames = PROTECT(Rf_GetRowNames(Rf_getAttrib(pars->start, R_DimNamesSymbol)));
     nprotect += 2;
 
     fdata params;
@@ -116,7 +145,10 @@ SEXP C_nls_internal(void *data)
     params.y = pars->y;
     params.rho = pars->env;
     params.start = pars->start;
-    params.warn = TRUE;
+    if (!mstart)
+        params.warn = TRUE;
+    else
+        params.warn = FALSE;
 
     if (verbose)
     {
@@ -156,11 +188,11 @@ SEXP C_nls_internal(void *data)
         nprotect++;
     }
 
-    /* set nls optimization parameters */
-    double *start1 = (double *)S_alloc(p, sizeof(double));
-    for (R_len_t k = 0; k < p; k++)
-        start1[k] = REAL_ELT(startvec, k);
-    gsl_vector_view par = gsl_vector_view_array(start1, p);
+    /* use weights */
+    pars->wts = gsl_vector_alloc(n);
+    if (!Rf_isNull(pars->swts))
+        for (R_len_t i = 0; i < n; i++)
+            gsl_vector_set(pars->wts, i, REAL_ELT(pars->swts, i));
 
     /* initialize solver */
     const gsl_multifit_nlinear_type *T = gsl_multifit_nlinear_trust;
@@ -168,21 +200,133 @@ SEXP C_nls_internal(void *data)
     /* allocate workspace with default parameters */
     pars->w = gsl_multifit_nlinear_alloc(T, &fdf_params, n, p);
 
-    /* initialize solver with starting point and weights */
-    if (!Rf_isNull(pars->swts))
+    /* multistart algorithm */
+    if (mstart)
     {
-        double *swts1 = (double *)S_alloc(n, sizeof(double));
-        for (R_len_t i = 0; i < n; i++)
-            swts1[i] = REAL_ELT(pars->swts, i);
-        gsl_vector_view wts = gsl_vector_view_array(swts1, n);
-        gsl_multifit_nlinear_winit(&par.vector, &wts.vector, &fdf, pars->w);
+        /* allocate qrng workspace */
+        if (p < 41)
+            pars->q = gsl_qrng_alloc(gsl_qrng_sobol, p);
+        else
+            pars->q = gsl_qrng_alloc(gsl_qrng_halton, p);
+
+        /* initialize multistart parameters */
+        int mstatus;
+        double mchisq;
+        double *mpall = (double *)R_alloc(mstart_ntest * p, sizeof(double));
+        double *mp = (double *)R_alloc(p, sizeof(double));
+        pars->mf = gsl_vector_alloc(n);
+
+        double *startptr = REAL(pars->start);
+        SEXP mpar = PROTECT(Rf_allocVector(REALSXP, p));
+        Rf_setAttrib(mpar, R_NamesSymbol, parnames);
+        SEXP mchisqall = PROTECT(Rf_allocVector(REALSXP, mstart_ntest));
+        nprotect += 2;
+
+        /* update fdf params */
+        params.start = mpar;
+
+        /* global stage: evaluate f at each test parameter vector */
+        for (R_len_t i = 0; i < mstart_ntest; i++)
+        {
+            /* get parameters */
+            gsl_qrng_get(pars->q, mp);
+            /* evaluate f at parameters*/
+            for (R_len_t k = 0; k < p; k++)
+            {
+                mpall[i * p + k] = startptr[k] + (startptr[p + k] - startptr[k]) * mp[k];
+                SET_REAL_ELT(mpar, k, mpall[i * p + k]);
+            }
+            mstatus = gsl_evalf(mpar, &params, pars->mf);
+            /* evaluate ssr */
+            if (mstatus == GSL_SUCCESS)
+            {
+                gsl_blas_ddot(pars->mf, pars->mf, &mchisq);
+                SET_REAL_ELT(mchisqall, i, mchisq);
+            }
+            else
+                SET_REAL_ELT(mchisqall, i, NA_REAL);
+        }
+
+        /* order ssr vector */
+        int *mchisqidx = (int *)R_alloc(mstart_ntest, sizeof(int));
+        R_orderVector1(mchisqidx, mstart_ntest, mchisqall, TRUE, FALSE);
+
+        if (verbose)
+        {
+            double nprint = mstart_ntest > 10 ? 10 : mstart_ntest;
+            Rprintf("multi-start: initialization stage\n");
+            for (R_len_t i = 0; i < nprint; i++)
+            {
+                Rprintf("mstart index %d/%d:, ssr = %g, par = (", mchisqidx[i] + 1, mstart_ntest, REAL_ELT(mchisqall, mchisqidx[i]));
+                for (R_len_t k = 0; k < p; k++)
+                    Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", mpall[mchisqidx[i] * p + k]);
+            }
+            if (mstart_ntest > 10)
+                Rprintf("...\n");
+            Rprintf("*******************\nmulti-start: local optimization stages\n");
+        }
+
+        /* local stage: optimize ssr at each seed parameter vector */
+        int minfo;
+        double theta, mchisq0, mchisq1 = GSL_POSINF;
+        mchisq = GSL_POSINF;
+        pars->mpi = gsl_vector_alloc(p);
+        pars->mpopt = gsl_vector_alloc(p);
+        for (R_len_t k = 0; k < p; k++)
+            gsl_vector_set(pars->mpopt, k, mpall[mchisqidx[0] * p + k]);
+
+        for (R_len_t i = 0; i < mstart_nseed; i++)
+        {
+            /* tiktak convex combination */
+            theta = sqrt(((double)i) / ((double)mstart_nseed));
+            theta = theta < 0.995 ? (theta > 0.1 ? theta : 0.1) : 0.995;
+            for (R_len_t k = 0; k < p; k++)
+                gsl_vector_set(pars->mpi, k, (1.0 - theta) * mpall[mchisqidx[i] * p + k] + theta * gsl_vector_get(pars->mpopt, k));
+
+            /* re-initialize solver */
+            if (!Rf_isNull(pars->swts))
+                gsl_multifit_nlinear_winit(pars->mpi, pars->wts, &fdf, pars->w);
+            else
+                gsl_multifit_nlinear_init(pars->mpi, &fdf, pars->w);
+
+            /* local optimization */
+            mchisq1 = REAL_ELT(mchisqall, mchisqidx[i]);
+            if (R_IsNA(mchisq1))
+                mchisq1 = GSL_POSINF;
+
+            mstatus = gsl_multifit_nlinear_driver2(mstart_niter, xtol, 1e-3, ftol, NULL, NULL, &minfo, &mchisq0, &mchisq1, pars->w);
+
+            /* save optimal parameters */
+            if (mchisq1 < mchisq)
+            {
+                mchisq = mchisq1;
+                gsl_vector_memcpy(pars->mpopt, (pars->w)->x);
+            }
+
+            if (verbose)
+            {
+                Rprintf("mstart step %d/%d: ssr = %g, ssr* = %g, par = (", i + 1, mstart_nseed, mchisq1, mchisq);
+                for (R_len_t k = 0; k < p; k++)
+                    Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", gsl_vector_get((pars->w)->x, k));
+                if(i == (mstart_nseed - 1))
+                    Rprintf("*******************\nsingle-start: local optimization\n");
+            }
+        }
     }
-    else
+    else /* single-start */
     {
-        gsl_multifit_nlinear_init(&par.vector, &fdf, pars->w);
+        pars->mpopt = gsl_vector_alloc(p);
+        for (R_len_t k = 0; k < p; k++)
+            gsl_vector_set(pars->mpopt, k, REAL_ELT(startvec, k));
     }
 
-    /* compute initial cost function */
+    /* (re-)initialize solver w/ optimal start parameters */
+    if (!Rf_isNull(pars->swts))
+        gsl_multifit_nlinear_winit(pars->mpopt, pars->wts, &fdf, pars->w);
+    else
+        gsl_multifit_nlinear_init(pars->mpopt, &fdf, pars->w);
+
+    /* initial cost */
     double chisq_init = GSL_POSINF;
     gsl_vector *resid = gsl_multifit_nlinear_residual(pars->w);
     gsl_blas_ddot(resid, resid, &chisq_init);
@@ -195,7 +339,7 @@ SEXP C_nls_internal(void *data)
         SET_REAL_ELT(params.ssrtrace, 0, chisq_init);
         double *parptr = REAL(params.partrace);
         for (R_len_t k = 0; k < p; k++)
-            parptr[(niter + 1) * k] = start1[k];
+            parptr[(niter + 1) * k] = gsl_vector_get(pars->mpopt, k);
     }
 
     /* solve the system  */
@@ -250,7 +394,7 @@ SEXP C_nls_internal(void *data)
     if (status == GSL_SUCCESS || status == GSL_EMAXITER)
     {
         for (R_len_t k = 0; k < p; k++)
-            SET_REAL_ELT(anspar, k, gsl_vector_get(pars->w->x, k));
+            SET_REAL_ELT(anspar, k, gsl_vector_get((pars->w)->x, k));
     }
     else
     {
@@ -657,4 +801,33 @@ void callback(const size_t iter, void *params, const gsl_multifit_nlinear_worksp
     Rprintf("iter %3d: ssr = %g, par = (", iter, chisq);
     for (R_len_t k = 0; k < p; k++)
         Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", parptr[iter + n * k]);
+}
+
+int gsl_evalf(SEXP par, fdata *params, gsl_vector *f)
+{
+    /* evaluate function f */
+    SETCADR(params->f, par);
+    SEXP fval = PROTECT(Rf_eval(params->f, params->rho));
+
+    /* function checks */
+    R_len_t n = params->n;
+    if (TYPEOF(fval) != REALSXP || Rf_length(fval) != n)
+    {
+        UNPROTECT(1);
+        return GSL_EBADFUNC;
+    }
+
+    /* set gsl residuals */
+    double *fvalptr = REAL(fval);
+    double *yptr = REAL(params->y);
+    for (R_len_t i = 0; i < n; i++)
+    {
+        if (R_IsNaN(fvalptr[i]) || !R_finite(fvalptr[i]))
+            gsl_vector_set(f, i, GSL_POSINF);
+        else
+            gsl_vector_set(f, i, fvalptr[i] - yptr[i]);
+    }
+
+    UNPROTECT(1);
+    return GSL_SUCCESS;
 }

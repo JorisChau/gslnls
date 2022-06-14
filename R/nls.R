@@ -355,6 +355,8 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
 
   ## lower/upper bounds
   if(is.matrix(start)) {
+    if(length(pnames) > 1229L)
+      stop("GSL quasi-random Halton sequences are only available up to 1229 parameters")
     if(any(start[, 1] > start[, 2]))
       stop("'start' lower bounds must all be smaller than upper bounds")
     else if(!any(start[, 1] < start[, 2]))
@@ -471,8 +473,9 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     is.numeric(.ctrl$xtol), length(.ctrl$xtol) == 1, .ctrl$xtol > 0,
     is.numeric(.ctrl$ftol), length(.ctrl$ftol) == 1, .ctrl$ftol > 0,
     is.numeric(.ctrl$gtol), length(.ctrl$gtol) == 1, .ctrl$gtol > 0,
-    is.numeric(.ctrl$ntest), length(.ctrl$ntest) == 1, .ctrl$ntest > 1,
-    is.numeric(.ctrl$nseed), length(.ctrl$nseed) == 1, .ctrl$nseed > 0, .ctrl$nseed < 1
+    is.numeric(.ctrl$mstart_m1), length(.ctrl$mstart_m1) == 1, .ctrl$mstart_m1 > 1,
+    is.numeric(.ctrl$mstart_m2), length(.ctrl$mstart_m2) == 1, .ctrl$mstart_m2 > 0, .ctrl$mstart_m2 < 1,
+    is.numeric(.ctrl$mstart_maxiter), length(.ctrl$mstart_maxiter) == 1, .ctrl$mstart_maxiter > 0
   )
   .ctrl_int <- c(
     as.integer(.ctrl$maxiter),
@@ -481,18 +484,15 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     match(.ctrl$scale, c("more", "levenberg", "marquardt")) - 1L,
     match(.ctrl$solver, c("qr", "cholesky", "svd")) - 1L,
     match(.ctrl$fdtype, c("forward", "center")) - 1L,
-    as.integer(.ctrl$ntest * length(pnames)),
-    as.integer(.ctrl$ntest * length(pnames) * .ctrl$nseed)
+    as.integer(.ctrl$mstart_m1 * length(pnames)),
+    as.integer(.ctrl$mstart_m1 * length(pnames) * .ctrl$mstart_m2),
+    as.integer(.ctrl$mstart_maxiter)
   )
   .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol")])
   .ctrl_tol <- unlist(.ctrl[c("xtol", "ftol", "gtol")])
 
   ## optimize
-  if(is.matrix(start)) {
-    cFit <- .Call(C_nls_multistart, .fn, .lhs, .jac, .fvv, environment(), start, wts, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
-  } else {
-    cFit <- .Call(C_nls, .fn, .lhs, .jac, .fvv, environment(), start, wts, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
-  }
+  cFit <- .Call(C_nls, .fn, .lhs, .jac, .fvv, environment(), start, wts, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
 
   ## convert to nls object
   m <- nlsModel(formula, mf, cFit$par, wts, jac)
@@ -565,6 +565,8 @@ gsl_nls.function <- function(fn, y, start,
 
   ## lower/upper bounds
   if(is.matrix(start)) {
+    if(p > 1229L)
+      stop("GSL quasi-random Halton sequences are only available up to 1229 parameters")
     if(any(start[, 1] > start[, 2]))
       stop("'start' lower bounds must all be smaller than upper bounds")
     else if(!any(start[, 1] < start[, 2]))
@@ -652,8 +654,9 @@ gsl_nls.function <- function(fn, y, start,
     is.numeric(.ctrl$xtol), length(.ctrl$xtol) == 1, .ctrl$xtol > 0,
     is.numeric(.ctrl$ftol), length(.ctrl$ftol) == 1, .ctrl$ftol > 0,
     is.numeric(.ctrl$gtol), length(.ctrl$gtol) == 1, .ctrl$gtol > 0,
-    is.numeric(.ctrl$ntest), length(.ctrl$ntest) == 1, .ctrl$ntest > 1,
-    is.numeric(.ctrl$nseed), length(.ctrl$nseed) == 1, .ctrl$nseed > 0, .ctrl$nseed < 1
+    is.numeric(.ctrl$mstart_m1), length(.ctrl$mstart_m1) == 1, .ctrl$mstart_m1 > 1,
+    is.numeric(.ctrl$mstart_m2), length(.ctrl$mstart_m2) == 1, .ctrl$mstart_m2 > 0, .ctrl$mstart_m2 < 1,
+    is.numeric(.ctrl$mstart_maxiter), length(.ctrl$mstart_maxiter) == 1, .ctrl$mstart_maxiter > 0
   )
   .ctrl_int <- c(
     as.integer(.ctrl$maxiter),
@@ -662,8 +665,9 @@ gsl_nls.function <- function(fn, y, start,
     match(.ctrl$scale, c("more", "levenberg", "marquardt")) - 1L,
     match(.ctrl$solver, c("qr", "cholesky", "svd")) - 1L,
     match(.ctrl$fdtype, c("forward", "center")) - 1L,
-    as.integer(.ctrl$ntest * p),
-    as.integer(.ctrl$ntest * p * .ctrl$nseed)
+    as.integer(.ctrl$mstart_m1 * length(pnames)),
+    as.integer(.ctrl$mstart_m1 * length(pnames) * .ctrl$mstart_m2),
+    as.integer(.ctrl$mstart_maxiter)
   )
   .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol")])
   .ctrl_tol <- unlist(.ctrl[c("xtol", "ftol", "gtol")])
@@ -679,13 +683,8 @@ gsl_nls.function <- function(fn, y, start,
   }
 
   ## optimize
-  if(is.matrix(start)) {
-    cFit <- .Call(C_nls_multistart, .fn, y, .jac, .fvv, environment(), start, weights, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
-    m <- gslModel(fn, y, cFit, start[, 1], weights, jac, ...)
-  } else {
-    cFit <- .Call(C_nls, .fn, y, .jac, .fvv, environment(), start, weights, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
-    m <- gslModel(fn, y, cFit, start, weights, jac, ...)
-  }
+  cFit <- .Call(C_nls_multistart, .fn, y, .jac, .fvv, environment(), start, weights, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
+  m <- gslModel(fn, y, cFit, if(is.matrix(start)) start[, 1] else start, weights, jac, ...)
 
   ## mimick nls object
   convInfo <- list(
@@ -764,9 +763,10 @@ gsl_nls.function <- function(fn, y, start,
 #' defaults to \code{sqrt(.Machine$double.eps)}.
 #' @param gtol numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
 #' indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}
-#' @param ntest numeric value larger than one, this factor multiplied by the number of parameters is the number of times the
-#' function is evaluated in the pre-testing phase of the multistart algorithm.
-#' @param nseed numeric value between zero and one, fraction of seed points kept in the pre-testing phase of the multistart algorithm.
+#' @param mstart_m1 numeric value larger than one, this value multiplied by the parameter dimension is the number of evaluated start
+#' parameter vectors in the multi-start initialization stage, defaults to 100.
+#' @param mstart_m2 numeric value between zero and one, fraction of start parameter vectors kept in the multi-start initialization stage, defaults to 0.02.
+#' @param mstart_maxiter positive integer, maximum number of iterations in the multi-start local optimization stages, defaults to \code{maxiter \%/\% 2}.
 #' @importFrom stats nls.control
 #' @seealso \code{\link[stats]{nls.control}}
 #' @seealso \url{https://www.gnu.org/software/gsl/doc/html/nls.html#tunable-parameters}
@@ -774,7 +774,7 @@ gsl_nls.function <- function(fn, y, start,
 #' @examples
 #' ## default tuning parameters
 #' gsl_nls_control()
-#' @return A \code{list} with exactly fourteen components:
+#' @return A \code{list} with exactly fifteen components:
 #' \itemize{
 #' \item maxiter
 #' \item scale
@@ -788,8 +788,9 @@ gsl_nls.function <- function(fn, y, start,
 #' \item xtol
 #' \item ftol
 #' \item gtol
-#' \item ntest
-#' \item nseed
+#' \item mstart_m1
+#' \item mstart_m2
+#' \item mstart_maxiter
 #' }
 #' with meanings as explained under 'Arguments'.
 #' @references M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
@@ -798,7 +799,7 @@ gsl_nls_control <- function(maxiter = 50, scale = "more", solver = "qr",
                             fdtype = "forward", factor_up = 2, factor_down = 3, avmax = 0.75,
                             h_df = sqrt(.Machine$double.eps), h_fvv = 0.02, xtol = sqrt(.Machine$double.eps),
                             ftol = sqrt(.Machine$double.eps), gtol = .Machine$double.eps^(1/3),
-                            ntest = 50, nseed = 0.05) {
+                            mstart_m1 = 100, mstart_m2 = 0.02, mstart_maxiter = maxiter %/% 2) {
 
   scale <- match.arg(scale, c("more", "levenberg", "marquardt"))
   solver <- match.arg(solver, c("qr", "cholesky", "svd"))
@@ -814,14 +815,15 @@ gsl_nls_control <- function(maxiter = 50, scale = "more", solver = "qr",
     is.numeric(xtol), length(xtol) == 1, xtol > 0,
     is.numeric(ftol), length(ftol) == 1, ftol > 0,
     is.numeric(gtol), length(gtol) == 1, gtol > 0,
-    is.numeric(ntest), length(ntest) == 1, ntest > 1,
-    is.numeric(nseed), length(nseed) == 1, nseed > 0, nseed < 1
+    is.numeric(mstart_m1), length(mstart_m1) == 1, mstart_m1 > 1,
+    is.numeric(mstart_m2), length(mstart_m2) == 1, mstart_m2 > 0, mstart_m2 < 1,
+    is.numeric(mstart_maxiter), length(mstart_maxiter) == 1, mstart_maxiter > 0
   )
 
   list(maxiter = as.integer(maxiter), scale = scale, solver = solver, fdtype = fdtype,
        factor_up = factor_up, factor_down = factor_down, avmax = avmax,
        h_df = h_df, h_fvv = h_fvv, xtol = xtol, ftol = ftol, gtol = gtol,
-       ntest = ntest, nseed = nseed)
+       mstart_m1 = mstart_m1, mstart_m2 = mstart_m2, mstart_maxiter = as.integer(mstart_maxiter))
 
 }
 
