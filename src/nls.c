@@ -406,7 +406,7 @@ SEXP C_nls_internal(void *data)
     else
     {
         for (R_len_t k = 0; k < p; k++)
-            SET_REAL_ELT(anspar, k, REAL_ELT(startvec, k));
+            SET_REAL_ELT(anspar, k, gsl_vector_get(pars->mpopt, k));
     }
     if (!Rf_isNull(parnames))
         Rf_setAttrib(anspar, R_NamesSymbol, parnames);
