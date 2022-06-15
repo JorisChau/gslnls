@@ -21,7 +21,7 @@ jobs:
   #     options: --user=root
   #
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v1
   #     - uses: r-lib/actions/run-rchk@master
 
   R-CMD-check:
@@ -34,7 +34,7 @@ jobs:
       matrix:
         config:
           - {os: macOS-latest,   r: 'release'}
-          - {os: windows-latest, r: 'release'}
+          - {os: windows-latest, r: '4.1.3'}
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
           - {os: ubuntu-latest,   r: 'oldrel/1'}
@@ -57,15 +57,10 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      - name: Install GSL (macOS)
+      - name: Install lib-gsl
         if: runner.os == 'macOS'
         run: |
           brew install gsl
-
-      - name: Install GSL (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          pacman -Syu mingw-w64-x86_64-gsl --noconfirm
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
