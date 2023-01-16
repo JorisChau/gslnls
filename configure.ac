@@ -1,5 +1,13 @@
 
-AC_INIT([gslnls],[1.1.1])
+AC_INIT([gslnls],[1.1.2])
+
+: ${R_HOME=`R RHOME`}
+if test -z "${R_HOME}"; then
+  echo "could not determine R_HOME"
+  exit 1
+fi
+CC=`"${R_HOME}/bin/R" CMD config CC`
+CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
 
 AC_PROG_CC
 

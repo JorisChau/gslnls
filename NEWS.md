@@ -1,3 +1,8 @@
+# gslnls 1.1.2
+
+* Check correct compiler in configure script
+* Change defaults for `factor_up` and `factor_down` in `gsl_nls_control()`
+
 # gslnls 1.1.1
 
 * Clean exits `gsl_nls()` and `gsl_nls_large()` when interrupted
