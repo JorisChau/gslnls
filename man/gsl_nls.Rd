@@ -46,9 +46,14 @@ defined as a \link{formula}. Can also be a list or an environment, but not a mat
 \item{y}{numeric response vector if \code{fn} is defined as a \link{function}, equal in
 length to the vector returned by evaluation of the function \code{fn}.}
 
-\item{start}{a named list or named numeric vector of starting estimates. \code{start} is
-only allowed to be missing if \code{fn} is a \code{\link{selfStart}} model. If \code{fn}
-is a \code{formula}, a naive guess for \code{start} is tried, but this should not be relied on.}
+\item{start}{initial parameter values (single-start) or parameter ranges (multi-start). The following choices are supported:
+\itemize{
+  \item \emph{single-start}: a named list or named vector of numeric starting values. \code{start} is only allowed to
+  be missing if \code{fn} is a \code{\link{selfStart}} model.
+  \item \emph{multi-start}: a named list with the (multi-start) parameter starting ranges in the form of length-2
+  numeric vectors. Can also be a (\code{2} by \code{p}) named matrix with as columns the numeric starting ranges for the parameters.
+  Ill-defined parameter ranges such as \code{c(0, Inf)} or \code{c(NA, 0)} are not allowed.
+}}
 
 \item{algorithm}{character string specifying the algorithm to use. The following choices are supported:
 \itemize{
@@ -66,7 +71,7 @@ searches a larger subspace for a solution, it can converge more quickly than \co
 on some problems.
 }}
 
-\item{control}{an optional list of control parameters to tune the least squares iterations.
+\item{control}{an optional list of control parameters to tune the least squares iterations and multistart algorithm.
 See \code{\link{gsl_nls_control}} for the available control parameters and their default values.}
 
 \item{jac}{either \code{NULL} (default) or a \link{function} returning the \code{n} by \code{p} dimensional Jacobian matrix of
@@ -122,13 +127,13 @@ the GNU Scientific Library (GSL).
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{formula}: If \code{fn} is a \code{formula}, the returned list object is of classes \code{gsl_nls} and \code{nls}.
+\item \code{gsl_nls(formula)}: If \code{fn} is a \code{formula}, the returned list object is of classes \code{gsl_nls} and \code{nls}.
 Therefore, all generic functions applicable to objects of class \code{nls}, such as \code{anova}, \code{coef}, \code{confint},
 \code{deviance}, \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print}, \code{profile},
 \code{residuals}, \code{summary}, \code{vcov} and \code{weights} are also applicable to the returned list object.
 In addition, a method \code{confintd} is available for inference of derived parameters.
 
-\item \code{function}: If \code{fn} is a \code{function}, the first argument must be the vector of parameters and
+\item \code{gsl_nls(`function`)}: If \code{fn} is a \code{function}, the first argument must be the vector of parameters and
 the function should return a numeric vector containing the nonlinear model evaluations at
 the provided parameter and predictor or covariate vectors. In addition, the argument \code{y}
 needs to contain the numeric vector of observed responses, equal in length to the numeric
@@ -138,7 +143,24 @@ applicable for an object of class \code{gsl_nls}: \code{anova}, \code{coef}, \co
 \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print},
 \code{residuals}, \code{summary}, \code{vcov} and \code{weights}. In addition, a method \code{confintd}
 is available for inference of derived parameters.
+
 }}
+\section{Multi-start algorithm}{
+
+If \code{start} is a list or matrix of parameter ranges, a modified version of the multi-start algorithm described in
+Hickernell and Yuan (1997) is applied. Note that the \code{start} parameter ranges are only used to bound the domain for the
+starting values, i.e. the resulting parameter estimates are not constrained to lie within these bounds. Quasi-random starting values
+are sampled in the unit hypercube from a Sobol sequence if \code{p < 41} and from a Halton sequence otherwise. The initial starting values
+are scaled to the specified parameter ranges using an inverse (scaled) logistic function favoring starting values near the center of the
+(scaled) domain. The trust region algorithm as specified by \code{algorithm} used for the inexpensive and expensive local search (see Algorithm 2.1 of Hickernell
+and Yuan (1997)) are the same, only differing in the number of search iterations \code{mstart_p} versus \code{mstart_maxiter}, where
+\code{mstart_p} is typically very small, e.g. 2 or 3. When a new stationary point is detected, the scaling step from the unit hypercube to
+the starting value domain is updated using the diagonal of the estimated scaling matrix \code{D} in the trust region algorithm, which is
+especially useful in sampling starting values when the parameters are living on very different scales. The multi-start algorithm terminates when NSP (number of stationary points)
+is larger than or equal to \code{mstart_minsp} and NWSP (number of worse stationary points) is larger than or equal to \code{mstart_r} times NSP,
+or when the maximum number of major iterations \code{mstart_maxstart} is reached. After termination of the multi-start algorithm, a full
+single-start optimization is executed starting from the optimal parameter values observed during the multi-start procedure.
+}
 
 \examples{
 # Example 1: exponential model
@@ -159,6 +181,13 @@ ex1_fit <- gsl_nls(
 )
 summary(ex1_fit)                                         ## model summary
 predict(ex1_fit, interval = "prediction")                ## prediction intervals
+
+## multi-start
+gsl_nls(
+  fn = y ~ A * exp(-lam * x) + b,                             ## model formula
+  data = data.frame(x = x, y = y),                            ## model fit data
+  start = list(A = c(0, 100), lam = c(0, 10), b = c(-10, 10)) ## starting ranges
+)
 
 ## analytic Jacobian 1
 gsl_nls(
@@ -263,9 +292,28 @@ gsl_nls(
   start = c(x1 = 6, x2 = 14.5),  ## starting values
   algorithm = "dogleg"           ## algorithm
 )
+
+# Other example problems
+
+nls_test_list()
+
+misra1a <- nls_test_problem(name = "Misra1a")
+
+misra1a_fit <- with(misra1a,
+  gsl_nls(
+    fn = fn,
+    data = data,
+    start = start
+  )
+)
+
+all.equal(coef(misra1a_fit), misra1a$target)
+
 }
 \references{
 M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
+
+Hickernell, F.J. and Yuan, Y. (1997) \emph{“A simple multistart algorithm for global optimization”}, OR Transactions, Vol. 1 (2).
 }
 \seealso{
 \code{\link[stats]{nls}}

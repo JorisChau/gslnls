@@ -22,7 +22,7 @@ gsl_nls_large(fn, ...)
   ...
 )
 
-\method{gsl_nls_large}{function}(
+\method{gsl_nls_large}{`function`}(
   fn,
   y,
   start,
@@ -70,7 +70,7 @@ The method performs well at points where the Jacobian is singular, and is also s
 where factoring the Jacobian matrix is prohibitively expensive.
 }}
 
-\item{control}{an optional list of control parameters to tune the least squares iterations.
+\item{control}{an optional list of control parameters to tune the least squares iterations and multistart algorithm.
 See \code{\link{gsl_nls_control}} for the available control parameters and their default values.}
 
 \item{jac}{a \link{function} returning the \code{n} by \code{p} dimensional Jacobian matrix of
@@ -125,13 +125,13 @@ the GNU Scientific Library (GSL).
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{formula}: If \code{fn} is a \code{formula}, the returned list object is of classes \code{gsl_nls} and \code{nls}.
+\item \code{gsl_nls_large(formula)}: If \code{fn} is a \code{formula}, the returned list object is of classes \code{gsl_nls} and \code{nls}.
 Therefore, all generic functions applicable to objects of class \code{nls}, such as \code{anova}, \code{coef}, \code{confint},
 \code{deviance}, \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print}, \code{profile},
 \code{residuals}, \code{summary}, \code{vcov} and \code{weights} are also applicable to the returned list object.
 In addition, a method \code{confintd} is available for inference of derived parameters.
 
-\item \code{function}: If \code{fn} is a \code{function}, the first argument must be the vector of parameters and
+\item \code{gsl_nls_large(`function`)}: If \code{fn} is a \code{function}, the first argument must be the vector of parameters and
 the function should return a numeric vector containing the nonlinear model evaluations at
 the provided parameter and predictor or covariate vectors. In addition, the argument \code{y}
 needs to contain the numeric vector of observed responses, equal in length to the numeric
@@ -141,8 +141,8 @@ applicable for an object of class \code{gsl_nls}: \code{anova}, \code{coef}, \co
 \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print},
 \code{residuals}, \code{summary}, \code{vcov} and \code{weights}. In addition, a method \code{confintd}
 is available for inference of derived parameters.
-}}
 
+}}
 \examples{
 # Large NLS example
 # (https://www.gnu.org/software/gsl/doc/html/nls.html#large-nonlinear-least-squares-example)

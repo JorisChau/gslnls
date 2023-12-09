@@ -1,7 +1,9 @@
-# gslnls 1.1.2
+# glsnls 1.2.0
 
-* Check correct compiler in configure script
-* Change defaults for `factor_up` and `factor_down` in `gsl_nls_control()`
+* Added multi-start algorithm to `gsl_nls()`
+* Added 56 NLS regression and optimization test problems
+* Added unit tests in folder `unit_tests`
+* Several minor changes/fixes
 
 # gslnls 1.1.1
 

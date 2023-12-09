@@ -5,6 +5,9 @@
 #' the GNU Scientific Library (GSL).
 #'
 #' @inheritParams gsl_nls
+#' @param start a named list or named numeric vector of starting estimates. \code{start} is
+#' only allowed to be missing if \code{fn} is a \code{\link{selfStart}} model. If \code{fn}
+#' is a \code{formula}, a naive guess for \code{start} is tried, but this should not be relied on.
 #' @param algorithm character string specifying the algorithm to use. The following choices are supported:
 #' \itemize{
 #' \item \code{"lm"} Levenberg-Marquardt algorithm (default)
@@ -352,6 +355,7 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
   ## control arguments
   trace <- isTRUE(trace)
   .ctrl <- gsl_nls_control()
+  .ctrl <- .ctrl[grep("^mstart", names(.ctrl), invert = TRUE)]
   if(!missing(control)) {
     control <- as.list(control)
     .ctrl[names(control)] <- control

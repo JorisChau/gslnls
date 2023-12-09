@@ -24,12 +24,12 @@ more fitted \code{"gsl_nls"} objects.
 set.seed(1)
 n <- 50
 xy <- data.frame(
-  x = (1:n) / n, 
+  x = (1:n) / n,
   y = 2.5 * exp(-1.5 * (1:n) / n) + 1 + rnorm(n, sd = 0.1)
 )
 ## model
 obj1 <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-obj2 <- gsl_nls(fn = y ~ A * exp(-lam * x) + b, data = xy, 
+obj2 <- gsl_nls(fn = y ~ A * exp(-lam * x) + b, data = xy,
     start = c(A = 1, lam = 1, b = 0))
 
 anova(obj1, obj2)

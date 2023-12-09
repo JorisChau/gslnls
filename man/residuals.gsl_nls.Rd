@@ -26,7 +26,7 @@ Returns the model residuals from a fitted \code{"gsl_nls"} object.
 set.seed(1)
 n <- 50
 xy <- data.frame(
-  x = (1:n) / n, 
+  x = (1:n) / n,
   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 )
 ## model

@@ -16,7 +16,16 @@ gsl_nls_control(
   h_fvv = 0.02,
   xtol = sqrt(.Machine$double.eps),
   ftol = sqrt(.Machine$double.eps),
-  gtol = .Machine$double.eps^(1/3)
+  gtol = .Machine$double.eps^(1/3),
+  mstart_n = 25,
+  mstart_p = 2,
+  mstart_q = 5,
+  mstart_r = 3,
+  mstart_s = 2,
+  mstart_tol = 0.1,
+  mstart_maxiter = maxiter\%/\%3,
+  mstart_maxstart = 100,
+  mstart_minsp = 1
 )
 }
 \arguments{
@@ -76,9 +85,27 @@ defaults to \code{sqrt(.Machine$double.eps)}.}
 
 \item{gtol}{numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
 indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}}
+
+\item{mstart_n}{positive integer, number of quasirandom points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 25.}
+
+\item{mstart_p}{positive integer, number of iterations of inexpensive local search to concentrate the sample, parameter \code{p} in Hickernell and Yuan (1997). Default is 2.}
+
+\item{mstart_q}{positiver integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is 5.}
+
+\item{mstart_r}{positive integer, scaling factor of number of stationary points determining when the multi-start algorithm terminates, parameter \code{r} in Hickernell and Yuan (1997). Default is 3.}
+
+\item{mstart_s}{positive integer, minimum number of iterations a point needs to be retained before starting an efficient local search, parameter \code{s} in Hickernell and Yuan (1997). Default is 2.}
+
+\item{mstart_tol}{numeric value, tolerance used as criterion to start an efficient local search (epsilon in Algorithm 2.1, Hickernell and Yuan (1997)).}
+
+\item{mstart_maxiter}{positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to \code{maxiter \%/\% 3}.}
+
+\item{mstart_maxstart}{positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 100.}
+
+\item{mstart_minsp}{positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.}
 }
 \value{
-A \code{list} with exactly twelve components:
+A \code{list} with exactly twenty-one components:
 \itemize{
 \item maxiter
 \item scale
@@ -92,6 +119,15 @@ A \code{list} with exactly twelve components:
 \item xtol
 \item ftol
 \item gtol
+\item mstart_n
+\item mstart_p
+\item mstart_q
+\item mstart_r
+\item mstart_s
+\item mstart_tol
+\item mstart_maxiter
+\item mstart_maxstart
+\item mstart_minsp
 }
 with meanings as explained under 'Arguments'.
 }
@@ -108,6 +144,8 @@ gsl_nls_control()
 }
 \references{
 M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
+
+Hickernell, F.J. and Yuan, Y. (1997) \emph{“A simple multistart algorithm for global optimization”}, OR Transactions, Vol. 1 (2).
 }
 \seealso{
 \code{\link[stats]{nls.control}}

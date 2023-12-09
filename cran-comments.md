@@ -1,4 +1,4 @@
-## CRAN package version 1.1.2
+## CRAN package version 1.2.0
 
 * System requirements: GSL (>= 2.2)
 

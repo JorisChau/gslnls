@@ -10,12 +10,12 @@
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' coef(obj)
 #' @export
 coef.gsl_nls <- function(object, ...) {
@@ -33,12 +33,12 @@ coef.gsl_nls <- function(object, ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' fitted(obj)
 #' @export
 fitted.gsl_nls <- function(object, ...) {
@@ -61,12 +61,12 @@ fitted.gsl_nls <- function(object, ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' nobs(obj)
 #' @export
 nobs.gsl_nls <- function(object, ...) {
@@ -86,16 +86,43 @@ nobs.gsl_nls <- function(object, ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' deviance(obj)
 #' @export
 deviance.gsl_nls <- function(object, ...) {
   object$m$deviance()
+}
+
+#' Residual standard deviation
+#' @description Returns the estimated (unweighted) residual standard deviation of a fitted \code{"gsl_nls"} object.
+#' @inheritParams coef.gsl_nls
+#' @return Numeric residual standard deviation value similar to \code{\link[stats]{sigma}}
+#' @seealso \code{\link[stats]{sigma}}
+#' @examples
+#' ## data
+#' set.seed(1)
+#' n <- 50
+#' xy <- data.frame(
+#'   x = (1:n) / n,
+#'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
+#' )
+#' ## model
+#' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
+#'
+#' sigma(obj)
+#' @export
+sigma.gsl_nls <- function(object, ...) {
+  w <- object$weights
+  if(is.null(w)) {
+    NextMethod()
+  } else {
+    sqrt(sum(as.vector(object$m$lhs() - object$m$fitted())^2)/df.residual(object))
+  }
 }
 
 #' Extract model formula
@@ -110,12 +137,12 @@ deviance.gsl_nls <- function(object, ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' formula(obj)
 #' @export
 formula.gsl_nls <- function(x, ...) {
@@ -136,12 +163,12 @@ formula.gsl_nls <- function(x, ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' summary(obj)
 #' @export
 summary.gsl_nls <- function (object, correlation = FALSE, symbolic.cor = FALSE, ...) {
@@ -162,17 +189,17 @@ summary.gsl_nls <- function (object, correlation = FALSE, symbolic.cor = FALSE, 
     tval <- param/se
     param <- cbind(param, se, tval, 2 * pt(abs(tval), rdf, lower.tail = FALSE))
     dimnames(param) <-
-        list(pnames, c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))
+      list(pnames, c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))
     ans <- list(formula = as.formula(sprintf("y ~ fn(%s)",
-                paste(names(formals(formula(object))), collapse = ", "))),
-        residuals = r, sigma = sqrt(resvar),
-        df = c(p, rdf), cov.unscaled = XtXinv,
-        call = object$call,
-        convInfo = object$convInfo,
-        control = object$control,
-        na.action = object$na.action,
-        coefficients = param,
-        parameters = param)# never documented, for back-compatibility
+                                             paste(names(formals(formula(object))), collapse = ", "))),
+                residuals = r, sigma = sqrt(resvar),
+                df = c(p, rdf), cov.unscaled = XtXinv,
+                call = object$call,
+                convInfo = object$convInfo,
+                control = object$control,
+                na.action = object$na.action,
+                coefficients = param,
+                parameters = param)# never documented, for back-compatibility
     if(correlation && rdf > 0) {
       ans$correlation <- (XtXinv * resvar)/outer(se, se)
       ans$symbolic.cor <- symbolic.cor
@@ -201,7 +228,7 @@ print.gsl_nls <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
     cat("  model: ", sprintf("y ~ fn(%s)", paste(names(formals(formula(x))), collapse = ", ")), "\n", sep = "")
   }
   print(x$m$getAllPars(), digits = digits, ...)
-  cat(" ", if(!is.null(x$weights) && diff(range(x$weights))) "weighted ",
+  cat(" ", if(!is.null(x$weights)) "weighted ",
       "residual sum-of-squares: ", format(x$m$deviance(), digits = digits),
       "\n", sep = "")
   convInfo(x, digits = digits)
@@ -232,12 +259,12 @@ print.gsl_nls <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' predict(obj)
 #' predict(obj, newdata = data.frame(x = 1:(2 * n) / n))
 #' predict(obj, interval = "confidence")
@@ -286,12 +313,12 @@ predict.gsl_nls <- function(object, newdata, scale = NULL, interval = c("none", 
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' residuals(obj)
 #' @export
 residuals.gsl_nls <- function(object, type = c("response", "pearson"), ...) {
@@ -324,12 +351,12 @@ residuals.gsl_nls <- function(object, type = c("response", "pearson"), ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' logLik(obj)
 #' @export
 logLik.gsl_nls <- function(object, REML = FALSE, ...) {
@@ -359,12 +386,12 @@ logLik.gsl_nls <- function(object, REML = FALSE, ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' df.residual(obj)
 #' @export
 df.residual.gsl_nls <- function(object, ...) {
@@ -385,12 +412,12 @@ df.residual.gsl_nls <- function(object, ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' vcov(obj)
 #' @export
 vcov.gsl_nls <- function(object, ...) {
@@ -411,35 +438,35 @@ vcov.gsl_nls <- function(object, ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + 1 + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj1 <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' obj2 <- gsl_nls(fn = y ~ A * exp(-lam * x) + b, data = xy, 
+#' obj2 <- gsl_nls(fn = y ~ A * exp(-lam * x) + b, data = xy,
 #'     start = c(A = 1, lam = 1, b = 0))
-#' 
+#'
 #' anova(obj1, obj2)
 #' @export
 anova.gsl_nls <- function(object, ...) {
   if(length(list(object, ...)) > 1L) {
     objects <- list(object, ...)
     responses <- vapply(objects, function(x)
-          if(inherits(formula(x), "formula")) as.character(formula(x)[[2L]]) else "y",
-        character(1))
+      if(inherits(formula(x), "formula")) as.character(formula(x)[[2L]]) else "y",
+      character(1))
     models <- lapply(objects, function(x)
-          if(inherits(formula(x), "formula")) {
-            formula(x)
-          } else {
-            sprintf("y ~ fn(%s)", paste(names(formals(formula(x))), collapse = ", "))
-          })
+      if(inherits(formula(x), "formula")) {
+        formula(x)
+      } else {
+        sprintf("y ~ fn(%s)", paste(names(formals(formula(x))), collapse = ", "))
+      })
     models <- as.character(models)
     sameresp <- responses == responses[1L]
     if (!all(sameresp)) {
       objects <- objects[sameresp]
       warning(gettextf("models with response %s removed because response differs from model 1",
-              sQuote(deparse(responses[!sameresp]))),
-          domain = NA)
+                       sQuote(deparse(responses[!sameresp]))),
+              domain = NA)
     }
     ## calculate the number of models
     nmodels <- length(objects)
@@ -467,14 +494,14 @@ anova.gsl_nls <- function(object, ...) {
     }
     table <- data.frame(df.r,ss.r,df,ss,f,p)
     dimnames(table) <- list(1L:nmodels, c("Res.Df", "Res.Sum Sq", "Df",
-            "Sum Sq", "F value", "Pr(>F)"))
+                                          "Sum Sq", "F value", "Pr(>F)"))
     ## construct table and title
     title <- "Analysis of Variance Table\n"
     topnote <- paste0("Model ", format(1L:nmodels), ": ", models,
-        collapse = "\n")
+                      collapse = "\n")
     ## calculate test statistic if needed
     structure(table, heading = c(title, topnote),
-        class = c("anova", "data.frame")) # was "tabular"
+              class = c("anova", "data.frame")) # was "tabular"
   } else {
     stop("anova is only defined for sequences of \"gsl_nls\" objects")
   }
@@ -503,12 +530,12 @@ anova.gsl_nls <- function(object, ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' ## asymptotic ci's
 #' confint(obj)
 #' \dontrun{
@@ -582,12 +609,12 @@ confintd <- function(object, expr, level = 0.95, ...) {
 #' set.seed(1)
 #' n <- 50
 #' xy <- data.frame(
-#'   x = (1:n) / n, 
+#'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
 #' )
 #' ## model
 #' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
-#' 
+#'
 #' ## delta method ci's
 #' confintd(obj, expr = c("log(lam)", "A / lam"))
 #' @export
@@ -623,19 +650,19 @@ confintd.gsl_nls <- function(object, expr, level = 0.95, dtype = "symbolic", ...
 
 convInfo <- function(x, digits, show. = getOption("show.nls.convergence", TRUE)) {
   with(x$convInfo, {
-        cat(sprintf("\nAlgorithm: %s, (scaling: %s, solver: %s)\n", trsName, x$control$scale, x$control$solver))
-        if(!isConv || show.) {
-          cat("\nNumber of iterations",
-              if(isConv) "to convergence:" else "till stop:", finIter,
-              "\nAchieved convergence tolerance:",
-              format(finTol, digits = digits))
-          cat("\n")
-        }
-        if(!isConv) {
-          cat("Reason stopped:", stopMessage)
-          cat("\n")
-        }
-      })
-  
+    cat(sprintf("\nAlgorithm: %s, (scaling: %s, solver: %s)\n", trsName, x$control$scale, x$control$solver))
+    if(!isConv || show.) {
+      cat("\nNumber of iterations",
+          if(isConv) "to convergence:" else "till stop:", finIter,
+          "\nAchieved convergence tolerance:",
+          format(finTol, digits = digits))
+      cat("\n")
+    }
+    if(!isConv) {
+      cat("Reason stopped:", stopMessage)
+      cat("\n")
+    }
+  })
+
   invisible()
 }
