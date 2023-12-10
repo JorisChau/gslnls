@@ -1,6 +1,5 @@
 #define R_NO_REMAP
 
-#include <math.h>
 #include "gsl_nls.h"
 
 SEXP C_nls_test_f(SEXP id, SEXP p, SEXP n, SEXP x)

@@ -29,7 +29,7 @@ static void C_nls_cleanup(void *data)
 SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl)
 {
     /* function arguments */
-    pdata pars = {fn, y, jac, fvv, env, start, swts, control_int, control_dbl, NULL, NULL, NULL, NULL, NULL, NULL};
+    pdata pars = {fn, y, jac, fvv, env, start, swts, control_int, control_dbl, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
     /* safe function call */
     SEXP ans = R_ExecWithCleanup(C_nls_internal, &pars, C_nls_cleanup, &pars);
@@ -228,7 +228,7 @@ SEXP C_nls_internal(void *data)
         mpars.mstarts = 0;
         mpars.nsp = 0;
         mpars.nwsp = 0;
-        mpars.mssropt = GSL_POSINF;
+        mpars.mssropt = (double)GSL_POSINF;
 
         SEXP mssr = PROTECT(Rf_allocVector(REALSXP, mpars.n));
         SEXP mpar = PROTECT(Rf_allocVector(REALSXP, p));
@@ -266,7 +266,7 @@ SEXP C_nls_internal(void *data)
             Rprintf("*******************\n");
         }
         /* add noise in case of zero residuals */
-        if(mpars.mssropt == 0)
+        if(mpars.mssropt <= 0)
         {
             gsl_vector_set(pars->mpopt, 0, gsl_vector_get(pars->mpopt, 0) + xtol);
         }
@@ -284,7 +284,7 @@ SEXP C_nls_internal(void *data)
         gsl_multifit_nlinear_init(pars->mpopt, &fdf, pars->w);
 
     /* initial cost */
-    double chisq_init = GSL_POSINF;
+    double chisq_init = (double)GSL_POSINF;
     gsl_vector *resid = gsl_multifit_nlinear_residual(pars->w);
     gsl_blas_ddot(resid, resid, &chisq_init);
     double chisq0 = chisq_init;
@@ -302,7 +302,7 @@ SEXP C_nls_internal(void *data)
     /* solve the system  */
     int info = GSL_CONTINUE;
     int status = gsl_multifit_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback : NULL, verbose ? &params : NULL, &info, &chisq0, &chisq1, pars->w);
-    R_len_t iter = gsl_multifit_nlinear_niter(pars->w);
+    R_len_t iter = (R_len_t)gsl_multifit_nlinear_niter(pars->w);
 
     /* compute covariance and cost at best fit parameters */
     gsl_matrix *J = NULL;
@@ -447,9 +447,9 @@ SEXP C_nls_internal(void *data)
 
     const char *nms[] = {"f", "J", "fvv", ""};
     SEXP ansneval = PROTECT(Rf_mkNamed(INTSXP, nms));
-    SET_INTEGER_ELT(ansneval, 0, fdf.nevalf);
-    SET_INTEGER_ELT(ansneval, 1, fdf.nevaldf);
-    SET_INTEGER_ELT(ansneval, 2, fdf.nevalfvv);
+    SET_INTEGER_ELT(ansneval, 0, (R_len_t)fdf.nevalf);
+    SET_INTEGER_ELT(ansneval, 1, (R_len_t)fdf.nevaldf);
+    SET_INTEGER_ELT(ansneval, 2, (R_len_t)fdf.nevalfvv);
     SET_VECTOR_ELT(ans, 10, ansneval);
     UNPROTECT(1);
 
@@ -618,7 +618,7 @@ int gsl_f(const gsl_vector *x, void *params, gsl_vector *f)
     for (R_len_t i = 0; i < n; i++)
     {
         if (R_IsNaN(fvalptr[i]) || !R_finite(fvalptr[i]))
-            gsl_vector_set(f, i, GSL_POSINF);
+            gsl_vector_set(f, i, (double)GSL_POSINF);
         else
             gsl_vector_set(f, i, fvalptr[i] - yptr[i]);
     }
@@ -771,8 +771,9 @@ void gsl_multistart_driver(pdata *pars,
 {
     // initialize variables
     int minfo;
+    R_len_t p = (R_len_t)(pars->mp->size);
     double kd, l0, l1, kd0, kd1;
-    double rcond, mchisq0 = GSL_POSINF, mchisq1 = GSL_POSINF;
+    double rcond, mchisq0 = (double)GSL_POSINF, mchisq1 = (double)GSL_POSINF;
     trust_state_t *trust_state = (trust_state_t *)(pars->w->state);
 
     /* sample initial points */
@@ -781,7 +782,7 @@ void gsl_multistart_driver(pdata *pars,
         if ((mpars->ntix)[nn] == 0)
         {
             gsl_qrng_get(pars->q, mpars->qmp);
-            for (R_len_t k = 0; k < (pars->mp)->size; k++)
+            for (R_len_t k = 0; k < p; k++)
             {
                 l0 = (mpars->startptr)[2 * k];
                 l1 = (mpars->startptr)[2 * k + 1];
@@ -810,7 +811,7 @@ void gsl_multistart_driver(pdata *pars,
             gsl_multifit_nlinear_init(pars->mp, fdff, pars->w);
         gsl_multifit_nlinear_driver2(mpars->p, xtol, 1e-3, ftol, NULL, NULL, &minfo, &mchisq0, &mchisq1, pars->w);
         gsl_matrix_set_row(pars->mx, nn, (pars->w)->x);
-        if (mchisq1 != GSL_POSINF)
+        if (mchisq1 < (double)GSL_POSINF)
             SET_REAL_ELT(mssr, nn, mchisq1);
         else
             SET_REAL_ELT(mssr, nn, NA_REAL);
@@ -845,7 +846,6 @@ void gsl_multistart_driver(pdata *pars,
                     gsl_vector_memcpy(pars->diag, trust_state->diag);
                     if (verbose)
                     {
-                        size_t p = pars->mp->size;
                         Rprintf("mstart ssr* = %g, cond(J) = %g, NSP = %d, NWSP = %d, par = (", mpars->mssropt, 1.0 / rcond, mpars->nsp, mpars->nwsp);
                         for (R_len_t k = 0; k < p; k++)
                             Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", gsl_vector_get((pars->w)->x, k));

@@ -96,71 +96,7 @@ subroutine p00_f ( nprob, m, n, x, f )
     call p25_f ( m, n, x, f )
   else if ( nprob == 26 ) then
     call p26_f ( m, n, x, f )
-  else
-    write ( *, '(a)' ) ' '
-    write ( *, '(a)' ) 'P00_F - Fatal error!'
-    write ( *, '(a,i8)' ) '  Illegal problem number = ', nprob
-    stop
   end if
-
-  return
-end
-subroutine p00_g ( nprob, m, n, x, g )
-
-!*****************************************************************************80
-!
-!! P00_G evaluates the least squares gradient for any problem.
-!
-!  Discussion:
-!
-!    If we write the least squares function as
-!
-!      FSQ = Sum ( 1 <= I <= M ) F(X)**2
-!
-!    then the least squares gradient vector is:
-!
-!      G(J) = d FSQ / d X(J) =
-!        Sum ( 1 <= I <= M ) 2 * F(X) * d F(X)/d X(J)
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    29 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Input, integer ( kind = 4 ) NPROB, the problem number.
-!
-!    Input, integer ( kind = 4 ) M, the number of equations.
-!
-!    Input, integer ( kind = 4 ) N, the number of variables.
-!
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
-!
-!    Output, real ( kind = 8 ) G(N), the least squares gradient vector.
-!
-  implicit none
-
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
-
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ) fjac(m,n)
-  real ( kind = 8 ) g(n)
-  integer ( kind = 4 ) nprob
-  real ( kind = 8 ) x(n)
-
-  call p00_f ( nprob, m, n, x, f )
-  call p00_j ( nprob, m, n, x, fjac )
-
-  g(1:n) = 2.0D+00 * matmul ( f(1:m), fjac(1:m,1:n) )
 
   return
 end
@@ -262,11 +198,6 @@ subroutine p00_j ( nprob, m, n, x, fjac )
     call p25_j ( m, n, x, fjac )
   else if ( nprob == 26 ) then
     call p26_j ( m, n, x, fjac )
-  else
-    write ( *, '(a)' ) ' '
-    write ( *, '(a)' ) 'P00_J - Fatal error!'
-    write ( *, '(a,i8)' ) '  Illegal problem number = ', nprob
-    stop
   end if
 
   return
@@ -363,11 +294,6 @@ subroutine p00_sol ( nprob, m, n, known, x )
     call p25_sol ( m, n, known, x )
   else if ( nprob == 26 ) then
     call p26_sol ( m, n, known, x )
-  else
-    write ( *, '(a)' ) ' '
-    write ( *, '(a)' ) 'P00_SOL - Fatal error!'
-    write ( *, '(a,i8)' ) '  Illegal problem number = ', nprob
-    stop
   end if
 
   return
@@ -457,11 +383,6 @@ subroutine p00_start ( nprob, n, x )
     call p25_start ( n, x )
   else if ( nprob == 26 ) then
     call p26_start ( n, x )
-  else
-    write ( *, '(a)' ) ' '
-    write ( *, '(a)' ) 'P00_START - Error!'
-    write ( *, '(a,i8)' ) '  Illegal problem number = ', nprob
-    stop
   end if
 
   return
@@ -817,36 +738,6 @@ subroutine p02_start ( n, x )
 
   return
 end
-subroutine p02_title ( title )
-
-!*****************************************************************************80
-!
-!! P02_TITLE specifies the title for problem 2.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = ' 2: Linear function, rank 1.'
-
-  return
-end
 subroutine p03_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -1030,36 +921,6 @@ subroutine p03_sol ( m, n, known, x )
 
   return
 end
-subroutine p03_title ( title )
-
-!*****************************************************************************80
-!
-!! P03_TITLE specifies the title for problem 3.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = ' 3: Linear function, rank 1, zero columns and rows.'
-
-  return
-end
 subroutine p04_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -1224,36 +1085,6 @@ subroutine p04_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:2) = (/ -1.2D+00, 1.0D+00 /)
-
-  return
-end
-subroutine p04_title ( title )
-
-!*****************************************************************************80
-!
-!! P04_TITLE specifies the title for problem 4.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = ' 4: Rosenbrock function.'
 
   return
 end
@@ -1443,36 +1274,6 @@ subroutine p05_start ( n, x )
 
   return
 end
-subroutine p05_title ( title )
-
-!*****************************************************************************80
-!
-!! P05_TITLE specifies the title for problem 5.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = ' 5: Helical valley function.'
-
-  return
-end
 subroutine p06_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -1651,36 +1452,6 @@ subroutine p06_start ( n, x )
 
   return
 end
-subroutine p06_title ( title )
-
-!*****************************************************************************80
-!
-!! P06_TITLE specifies the title for problem 6.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = ' 6: Powell singular function.'
-
-  return
-end
 subroutine p07_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -1845,36 +1616,6 @@ subroutine p07_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:2) = (/ 0.5D+00, -2.0D+00 /)
-
-  return
-end
-subroutine p07_title ( title )
-
-!*****************************************************************************80
-!
-!! P07_TITLE specifies the title for problem 7.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = ' 7: Freudenstein-Roth function.'
 
   return
 end
@@ -2076,36 +1817,6 @@ subroutine p08_start ( n, x )
 
   return
 end
-subroutine p08_title ( title )
-
-!*****************************************************************************80
-!
-!! P08_TITLE specifies the title for problem 8.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = ' 8: Bard function.'
-
-  return
-end
 subroutine p09_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -2297,36 +2008,6 @@ subroutine p09_start ( n, x )
 
   return
 end
-subroutine p09_title ( title )
-
-!*****************************************************************************80
-!
-!! P09_TITLE specifies the title for problem 9.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = ' 9: Kowalik and Osborne function.'
-
-  return
-end
 subroutine p10_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -2511,36 +2192,6 @@ subroutine p10_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:3) = (/ 0.02D+00, 4000.0D+00, 250.0D+00 /)
-
-  return
-end
-subroutine p10_title ( title )
-
-!*****************************************************************************80
-!
-!! P10_TITLE specifies the title for problem 10.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '10: Meyer function.'
 
   return
 end
@@ -2758,36 +2409,6 @@ subroutine p11_start ( n, x )
 
   return
 end
-subroutine p11_title ( title )
-
-!*****************************************************************************80
-!
-!! P11_TITLE specifies the title for problem 11.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '11: Watson function.'
-
-  return
-end
 subroutine p12_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -2966,36 +2587,6 @@ subroutine p12_start ( n, x )
 
   return
 end
-subroutine p12_title ( title )
-
-!*****************************************************************************80
-!
-!! P12_TITLE specifies the title for problem 12.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '12: Box 3-dimensional function.'
-
-  return
-end
 subroutine p13_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -3170,36 +2761,6 @@ subroutine p13_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:2) = (/ 0.3D+00, 0.4D+00 /)
-
-  return
-end
-subroutine p13_title ( title )
-
-!*****************************************************************************80
-!
-!! P13_TITLE specifies the title for problem 13.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '13: Jennrich-Sampson function.'
 
   return
 end
@@ -3385,37 +2946,6 @@ subroutine p14_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:4) = (/ 25.0D+00, 5.0D+00, -5.0D+00, -1.0D+00 /)
-
-  return
-end
-subroutine p14_title ( title )
-
-!*****************************************************************************80
-!
-!! P14_TITLE specifies the title for problem 14.
-!
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '14: Brown and Dennis function.'
 
   return
 end
@@ -3642,36 +3172,6 @@ subroutine p15_start ( n, x )
 
   return
 end
-subroutine p15_title ( title )
-
-!*****************************************************************************80
-!
-!! P15_TITLE specifies the title for problem 15.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '15: Chebyquad function.'
-
-  return
-end
 subroutine p16_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -3846,36 +3346,6 @@ subroutine p16_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:n) = 0.5D+00
-
-  return
-end
-subroutine p16_title ( title )
-
-!*****************************************************************************80
-!
-!! P16_TITLE specifies the title for problem 16.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '16: Brown almost-linear function.'
 
   return
 end
@@ -4069,36 +3539,6 @@ subroutine p17_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:5) = (/ 0.5D+00, 1.5D+00, -1.0D+00, 0.01D+00, 0.02D+00 /)
-
-  return
-end
-subroutine p17_title ( title )
-
-!*****************************************************************************80
-!
-!! P17_TITLE specifies the title for problem 17.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '17: Osborne function 1.'
 
   return
 end
@@ -4318,36 +3758,6 @@ subroutine p18_start ( n, x )
 
   return
 end
-subroutine p18_title ( title )
-
-!*****************************************************************************80
-!
-!! P18_TITLE specifies the title for problem 18.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '18: Osborne function 2.'
-
-  return
-end
 subroutine p19_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -4521,36 +3931,6 @@ subroutine p19_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:2) = (/ 10.0D+00, 0.15D+00 /)
-
-  return
-end
-subroutine p19_title ( title )
-
-!*****************************************************************************80
-!
-!! P19_TITLE specifies the title for problem 19.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '19: Hanson function 1.'
 
   return
 end
@@ -4731,36 +4111,6 @@ subroutine p20_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:3) = (/ 25.0D+00, -0.1D+00, 0.1D+00 /)
-
-  return
-end
-subroutine p20_title ( title )
-
-!*****************************************************************************80
-!
-!! P20_TITLE specifies the title for problem 20.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '20: Hanson function 2.'
 
   return
 end
@@ -4956,36 +4306,6 @@ subroutine p21_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:n) = 0.1D+00
-
-  return
-end
-subroutine p21_title ( title )
-
-!*****************************************************************************80
-!
-!! P21_TITLE specifies the title for problem 21.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '21: McKeown problem 1.'
 
   return
 end
@@ -5186,36 +4506,6 @@ subroutine p22_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:n) = 0.1D+00
-
-  return
-end
-subroutine p22_title ( title )
-
-!*****************************************************************************80
-!
-!! P22_TITLE specifies the title for problem 22.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '22: McKeown problem 2.'
 
   return
 end
@@ -5443,36 +4733,6 @@ subroutine p23_start ( n, x )
 
   return
 end
-subroutine p23_title ( title )
-
-!*****************************************************************************80
-!
-!! P23_TITLE specifies the title for problem 23.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '23: McKeown problem 3.'
-
-  return
-end
 subroutine p24_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -5651,36 +4911,6 @@ subroutine p24_start ( n, x )
   real ( kind = 8 ) x(n)
 
   x(1:4) = (/ 1.0D+00, 8.0D+00, 4.0D+00, 4.412D+00 /)
-
-  return
-end
-subroutine p24_title ( title )
-
-!*****************************************************************************80
-!
-!! P24_TITLE specifies the title for problem 24.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '24: Devilliers-Glasser function 1.'
 
   return
 end
@@ -5880,36 +5110,6 @@ subroutine p25_start ( n, x )
 
   return
 end
-subroutine p25_title ( title )
-
-!*****************************************************************************80
-!
-!! P25_TITLE specifies the title for problem 25.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    28 October 2000
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '25: Devilliers-Glasser function 2.'
-
-  return
-end
 subroutine p26_f ( m, n, x, f )
 
 !*****************************************************************************80
@@ -6081,36 +5281,6 @@ subroutine p26_start ( n, x )
 
   return
 end
-subroutine p26_title ( title )
-
-!*****************************************************************************80
-!
-!! P26_TITLE specifies the title for problem 26.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    25 November 2002
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Output, character ( len = * ) TITLE, the problem title.
-!
-  implicit none
-
-  character ( len = * ) title
-
-  title = '26: The Madsen example.'
-
-  return
-end
 function r8_pi ( )
 
 !*****************************************************************************80
@@ -6138,270 +5308,6 @@ function r8_pi ( )
   real ( kind = 8 ) r8_pi
 
   r8_pi = 3.141592653589793D+00
-
-  return
-end
-subroutine r8mat_print ( m, n, a, title )
-
-!*****************************************************************************80
-!
-!! R8MAT_PRINT prints an R8MAT.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    20 May 2004
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Input, integer ( kind = 4 ) M, the number of rows in A.
-!
-!    Input, integer ( kind = 4 ) N, the number of columns in A.
-!
-!    Input, real ( kind = 8 ) A(M,N), the matrix.
-!
-!    Input, character ( len = * ) TITLE, a title to be printed.
-!
-  implicit none
-
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
-
-  real ( kind = 8 ) a(m,n)
-  character ( len = * ) title
-
-  call r8mat_print_some ( m, n, a, 1, 1, m, n, title )
-
-  return
-end
-subroutine r8mat_print_some ( m, n, a, ilo, jlo, ihi, jhi, title )
-
-!*****************************************************************************80
-!
-!! DMAT_PRINT_SOME prints some of a double precision matrix.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    04 November 2003
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Input, integer ( kind = 4 ) M, N, the number of rows and columns.
-!
-!    Input, real ( kind = 8 ) A(M,N), an M by N matrix to be printed.
-!
-!    Input, integer ( kind = 4 ) ILO, JLO, the first row and column to print.
-!
-!    Input, integer ( kind = 4 ) IHI, JHI, the last row and column to print.
-!
-!    Input, character ( len = * ) TITLE, an optional title.
-!
-  implicit none
-
-  integer ( kind = 4 ), parameter :: incx = 5
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
-
-  real ( kind = 8 ) a(m,n)
-  character ( len = 14 ) ctemp(incx)
-  integer ( kind = 4 ) i
-  integer ( kind = 4 ) i2hi
-  integer ( kind = 4 ) i2lo
-  integer ( kind = 4 ) ihi
-  integer ( kind = 4 ) ilo
-  integer ( kind = 4 ) inc
-  integer ( kind = 4 ) j
-  integer ( kind = 4 ) j2
-  integer ( kind = 4 ) j2hi
-  integer ( kind = 4 ) j2lo
-  integer ( kind = 4 ) jhi
-  integer ( kind = 4 ) jlo
-  character ( len = * ) title
-
-  if ( 0 < len_trim ( title ) ) then
-    write ( *, '(a)' ) ' '
-    write ( *, '(a)' ) trim ( title )
-  end if
-
-  do j2lo = max ( jlo, 1 ), min ( jhi, n ), incx
-
-    j2hi = j2lo + incx - 1
-    j2hi = min ( j2hi, n )
-    j2hi = min ( j2hi, jhi )
-
-    inc = j2hi + 1 - j2lo
-
-    write ( *, '(a)' ) ' '
-
-    do j = j2lo, j2hi
-      j2 = j + 1 - j2lo
-      write ( ctemp(j2), '(i7,7x)') j
-    end do
-
-    write ( *, '(''  Col   '',5a14)' ) ctemp(1:inc)
-    write ( *, '(a)' ) '  Row'
-    write ( *, '(a)' ) ' '
-
-    i2lo = max ( ilo, 1 )
-    i2hi = min ( ihi, m )
-
-    do i = i2lo, i2hi
-
-      do j2 = 1, inc
-
-        j = j2lo - 1 + j2
-
-        write ( ctemp(j2), '(g14.6)' ) a(i,j)
-
-      end do
-
-      write ( *, '(i5,1x,5a14)' ) i, ( ctemp(j), j = 1, inc )
-
-    end do
-
-  end do
-
-  write ( *, '(a)' ) ' '
-
-  return
-end
-subroutine r8vec_print ( n, a, title )
-
-!*****************************************************************************80
-!
-!! R8VEC_PRINT prints an R8VEC.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license. 
-!
-!  Modified:
-!
-!    16 December 1999
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    Input, integer ( kind = 4 ) N, the number of components of the vector.
-!
-!    Input, real ( kind = 8 ) A(N), the vector to be printed.
-!
-!    Input, character ( len = * ) TITLE, a title to be printed first.
-!    TITLE may be blank.
-!
-  implicit none
-
-  integer ( kind = 4 ) n
-
-  real ( kind = 8 ) a(n)
-  integer ( kind = 4 ) i
-  character ( len = * ) title
-
-  if ( title /= ' ' ) then
-    write ( *, '(a)' ) ' '
-    write ( *, '(a)' ) trim ( title )
-  end if
-
-  write ( *, '(a)' ) ' '
-  do i = 1, n
-    write ( *, '(i8,g14.6)' ) i, a(i)
-  end do
-
-  return
-end
-subroutine timestamp ( )
-
-!*****************************************************************************80
-!
-!! TIMESTAMP prints the current YMDHMS date as a time stamp.
-!
-!  Example:
-!
-!    31 May 2001   9:45:54.872 AM
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license.
-!
-!  Modified:
-!
-!    18 May 2013
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Parameters:
-!
-!    None
-!
-  implicit none
-
-  character ( len = 8 ) ampm
-  integer ( kind = 4 ) d
-  integer ( kind = 4 ) h
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) mm
-  character ( len = 9 ), parameter, dimension(12) :: month = (/ &
-    'January  ', 'February ', 'March    ', 'April    ', &
-    'May      ', 'June     ', 'July     ', 'August   ', &
-    'September', 'October  ', 'November ', 'December ' /)
-  integer ( kind = 4 ) n
-  integer ( kind = 4 ) s
-  integer ( kind = 4 ) values(8)
-  integer ( kind = 4 ) y
-
-  call date_and_time ( values = values )
-
-  y = values(1)
-  m = values(2)
-  d = values(3)
-  h = values(5)
-  n = values(6)
-  s = values(7)
-  mm = values(8)
-
-  if ( h < 12 ) then
-    ampm = 'AM'
-  else if ( h == 12 ) then
-    if ( n == 0 .and. s == 0 ) then
-      ampm = 'Noon'
-    else
-      ampm = 'PM'
-    end if
-  else
-    h = h - 12
-    if ( h < 12 ) then
-      ampm = 'PM'
-    else if ( h == 12 ) then
-      if ( n == 0 .and. s == 0 ) then
-        ampm = 'Midnight'
-      else
-        ampm = 'AM'
-      end if
-    end if
-  end if
-
-  write ( *, '(i2,1x,a,1x,i4,2x,i2,a1,i2.2,a1,i2.2,a1,i3.3,1x,a)' ) &
-    d, trim ( month(m) ), y, h, ':', n, ':', s, '.', mm, trim ( ampm )
 
   return
 end

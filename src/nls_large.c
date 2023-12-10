@@ -218,7 +218,7 @@ SEXP C_nls_large_internal(void *data)
     }
 
     /* compute initial cost function */
-    double chisq_init = GSL_POSINF;
+    double chisq_init = (double)GSL_POSINF;
     gsl_vector *resid = gsl_multilarge_nlinear_residual(pars->w);
     gsl_blas_ddot(resid, resid, &chisq_init);
     double chisq0 = chisq_init;
@@ -236,7 +236,7 @@ SEXP C_nls_large_internal(void *data)
     /* solve the system  */
     int info = GSL_CONTINUE;
     int status = gsl_multilarge_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback_large : NULL, verbose ? &params : NULL, &info, &chisq0, &chisq1, pars->w);
-    R_len_t iter = gsl_multilarge_nlinear_niter(pars->w);
+    R_len_t iter = (R_len_t)gsl_multilarge_nlinear_niter(pars->w);
 
     /* compute covariance and cost at best fit parameters */
     gsl_matrix *cov = NULL;
@@ -385,10 +385,10 @@ SEXP C_nls_large_internal(void *data)
 
     const char *nms[] = {"f", "dfu", "df2", "fvv", ""};
     SEXP ansneval = PROTECT(Rf_mkNamed(INTSXP, nms));
-    SET_INTEGER_ELT(ansneval, 0, fdf.nevalf);
-    SET_INTEGER_ELT(ansneval, 1, fdf.nevaldfu);
-    SET_INTEGER_ELT(ansneval, 2, fdf.nevaldf2);
-    SET_INTEGER_ELT(ansneval, 3, fdf.nevalfvv);
+    SET_INTEGER_ELT(ansneval, 0, (R_len_t)fdf.nevalf);
+    SET_INTEGER_ELT(ansneval, 1, (R_len_t)fdf.nevaldfu);
+    SET_INTEGER_ELT(ansneval, 2, (R_len_t)fdf.nevaldf2);
+    SET_INTEGER_ELT(ansneval, 3, (R_len_t)fdf.nevalfvv);
     SET_VECTOR_ELT(ans, 10, ansneval);
     UNPROTECT(1);
 
