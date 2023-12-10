@@ -6,7 +6,7 @@ subroutine p00_f ( nprob, m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -115,7 +115,7 @@ subroutine p00_j ( nprob, m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -210,7 +210,7 @@ subroutine p00_sol ( nprob, m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -306,7 +306,7 @@ subroutine p00_start ( nprob, n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -395,7 +395,7 @@ subroutine p01_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -433,7 +433,7 @@ subroutine p01_f ( m, n, x, f )
   double precision x_sum
 
   x_sum = sum ( x(1:n) )
-  f(1:m) = - 1.0D+00 - 2.0D+00 * x_sum / real ( m, kind = 8 )
+  f(1:m) = - 1.0D+00 - 2.0D+00 * x_sum / real( m )
   mn = min ( m, n )
   f(1:mn) = f(1:mn) + x(1:mn)
 
@@ -447,7 +447,7 @@ subroutine p01_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -476,7 +476,7 @@ subroutine p01_j ( m, n, x, fjac )
   integer j
   double precision x(n)
 
-  fjac(1:m,1:n) = - 2.0D+00 / real ( m, kind = 8 )
+  fjac(1:m,1:n) = - 2.0D+00 / real( m )
   do j = 1, n
     fjac(j,j) = fjac(j,j) + 1.0D+00
   end do
@@ -491,7 +491,7 @@ subroutine p01_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -507,7 +507,7 @@ subroutine p01_sol ( m, n, known, x )
 !
 !    Input, integer N, the number of variables.
 !
-!    Output, integer KNOWN, 1 or 0, if the solution 
+!    Output, integer KNOWN, 1 or 0, if the solution
 !    is known or not.
 !
 !    Output, double precision X(N), the solution, if known.
@@ -533,7 +533,7 @@ subroutine p01_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -567,7 +567,7 @@ subroutine p02_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -607,11 +607,11 @@ subroutine p02_f ( m, n, x, f )
 
   x_sum = 0.0D+00
   do j = 1, n
-    x_sum = x_sum + real ( j, kind = 8 ) * x(j)
+    x_sum = x_sum + real ( j ) * x(j)
   end do
 
   do i = 1, m
-    f(i) = real ( i, kind = 8 ) * x_sum - 1.0D+00
+    f(i) = real ( i ) * x_sum - 1.0D+00
   end do
 
   return
@@ -624,7 +624,7 @@ subroutine p02_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -656,7 +656,7 @@ subroutine p02_j ( m, n, x, fjac )
 
   do j = 1, n
     do i = 1, m
-      fjac(i,j) = real ( i * j, kind = 8 )
+      fjac(i,j) = real ( i * j )
     end do
   end do
 
@@ -670,7 +670,7 @@ subroutine p02_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -686,7 +686,7 @@ subroutine p02_sol ( m, n, known, x )
 !
 !    Input, integer N, the number of variables.
 !
-!    Output, integer KNOWN, 1 or 0, if the solution 
+!    Output, integer KNOWN, 1 or 0, if the solution
 !    is known or not.
 !
 !    Output, double precision X(N), the solution, if known.
@@ -700,7 +700,7 @@ subroutine p02_sol ( m, n, known, x )
   double precision x(n)
 
   known = 1
-  x(1:n) = 6.0D+00 / real ( ( 2 * m + 1 ) * ( n + 1 ) * n, kind = 8 )
+  x(1:n) = 6.0D+00 / real ( ( 2 * m + 1 ) * ( n + 1 ) * n )
 
   return
 end
@@ -712,7 +712,7 @@ subroutine p02_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -746,7 +746,7 @@ subroutine p03_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -786,11 +786,11 @@ subroutine p03_f ( m, n, x, f )
 
   x_sum = 0.0D+00
   do j = 2, n-1
-    x_sum = x_sum + real ( j, kind = 8 ) * x(j)
+    x_sum = x_sum + real ( j ) * x(j)
   end do
 
   do i = 1, m-1
-    f(i) = real ( i - 1, kind = 8 ) * x_sum - 1.0D+00
+    f(i) = real ( i - 1 ) * x_sum - 1.0D+00
   end do
 
   f(m) = -1.0D+00
@@ -805,7 +805,7 @@ subroutine p03_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -838,7 +838,7 @@ subroutine p03_j ( m, n, x, fjac )
   fjac(1:m,1:n) = 0.0D+00
   do j = 2, n-1
     do i = 2, m-1
-      fjac(i,j) = real ( ( i - 1 ) * j, kind = 8 )
+      fjac(i,j) = real ( ( i - 1 ) * j )
     end do
   end do
 
@@ -852,7 +852,7 @@ subroutine p03_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -886,7 +886,7 @@ subroutine p03_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -902,7 +902,7 @@ subroutine p03_sol ( m, n, known, x )
 !
 !    Input, integer N, the number of variables.
 !
-!    Output, integer KNOWN, 1 or 0, if the solution is 
+!    Output, integer KNOWN, 1 or 0, if the solution is
 !    known or not.
 !
 !    Output, double precision X(N), the solution, if known.
@@ -917,7 +917,7 @@ subroutine p03_sol ( m, n, known, x )
 
   known = 1
   x(1:n) = 6.0D+00 / &
-    real ( ( 2 * m - 3 ) * ( n * ( n + 1 ) - 2 * n - 2 ), kind = 8 )
+    real ( ( 2 * m - 3 ) * ( n * ( n + 1 ) - 2 * n - 2 ) )
 
   return
 end
@@ -929,7 +929,7 @@ subroutine p04_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -977,7 +977,7 @@ subroutine p04_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1020,7 +1020,7 @@ subroutine p04_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1036,7 +1036,7 @@ subroutine p04_sol ( m, n, known, x )
 !
 !    Input, integer N, the number of variables.
 !
-!    Output, integer KNOWN, 1 or 0, if the solution is 
+!    Output, integer KNOWN, 1 or 0, if the solution is
 !    known or not.
 !
 !    Output, double precision X(N), the solution, if known.
@@ -1062,7 +1062,7 @@ subroutine p04_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1096,7 +1096,7 @@ subroutine p05_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1155,7 +1155,7 @@ subroutine p05_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1206,7 +1206,7 @@ subroutine p05_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1248,7 +1248,7 @@ subroutine p05_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1282,7 +1282,7 @@ subroutine p06_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1332,7 +1332,7 @@ subroutine p06_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1384,7 +1384,7 @@ subroutine p06_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1426,7 +1426,7 @@ subroutine p06_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1460,7 +1460,7 @@ subroutine p07_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1508,7 +1508,7 @@ subroutine p07_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1551,7 +1551,7 @@ subroutine p07_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1593,7 +1593,7 @@ subroutine p07_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1627,7 +1627,7 @@ subroutine p08_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1671,8 +1671,8 @@ subroutine p08_f ( m, n, x, f )
     0.73D+00, 0.96D+00, 1.34D+00, 2.10D+00, 4.39D+00 /)
 !
   do i = 1, 15
-    tmp1 = real ( i, kind = 8 )
-    tmp2 = real ( 16 - i, kind = 8 )
+    tmp1 = real ( i )
+    tmp2 = real ( 16 - i )
     if ( i <= 8 ) then
       tmp3 = tmp1
     else
@@ -1691,7 +1691,7 @@ subroutine p08_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1725,8 +1725,8 @@ subroutine p08_j ( m, n, x, fjac )
 
   do i = 1, 15
 
-    tmp1 = real ( i, kind = 8 )
-    tmp2 = real ( 16 - i, kind = 8 )
+    tmp1 = real ( i )
+    tmp2 = real ( 16 - i )
     if ( i <= 8 ) then
       tmp3 = tmp1
     else
@@ -1749,7 +1749,7 @@ subroutine p08_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1791,7 +1791,7 @@ subroutine p08_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1825,7 +1825,7 @@ subroutine p09_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1887,7 +1887,7 @@ subroutine p09_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1940,7 +1940,7 @@ subroutine p09_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -1982,7 +1982,7 @@ subroutine p09_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2016,7 +2016,7 @@ subroutine p10_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2059,7 +2059,7 @@ subroutine p10_f ( m, n, x, f )
 
   do i = 1, 16
     f(i) = x(1) * exp ( x(2) &
-      / ( 5.0D+00 * real ( i, kind = 8 ) + 45.0D+00 + x(3) ) ) &
+      / ( 5.0D+00 * real ( i ) + 45.0D+00 + x(3) ) ) &
       - y(i)
   end do
 
@@ -2080,7 +2080,7 @@ subroutine p10_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2111,7 +2111,7 @@ subroutine p10_j ( m, n, x, fjac )
   double precision x(n)
 
   do i = 1, 16
-    temp = 5.0D+00 * real ( i, kind = 8 ) + 45.0D+00 + x(3)
+    temp = 5.0D+00 * real ( i ) + 45.0D+00 + x(3)
     fjac(i,1) = exp ( x(2) / temp )
     fjac(i,2) = x(1) * exp ( x(2) / temp ) / temp
     fjac(i,3) = - fjac(i,2) * x(2) / temp
@@ -2127,7 +2127,7 @@ subroutine p10_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2169,7 +2169,7 @@ subroutine p10_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2203,7 +2203,7 @@ subroutine p11_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2246,11 +2246,11 @@ subroutine p11_f ( m, n, x, f )
 
   do i = 1, 29
 
-    div = real ( i, kind = 8 ) / 29.0D+00
+    div = real ( i ) / 29.0D+00
     s1 = 0.0D+00
     dx = 1.0D+00
     do j = 2, n
-      s1 = s1 + real ( j - 1, kind = 8 ) * dx * x(j)
+      s1 = s1 + real ( j - 1 ) * dx * x(j)
       dx = div * dx
     end do
 
@@ -2276,7 +2276,7 @@ subroutine p11_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2311,7 +2311,7 @@ subroutine p11_j ( m, n, x, fjac )
   double precision x(n)
 
   do i = 1, 29
-    div = real ( i, kind = 8 ) / 29.0D+00
+    div = real ( i ) / 29.0D+00
     s2 = 0.0D+00
     dx = 1.0D+00
     do j = 1, n
@@ -2321,7 +2321,7 @@ subroutine p11_j ( m, n, x, fjac )
     temp = 2.0D+00 * div * s2
     dx = 1.0D+00 / div
     do j = 1, n
-      fjac(i,j) = dx * ( real ( j - 1, kind = 8 ) - temp )
+      fjac(i,j) = dx * ( real ( j - 1 ) - temp )
       dx = div * dx
     end do
   end do
@@ -2341,7 +2341,7 @@ subroutine p11_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2383,7 +2383,7 @@ subroutine p11_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2417,7 +2417,7 @@ subroutine p12_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2456,7 +2456,7 @@ subroutine p12_f ( m, n, x, f )
   do i = 1, m
 
     f(i) = exp ( - i * x(1) / 10.0D+00 ) - exp ( - i * x(2) / 10.0D+00 ) &
-      + ( exp ( - real ( i, kind = 8 ) ) - exp ( - i / 10.0D+00 ) ) * x(3)
+      + ( exp ( - real ( i ) ) - exp ( - i / 10.0D+00 ) ) * x(3)
 
   end do
 
@@ -2470,7 +2470,7 @@ subroutine p12_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2502,7 +2502,7 @@ subroutine p12_j ( m, n, x, fjac )
   double precision x(n)
 
   do i = 1, m
-    temp = real ( i, kind = 8 )
+    temp = real ( i )
     tmp1 = temp / 10.0D+00
     fjac(i,1) = -tmp1 * exp ( -tmp1 * x(1) )
     fjac(i,2) = tmp1 * exp ( -tmp1 * x(2) )
@@ -2519,7 +2519,7 @@ subroutine p12_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2561,7 +2561,7 @@ subroutine p12_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2595,7 +2595,7 @@ subroutine p13_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2632,9 +2632,9 @@ subroutine p13_f ( m, n, x, f )
   double precision x(n)
 
   do i = 1, m
-    f(i) = 2.0D+00 + 2.0D+00 * real ( i, kind = 8 ) &
-      - exp ( real ( i, kind = 8 ) * x(1) ) &
-      - exp ( real ( i, kind = 8 ) * x(2) )
+    f(i) = 2.0D+00 + 2.0D+00 * real ( i ) &
+      - exp ( real ( i ) * x(1) ) &
+      - exp ( real ( i ) * x(2) )
   end do
 
   return
@@ -2647,7 +2647,7 @@ subroutine p13_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2677,8 +2677,8 @@ subroutine p13_j ( m, n, x, fjac )
   double precision x(n)
 
   do i = 1, m
-    fjac(i,1) = - real ( i, kind = 8 ) * exp ( real ( i, kind = 8 ) * x(1) )
-    fjac(i,2) = - real ( i, kind = 8 ) * exp ( real ( i, kind = 8 ) * x(2) )
+    fjac(i,1) = - real ( i ) * exp ( real ( i ) * x(1) )
+    fjac(i,2) = - real ( i ) * exp ( real ( i ) * x(2) )
   end do
 
   return
@@ -2691,7 +2691,7 @@ subroutine p13_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2738,7 +2738,7 @@ subroutine p13_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2772,7 +2772,7 @@ subroutine p14_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2810,10 +2810,10 @@ subroutine p14_f ( m, n, x, f )
 
   do i = 1, m
     f(i) = &
-        ( x(1) + real ( i, kind = 8 ) / 5.0D+00 * x(2) &
-      - exp ( real ( i, kind = 8 ) / 5.0D+00 ) )**2 &
-      + ( x(3) + sin ( real ( i, kind = 8 ) / 5.0D+00 ) * x(4) &
-      - cos ( real ( i, kind = 8 ) / 5.0D+00 ) )**2
+        ( x(1) + real ( i ) / 5.0D+00 * x(2) &
+      - exp ( real ( i ) / 5.0D+00 ) )**2 &
+      + ( x(3) + sin ( real ( i ) / 5.0D+00 ) * x(4) &
+      - cos ( real ( i ) / 5.0D+00 ) )**2
   end do
 
   return
@@ -2826,7 +2826,7 @@ subroutine p14_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2860,7 +2860,7 @@ subroutine p14_j ( m, n, x, fjac )
 
   do i = 1, m
 
-    temp = real ( i, kind = 8 ) / 5.0D+00
+    temp = real ( i ) / 5.0D+00
     tmp1 = x(1) + temp * x(2) - exp ( temp )
     tmp2 = x(3) + sin ( temp ) * x(4) - cos ( temp )
 
@@ -2881,7 +2881,7 @@ subroutine p14_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2923,7 +2923,7 @@ subroutine p14_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -2957,7 +2957,7 @@ subroutine p15_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3014,13 +3014,13 @@ subroutine p15_f ( m, n, x, f )
     end do
   end do
 
-  dx = 1.0D+00 / real ( n, kind = 8 )
+  dx = 1.0D+00 / real ( n )
 
   iev = -1
   do i = 1, m
     f(i) = dx * f(i)
     if ( 0 < iev ) then
-      f(i) = f(i) + 1.0D+00 / ( real ( i * i, kind = 8 ) - 1.0D+00 )
+      f(i) = f(i) + 1.0D+00 / ( real ( i * i ) - 1.0D+00 )
     end if
     iev = -iev
   end do
@@ -3035,7 +3035,7 @@ subroutine p15_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3072,7 +3072,7 @@ subroutine p15_j ( m, n, x, fjac )
   double precision tmp4
   double precision x(n)
 
-  dx = 1.0D+00 / real ( n, kind = 8 )
+  dx = 1.0D+00 / real ( n )
 
   do j = 1, n
     tmp1 = 1.0D+00
@@ -3101,7 +3101,7 @@ subroutine p15_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3132,7 +3132,7 @@ subroutine p15_sol ( m, n, known, x )
 
   known = 0
   x(1:n) = 0.0D+00
- 
+
   return
 end
 subroutine p15_start ( n, x )
@@ -3143,7 +3143,7 @@ subroutine p15_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3167,7 +3167,7 @@ subroutine p15_start ( n, x )
   double precision x(n)
 
   do j = 1, n
-    x(j) = real ( j, kind = 8 ) / real ( n + 1, kind = 8 )
+    x(j) = real ( j ) / real ( n + 1 )
   end do
 
   return
@@ -3180,7 +3180,7 @@ subroutine p16_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3215,7 +3215,7 @@ subroutine p16_f ( m, n, x, f )
   double precision f(m)
   double precision x(n)
 
-  f(1:n-1) = x(1:n-1) + sum ( x(1:n) ) - real ( n + 1, kind = 8 )
+  f(1:n-1) = x(1:n-1) + sum ( x(1:n) ) - real ( n + 1 )
 
   f(n) = product ( x(1:n) ) - 1.0D+00
 
@@ -3229,7 +3229,7 @@ subroutine p16_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3281,7 +3281,7 @@ subroutine p16_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3323,7 +3323,7 @@ subroutine p16_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3357,7 +3357,7 @@ subroutine p17_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3404,8 +3404,8 @@ subroutine p17_f ( m, n, x, f )
   do i = 1, 33
 
     f(i) = y(i) - ( x(1) &
-      + x(2) * exp ( - x(4) * 10.0D+00 * real ( i - 1, kind = 8 ) ) &
-      + x(3) * exp ( - x(5) * 10.0D+00 * real ( i - 1, kind = 8 ) ) )
+      + x(2) * exp ( - x(4) * 10.0D+00 * real ( i - 1 ) ) &
+      + x(3) * exp ( - x(5) * 10.0D+00 * real ( i - 1 ) ) )
   end do
 
   return
@@ -3418,7 +3418,7 @@ subroutine p17_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3452,7 +3452,7 @@ subroutine p17_j ( m, n, x, fjac )
 
   do i = 1, 33
 
-    temp = 10.0D+00 * real ( i - 1, kind = 8 )
+    temp = 10.0D+00 * real ( i - 1 )
     tmp1 = exp ( -x(4) * temp )
     tmp2 = exp ( -x(5) * temp )
 
@@ -3474,7 +3474,7 @@ subroutine p17_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3505,7 +3505,7 @@ subroutine p17_sol ( m, n, known, x )
 
   known = 0
   x(1:n) = 0.0D+00
- 
+
   return
 end
 subroutine p17_start ( n, x )
@@ -3516,7 +3516,7 @@ subroutine p17_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3550,7 +3550,7 @@ subroutine p18_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3603,7 +3603,7 @@ subroutine p18_f ( m, n, x, f )
 
   do i = 1, 65
 
-    temp = real ( i - 1, kind = 8 ) / 10.0D+00
+    temp = real ( i - 1 ) / 10.0D+00
 
     f(i) = y(i) - ( &
         x(1) * exp ( - x(5) * temp ) &
@@ -3623,7 +3623,7 @@ subroutine p18_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3659,7 +3659,7 @@ subroutine p18_j ( m, n, x, fjac )
 
   do i = 1, 65
 
-    temp = real ( i - 1, kind = 8 ) / 10.0D+00
+    temp = real ( i - 1 ) / 10.0D+00
     tmp1 = exp ( -x(5) * temp )
     tmp2 = exp ( -x(6) * ( temp - x(9) )**2 )
     tmp3 = exp ( -x(7) * ( temp - x(10) )**2 )
@@ -3689,7 +3689,7 @@ subroutine p18_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3705,7 +3705,7 @@ subroutine p18_sol ( m, n, known, x )
 !
 !    Input, integer N, the number of variables.
 !
-!    Output, integer KNOWN, 1 or 0, if the solution 
+!    Output, integer KNOWN, 1 or 0, if the solution
 !    is known or not.
 !
 !    Output, double precision X(N), the solution, if known.
@@ -3720,7 +3720,7 @@ subroutine p18_sol ( m, n, known, x )
 
   known = 0
   x(1:n) = 0.0D+00
- 
+
   return
 end
 subroutine p18_start ( n, x )
@@ -3731,7 +3731,7 @@ subroutine p18_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3766,7 +3766,7 @@ subroutine p19_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3803,7 +3803,7 @@ subroutine p19_f ( m, n, x, f )
     5.0D+00,  6.0D+00,  8.0D+00, 10.0D+00, 12.0D+00, &
    15.0D+00, 20.0D+00, 25.0D+00, 30.0D+00, 40.0D+00, 50.0D+00 /)
   double precision, dimension ( 16 ) :: b = (/ &
-    0.0D+00,  1.0D+00,  2.0D+00,  3.0D+00,  5.0D+00, & 
+    0.0D+00,  1.0D+00,  2.0D+00,  3.0D+00,  5.0D+00, &
     6.0D+00,  8.0D+00, 11.0D+00, 13.0D+00, 12.0D+00, &
     9.0D+00,  6.0D+00,  3.0D+00,  2.0D+00,  1.5D+00,  1.0D+00 /)
   double precision f(m)
@@ -3821,7 +3821,7 @@ subroutine p19_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3866,7 +3866,7 @@ subroutine p19_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3882,7 +3882,7 @@ subroutine p19_sol ( m, n, known, x )
 !
 !    Input, integer N, the number of variables.
 !
-!    Output, integer KNOWN, 1 or 0, if the solution 
+!    Output, integer KNOWN, 1 or 0, if the solution
 !    is known or not.
 !
 !    Output, double precision X(N), the solution, if known.
@@ -3897,7 +3897,7 @@ subroutine p19_sol ( m, n, known, x )
 
   known = 0
   x(1:n) = 0.0D+00
- 
+
   return
 end
 subroutine p19_start ( n, x )
@@ -3908,7 +3908,7 @@ subroutine p19_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3942,7 +3942,7 @@ subroutine p20_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -3975,7 +3975,7 @@ subroutine p20_f ( m, n, x, f )
   integer n
 
   double precision, dimension ( 16 ) :: a = (/ &
-    0.0D+00,  1.0D+00,  2.0D+00,  3.0D+00,  4.0D+00, & 
+    0.0D+00,  1.0D+00,  2.0D+00,  3.0D+00,  4.0D+00, &
     5.0D+00,  6.0D+00,  8.0D+00, 10.0D+00, 12.0D+00, &
    15.0D+00, 20.0D+00, 25.0D+00, 30.0D+00, 40.0D+00, 50.0D+00 /)
   double precision, dimension ( 16 ) :: b = (/ &
@@ -3997,7 +3997,7 @@ subroutine p20_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4046,7 +4046,7 @@ subroutine p20_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4077,7 +4077,7 @@ subroutine p20_sol ( m, n, known, x )
 
   known = 0
   x(1:n) = 0.0D+00
- 
+
   return
 end
 subroutine p20_start ( n, x )
@@ -4088,7 +4088,7 @@ subroutine p20_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4122,7 +4122,7 @@ subroutine p21_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4182,7 +4182,7 @@ subroutine p21_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4241,7 +4241,7 @@ subroutine p21_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4272,7 +4272,7 @@ subroutine p21_sol ( m, n, known, x )
 
   known = 0
   x(1:n) = 0.0D+00
- 
+
   return
 end
 subroutine p21_start ( n, x )
@@ -4283,7 +4283,7 @@ subroutine p21_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4317,7 +4317,7 @@ subroutine p22_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4379,7 +4379,7 @@ subroutine p22_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4441,7 +4441,7 @@ subroutine p22_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4472,7 +4472,7 @@ subroutine p22_sol ( m, n, known, x )
 
   known = 0
   x(1:n) = 0.0D+00
- 
+
   return
 end
 subroutine p22_start ( n, x )
@@ -4483,7 +4483,7 @@ subroutine p22_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4517,7 +4517,7 @@ subroutine p23_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4591,7 +4591,7 @@ subroutine p23_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4665,7 +4665,7 @@ subroutine p23_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4696,7 +4696,7 @@ subroutine p23_sol ( m, n, known, x )
 
   known = 0
   x(1:n) = 0.0D+00
- 
+
   return
 end
 subroutine p23_start ( n, x )
@@ -4707,7 +4707,7 @@ subroutine p23_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4741,7 +4741,7 @@ subroutine p24_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4779,7 +4779,7 @@ subroutine p24_f ( m, n, x, f )
   double precision x(n)
 
   do i = 1, m
-    ti = real ( i - 1, kind = 8 ) / 10.0D+00
+    ti = real ( i - 1 ) / 10.0D+00
 
     f(i) = x(1) * ( x(2)**ti ) * sin ( x(3) * ti + x(4) ) &
       - 60.137D+00 * ( 1.371**ti ) * sin ( 3.112D+00 * ti + 1.761D+00 )
@@ -4795,7 +4795,7 @@ subroutine p24_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4827,7 +4827,7 @@ subroutine p24_j ( m, n, x, fjac )
 
   do i = 1, m
 
-    ti = real ( i - 1, kind = 8 ) / 10.0D+00
+    ti = real ( i - 1 ) / 10.0D+00
 
     fjac(i,1) = x(2)**ti * sin ( x(3) * ti + x(4) )
     fjac(i,2) = x(1) * ti * x(2)**( ti - 1.0D+00 ) * sin ( x(3) * ti + x(4) )
@@ -4846,7 +4846,7 @@ subroutine p24_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4877,7 +4877,7 @@ subroutine p24_sol ( m, n, known, x )
 
   known = 0
   x(1:n) = 0.0D+00
- 
+
   return
 end
 subroutine p24_start ( n, x )
@@ -4888,7 +4888,7 @@ subroutine p24_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4922,7 +4922,7 @@ subroutine p25_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -4961,7 +4961,7 @@ subroutine p25_f ( m, n, x, f )
 
   do i = 1, m
 
-    ti = real ( i - 1, kind = 8 ) / 10.0D+00
+    ti = real ( i - 1 ) / 10.0D+00
 
     f(i) = x(1) * ( abs ( x(2) )**ti ) &
       * tanh ( x(3) * ti + sin ( x(4) * ti ) ) &
@@ -4981,7 +4981,7 @@ subroutine p25_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -5013,7 +5013,7 @@ subroutine p25_j ( m, n, x, fjac )
 
   do i = 1, m
 
-    ti = real ( i - 1, kind = 8 ) / 10.0D+00
+    ti = real ( i - 1 ) / 10.0D+00
 
     fjac(i,1) = ( abs ( x(2) ) )**ti * tanh ( x(3) * ti + sin ( x(4) * ti ) ) &
       * cos ( ti * exp ( x(5) ) )
@@ -5042,7 +5042,7 @@ subroutine p25_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -5073,7 +5073,7 @@ subroutine p25_sol ( m, n, known, x )
 
   known = 0
   x(1:n) = 0.0D+00
- 
+
   return
 end
 subroutine p25_start ( n, x )
@@ -5084,7 +5084,7 @@ subroutine p25_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -5118,7 +5118,7 @@ subroutine p26_f ( m, n, x, f )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -5167,7 +5167,7 @@ subroutine p26_j ( m, n, x, fjac )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -5213,7 +5213,7 @@ subroutine p26_sol ( m, n, known, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -5244,7 +5244,7 @@ subroutine p26_sol ( m, n, known, x )
 
   known = 1
   x(1:n) = (/ -0.155489D+00, 0.694560D+00 /)
- 
+
   return
 end
 subroutine p26_start ( n, x )
@@ -5255,7 +5255,7 @@ subroutine p26_start ( n, x )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !
@@ -5289,7 +5289,7 @@ function r8_pi ( )
 !
 !  Licensing:
 !
-!    This code is distributed under the GNU LGPL license. 
+!    This code is distributed under the GNU LGPL license.
 !
 !  Modified:
 !

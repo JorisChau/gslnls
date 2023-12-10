@@ -4,7 +4,7 @@
 
 ## Test environments
 
-* ubuntu gcc R-oldrel, R-release, R-devel (rhub)
+* ubuntu gcc R-oldrel, R-release, R-devel (rhub, gh-actions)
 * debian gcc R-release, R-devel, R-patched (rhub)
 * debian clang R-devel (rhub)
 * fedora clang/gcc R-devel (rhub)
