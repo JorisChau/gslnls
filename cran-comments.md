@@ -2,20 +2,17 @@
 
 * System requirements: GSL (>= 2.2)
 
-### Test environments
+## Test environments
 
-* ubuntu gcc R-release, R-devel (rhub)
+* ubuntu gcc R-oldrel, R-release, R-devel (rhub)
 * debian gcc R-release, R-devel, R-patched (rhub)
 * debian clang R-devel (rhub)
 * fedora clang/gcc R-devel (rhub)
-* centos8-epel R-4.0.4 (rhub)
-* macos-highsierra R-release (rhub)
-* solaris10 gcc R-release/GSL-2.4 (local vm)
-* solaris10 ods R-release/GSL-2.4 (local vm)
-* win-builder R-release, R-devel, R-devel (UCRT), R-old-release 
+* macos-darwin20 clang R-release, R-devel (gh-actions)
+* windows gcc R-release, R-devel, R-patched, R-4.1 (rhub, gh-actions)
 
-### Compiled code checks
+## Compiled code checks
 
-* ubuntu-rchk
-* ubuntu gcc R-release --use-valgrind 
-* ubuntu gcc R-release --use-gct
+* ubuntu-rchk R-devel (rhub)
+* ubuntu gcc R-4.3 --use-valgrind 
+* ubuntu gcc R-4.3 --use-gct 

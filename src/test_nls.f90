@@ -25,24 +25,24 @@ subroutine p00_f ( nprob, m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) NPROB, the problem number.
+!    Input, integer NPROB, the problem number.
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) nprob
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  integer nprob
+  double precision x(n)
 
   if ( nprob == 1 ) then
     call p01_f ( m, n, x, f )
@@ -127,24 +127,24 @@ subroutine p00_j ( nprob, m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) NPROB, the problem number.
+!    Input, integer NPROB, the problem number.
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) nprob
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer nprob
+  double precision x(n)
 
   if ( nprob == 1 ) then
     call p01_j ( m, n, x, fjac )
@@ -222,25 +222,25 @@ subroutine p00_sol ( nprob, m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) NPROB, the problem number.
+!    Input, integer NPROB, the problem number.
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) nprob
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  integer nprob
+  double precision x(n)
 
   if ( nprob == 1 ) then
     call p01_sol ( m, n, known, x )
@@ -318,18 +318,18 @@ subroutine p00_start ( nprob, n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) NPROB, the problem number.
+!    Input, integer NPROB, the problem number.
 !
-!    Input, integer ( kind = 4 ) N, the number of components of X.
+!    Input, integer N, the number of components of X.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) nprob
-  real ( kind = 8 ) x(n)
+  integer nprob
+  double precision x(n)
 
   if ( nprob == 1 ) then
     call p01_start ( n, x )
@@ -414,23 +414,23 @@ subroutine p01_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) mn
-  real ( kind = 8 ) x(n)
-  real ( kind = 8 ) x_sum
+  double precision f(m)
+  integer mn
+  double precision x(n)
+  double precision x_sum
 
   x_sum = sum ( x(1:n) )
   f(1:m) = - 1.0D+00 - 2.0D+00 * x_sum / real ( m, kind = 8 )
@@ -459,22 +459,22 @@ subroutine p01_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) j
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer j
+  double precision x(n)
 
   fjac(1:m,1:n) = - 2.0D+00 / real ( m, kind = 8 )
   do j = 1, n
@@ -503,22 +503,22 @@ subroutine p01_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution 
+!    Output, integer KNOWN, 1 or 0, if the solution 
 !    is known or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 1
   x(1:n) = -1.0D+00
@@ -545,15 +545,15 @@ subroutine p01_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:n) = 1.0D+00
 
@@ -586,24 +586,24 @@ subroutine p02_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  integer ( kind = 4 ) j
-  real ( kind = 8 ) x(n)
-  real ( kind = 8 ) x_sum
+  double precision f(m)
+  integer i
+  integer j
+  double precision x(n)
+  double precision x_sum
 
   x_sum = 0.0D+00
   do j = 1, n
@@ -636,23 +636,23 @@ subroutine p02_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  integer ( kind = 4 ) j
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  integer j
+  double precision x(n)
 
   do j = 1, n
     do i = 1, m
@@ -682,22 +682,22 @@ subroutine p02_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution 
+!    Output, integer KNOWN, 1 or 0, if the solution 
 !    is known or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 1
   x(1:n) = 6.0D+00 / real ( ( 2 * m + 1 ) * ( n + 1 ) * n, kind = 8 )
@@ -724,15 +724,15 @@ subroutine p02_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:n) = 1.0D+00
 
@@ -765,24 +765,24 @@ subroutine p03_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  integer ( kind = 4 ) j
-  real ( kind = 8 ) x(n)
-  real ( kind = 8 ) x_sum
+  double precision f(m)
+  integer i
+  integer j
+  double precision x(n)
+  double precision x_sum
 
   x_sum = 0.0D+00
   do j = 2, n-1
@@ -817,23 +817,23 @@ subroutine p03_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  integer ( kind = 4 ) j
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  integer j
+  double precision x(n)
 
   fjac(1:m,1:n) = 0.0D+00
   do j = 2, n-1
@@ -864,15 +864,15 @@ subroutine p03_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:n) = 1.0D+00
 
@@ -898,22 +898,22 @@ subroutine p03_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is 
+!    Output, integer KNOWN, 1 or 0, if the solution is 
 !    known or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 1
   x(1:n) = 6.0D+00 / &
@@ -948,21 +948,21 @@ subroutine p04_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  double precision x(n)
 
   f(1) = 10.0D+00 * ( x(2) - x(1)**2 )
   f(2) = 1.0D+00 - x(1)
@@ -989,21 +989,21 @@ subroutine p04_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  double precision x(n)
 
   fjac(1,1) = -20.0D+00 * x(1)
   fjac(1,2) = 10.0D+00
@@ -1032,22 +1032,22 @@ subroutine p04_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is 
+!    Output, integer KNOWN, 1 or 0, if the solution is 
 !    known or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 1
   x(1:2) = (/ 1.0D+00, 1.0D+00 /)
@@ -1074,15 +1074,15 @@ subroutine p04_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:2) = (/ -1.2D+00, 1.0D+00 /)
 
@@ -1115,23 +1115,23 @@ subroutine p05_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
-  real ( kind = 8 ) tmp1
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  double precision, parameter :: r8_pi = 3.141592653589793D+00
+  double precision tmp1
+  double precision x(n)
 
   if ( x(1) < 0.0D+00 ) then
     tmp1 = atan ( x(2) / x(1) ) / ( 2.0D+00 * r8_pi ) + 0.5D+00
@@ -1167,22 +1167,22 @@ subroutine p05_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  double precision, parameter :: r8_pi = 3.141592653589793D+00
+  double precision x(n)
 
   fjac(1,1) = 50.0D+00 * x(2) / ( r8_pi * ( x(1)**2 + x(2)**2 ) )
   fjac(1,2) = -50.0D+00 * x(1) / ( r8_pi * ( x(1)**2 + x(2)**2 ) )
@@ -1218,22 +1218,22 @@ subroutine p05_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is
+!    Output, integer KNOWN, 1 or 0, if the solution is
 !    known or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 1
   x(1:3) = (/ 1.0D+00, 0.0D+00, 0.0D+00 /)
@@ -1260,15 +1260,15 @@ subroutine p05_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:3) = (/ -1.0D+00, 0.0D+00, 0.0D+00 /)
 
@@ -1301,21 +1301,21 @@ subroutine p06_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  double precision x(n)
 
   f(1) = x(1) + 10.0D+00 * x(2)
   f(2) = sqrt ( 5.0D+00 ) * ( x(3) - x(4) )
@@ -1344,21 +1344,21 @@ subroutine p06_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  double precision x(n)
 
   fjac(1:4,1:4) = 0.0D+00
 
@@ -1396,22 +1396,22 @@ subroutine p06_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 1
   x(1:n) = 0.0D+00
@@ -1438,15 +1438,15 @@ subroutine p06_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:4) = (/ 3.0D+00, -1.0D+00, 0.0D+00, 1.0D+00 /)
 
@@ -1479,21 +1479,21 @@ subroutine p07_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  double precision x(n)
 
   f(1) = - 13.0D+00 + x(1) + ( ( 5.0D+00 - x(2) ) * x(2) - 2.0D+00 ) * x(2)
   f(2) = - 29.0D+00 + x(1) + ( ( 1.0D+00 + x(2) ) * x(2) - 14.0D+00 ) * x(2)
@@ -1520,21 +1520,21 @@ subroutine p07_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  double precision x(n)
 
   fjac(1,1) = 1.0D+00
   fjac(1,2) = x(2) * ( 10.0D+00 - 3.0D+00 * x(2) ) - 2.0D+00
@@ -1563,22 +1563,22 @@ subroutine p07_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 1
   x(1:2) = (/ 5.0D+00, 4.0D+00 /)
@@ -1605,15 +1605,15 @@ subroutine p07_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:2) = (/ 0.5D+00, -2.0D+00 /)
 
@@ -1646,26 +1646,26 @@ subroutine p08_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) tmp1
-  real ( kind = 8 ) tmp2
-  real ( kind = 8 ) tmp3
-  real ( kind = 8 ) x(n)
-  real ( kind = 8 ), dimension ( 15 ) :: y = (/ &
+  double precision f(m)
+  integer i
+  double precision tmp1
+  double precision tmp2
+  double precision tmp3
+  double precision x(n)
+  double precision, dimension ( 15 ) :: y = (/ &
     0.14D+00, 0.18D+00, 0.22D+00, 0.25D+00, 0.29D+00, &
     0.32D+00, 0.35D+00, 0.39D+00, 0.37D+00, 0.58D+00, &
     0.73D+00, 0.96D+00, 1.34D+00, 2.10D+00, 4.39D+00 /)
@@ -1703,25 +1703,25 @@ subroutine p08_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) tmp1
-  real ( kind = 8 ) tmp2
-  real ( kind = 8 ) tmp3
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  double precision tmp1
+  double precision tmp2
+  double precision tmp3
+  double precision x(n)
 
   do i = 1, 15
 
@@ -1761,22 +1761,22 @@ subroutine p08_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -1803,15 +1803,15 @@ subroutine p08_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:3) = (/ 1.0D+00, 1.0D+00, 1.0D+00 /)
 
@@ -1844,25 +1844,25 @@ subroutine p09_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ), dimension ( 11 ) :: v = (/ &
+  double precision f(m)
+  double precision, dimension ( 11 ) :: v = (/ &
     4.0D+00, 2.0D+00, 1.0D+00, 0.5D+00, 0.25D+00, &
     0.167D+00, 0.125D+00, 0.1D+00, 0.0833D+00, 0.0714D+00, 0.0625D+00 /)
-  real ( kind = 8 ) x(n)
-  real ( kind = 8 ), dimension ( 11 ) :: y = (/ &
+  double precision x(n)
+  double precision, dimension ( 11 ) :: y = (/ &
     0.1957D+00, 0.1947D+00, 0.1735D+00, 0.1600D+00, 0.0844D+00, &
     0.0627D+00, 0.0456D+00, 0.0342D+00, 0.0323D+00, 0.0235D+00, &
     0.0246D+00 /)
@@ -1899,27 +1899,27 @@ subroutine p09_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) tmp1
-  real ( kind = 8 ) tmp2
-  real ( kind = 8 ), dimension ( 11 ) :: v = (/ &
+  double precision fjac(m,n)
+  integer i
+  double precision tmp1
+  double precision tmp2
+  double precision, dimension ( 11 ) :: v = (/ &
     4.0D+00, 2.0D+00, 1.0D+00, 0.5D+00, 0.25D+00, &
     0.167D+00, 0.125D+00, 0.1D+00, 0.0833D+00, 0.0714D+00, 0.0625D+00 /)
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   do i = 1, 11
     tmp1 = v(i) * ( v(i) + x(2) )
@@ -1952,22 +1952,22 @@ subroutine p09_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -1994,15 +1994,15 @@ subroutine p09_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:4) = (/ 0.25D+00, 0.39D+00, 0.415D+00, 0.39D+00 /)
 
@@ -2035,23 +2035,23 @@ subroutine p10_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) x(n)
-  real ( kind = 8 ), dimension ( 16 ) :: y = (/ &
+  double precision f(m)
+  integer i
+  double precision x(n)
+  double precision, dimension ( 16 ) :: y = (/ &
     3.478D+04, 2.861D+04, 2.365D+04, 1.963D+04, 1.637D+04, &
     1.372D+04, 1.154D+04, 9.744D+03, 8.261D+03, 7.03D+03,  &
     6.005D+03, 5.147D+03, 4.427D+03, 3.82D+03,  3.307D+03, &
@@ -2092,23 +2092,23 @@ subroutine p10_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) temp
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  double precision temp
+  double precision x(n)
 
   do i = 1, 16
     temp = 5.0D+00 * real ( i, kind = 8 ) + 45.0D+00 + x(3)
@@ -2139,22 +2139,22 @@ subroutine p10_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -2181,15 +2181,15 @@ subroutine p10_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:3) = (/ 0.02D+00, 4000.0D+00, 250.0D+00 /)
 
@@ -2222,27 +2222,27 @@ subroutine p11_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) div
-  real ( kind = 8 ) dx
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  integer ( kind = 4 ) j
-  real ( kind = 8 ) s1
-  real ( kind = 8 ) s2
-  real ( kind = 8 ) x(n)
+  double precision div
+  double precision dx
+  double precision f(m)
+  integer i
+  integer j
+  double precision s1
+  double precision s2
+  double precision x(n)
 
   do i = 1, 29
 
@@ -2288,27 +2288,27 @@ subroutine p11_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) div
-  real ( kind = 8 ) dx
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  integer ( kind = 4 ) j
-  real ( kind = 8 ) s2
-  real ( kind = 8 ) temp
-  real ( kind = 8 ) x(n)
+  double precision div
+  double precision dx
+  double precision fjac(m,n)
+  integer i
+  integer j
+  double precision s2
+  double precision temp
+  double precision x(n)
 
   do i = 1, 29
     div = real ( i, kind = 8 ) / 29.0D+00
@@ -2353,22 +2353,22 @@ subroutine p11_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -2395,15 +2395,15 @@ subroutine p11_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:n) = 0.0D+00
 
@@ -2436,22 +2436,22 @@ subroutine p12_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  integer i
+  double precision x(n)
 
   do i = 1, m
 
@@ -2482,24 +2482,24 @@ subroutine p12_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) temp
-  real ( kind = 8 ) tmp1
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  double precision temp
+  double precision tmp1
+  double precision x(n)
 
   do i = 1, m
     temp = real ( i, kind = 8 )
@@ -2531,22 +2531,22 @@ subroutine p12_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 1
   x(1:3) = (/ 1.0D+00, 10.0D+00, 1.0D+00 /)
@@ -2573,15 +2573,15 @@ subroutine p12_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:3) = (/ 0.0D+00, 10.0D+00, 20.0D+00 /)
 
@@ -2614,22 +2614,22 @@ subroutine p13_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  integer i
+  double precision x(n)
 
   do i = 1, m
     f(i) = 2.0D+00 + 2.0D+00 * real ( i, kind = 8 ) &
@@ -2659,22 +2659,22 @@ subroutine p13_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  double precision x(n)
 
   do i = 1, m
     fjac(i,1) = - real ( i, kind = 8 ) * exp ( real ( i, kind = 8 ) * x(1) )
@@ -2703,22 +2703,22 @@ subroutine p13_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   if ( m == 10 ) then
     known = 1
@@ -2750,15 +2750,15 @@ subroutine p13_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:2) = (/ 0.3D+00, 0.4D+00 /)
 
@@ -2791,22 +2791,22 @@ subroutine p14_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  integer i
+  double precision x(n)
 
   do i = 1, m
     f(i) = &
@@ -2838,25 +2838,25 @@ subroutine p14_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) temp
-  real ( kind = 8 ) tmp1
-  real ( kind = 8 ) tmp2
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  double precision temp
+  double precision tmp1
+  double precision tmp2
+  double precision x(n)
 
   do i = 1, m
 
@@ -2893,22 +2893,22 @@ subroutine p14_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -2935,15 +2935,15 @@ subroutine p14_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:4) = (/ 25.0D+00, 5.0D+00, -5.0D+00, -1.0D+00 /)
 
@@ -2976,29 +2976,29 @@ subroutine p15_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) dx
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  integer ( kind = 4 ) iev
-  integer ( kind = 4 ) j
-  real ( kind = 8 ) temp
-  real ( kind = 8 ) ti
-  real ( kind = 8 ) tmp1
-  real ( kind = 8 ) tmp2
-  real ( kind = 8 ) x(n)
+  double precision dx
+  double precision f(m)
+  integer i
+  integer iev
+  integer j
+  double precision temp
+  double precision ti
+  double precision tmp1
+  double precision tmp2
+  double precision x(n)
 
   f(1:m) = 0.0D+00
 
@@ -3047,30 +3047,30 @@ subroutine p15_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) dx
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  integer ( kind = 4 ) j
-  real ( kind = 8 ) temp
-  real ( kind = 8 ) ti
-  real ( kind = 8 ) tmp1
-  real ( kind = 8 ) tmp2
-  real ( kind = 8 ) tmp3
-  real ( kind = 8 ) tmp4
-  real ( kind = 8 ) x(n)
+  double precision dx
+  double precision fjac(m,n)
+  integer i
+  integer j
+  double precision temp
+  double precision ti
+  double precision tmp1
+  double precision tmp2
+  double precision tmp3
+  double precision tmp4
+  double precision x(n)
 
   dx = 1.0D+00 / real ( n, kind = 8 )
 
@@ -3113,22 +3113,22 @@ subroutine p15_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -3155,16 +3155,16 @@ subroutine p15_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) j
-  real ( kind = 8 ) x(n)
+  integer j
+  double precision x(n)
 
   do j = 1, n
     x(j) = real ( j, kind = 8 ) / real ( n + 1, kind = 8 )
@@ -3199,21 +3199,21 @@ subroutine p16_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  double precision x(n)
 
   f(1:n-1) = x(1:n-1) + sum ( x(1:n) ) - real ( n + 1, kind = 8 )
 
@@ -3241,23 +3241,23 @@ subroutine p16_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) j
-  real ( kind = 8 ) temp
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer j
+  double precision temp
+  double precision x(n)
 
   fjac(1:n,1:n) = 1.0D+00
   do j = 1, n
@@ -3293,22 +3293,22 @@ subroutine p16_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 1
   x(1:n) = 1.0D+00
@@ -3335,15 +3335,15 @@ subroutine p16_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:n) = 0.5D+00
 
@@ -3376,23 +3376,23 @@ subroutine p17_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) x(n)
-  real ( kind = 8 ), dimension ( 33 ) :: y = (/ &
+  double precision f(m)
+  integer i
+  double precision x(n)
+  double precision, dimension ( 33 ) :: y = (/ &
     0.844D+00, 0.908D+00, 0.932D+00, 0.936D+00, 0.925D+00, &
     0.908D+00, 0.881D+00, 0.850D+00, 0.818D+00, 0.784D+00, &
     0.751D+00, 0.718D+00, 0.685D+00, 0.658D+00, 0.628D+00, &
@@ -3430,25 +3430,25 @@ subroutine p17_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) temp
-  real ( kind = 8 ) tmp1
-  real ( kind = 8 ) tmp2
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  double precision temp
+  double precision tmp1
+  double precision tmp2
+  double precision x(n)
 
   do i = 1, 33
 
@@ -3486,22 +3486,22 @@ subroutine p17_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -3528,15 +3528,15 @@ subroutine p17_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:5) = (/ 0.5D+00, 1.5D+00, -1.0D+00, 0.01D+00, 0.02D+00 /)
 
@@ -3569,24 +3569,24 @@ subroutine p18_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) temp
-  real ( kind = 8 ) x(n)
-  real ( kind = 8 ), dimension ( 65 ) :: y = (/ &
+  double precision f(m)
+  integer i
+  double precision temp
+  double precision x(n)
+  double precision, dimension ( 65 ) :: y = (/ &
     1.366D+00, 1.191D+00, 1.112D+00, 1.013D+00, 0.991D+00, &
     0.885D+00, 0.831D+00, 0.847D+00, 0.786D+00, 0.725D+00, &
     0.746D+00, 0.679D+00, 0.608D+00, 0.655D+00, 0.616D+00, &
@@ -3635,27 +3635,27 @@ subroutine p18_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) temp
-  real ( kind = 8 ) tmp1
-  real ( kind = 8 ) tmp2
-  real ( kind = 8 ) tmp3
-  real ( kind = 8 ) tmp4
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  double precision temp
+  double precision tmp1
+  double precision tmp2
+  double precision tmp3
+  double precision tmp4
+  double precision x(n)
 
   do i = 1, 65
 
@@ -3701,22 +3701,22 @@ subroutine p18_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution 
+!    Output, integer KNOWN, 1 or 0, if the solution 
 !    is known or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -3743,15 +3743,15 @@ subroutine p18_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:11) = (/ 1.3D+00, 0.65D+00, 0.65D+00, 0.7D+00, 0.6D+00, &
     3.0D+00, 5.0D+00, 7.0D+00, 2.0D+00, 4.5D+00, 5.5D+00 /)
@@ -3785,29 +3785,29 @@ subroutine p19_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ), dimension ( 16 ) :: a = (/ &
+  double precision, dimension ( 16 ) :: a = (/ &
     0.0D+00,  1.0D+00,  2.0D+00,  3.0D+00,  4.0D+00, &
     5.0D+00,  6.0D+00,  8.0D+00, 10.0D+00, 12.0D+00, &
    15.0D+00, 20.0D+00, 25.0D+00, 30.0D+00, 40.0D+00, 50.0D+00 /)
-  real ( kind = 8 ), dimension ( 16 ) :: b = (/ &
+  double precision, dimension ( 16 ) :: b = (/ &
     0.0D+00,  1.0D+00,  2.0D+00,  3.0D+00,  5.0D+00, & 
     6.0D+00,  8.0D+00, 11.0D+00, 13.0D+00, 12.0D+00, &
     9.0D+00,  6.0D+00,  3.0D+00,  2.0D+00,  1.5D+00,  1.0D+00 /)
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  double precision x(n)
 
   f(1:16) = x(1) * sin ( x(2) * a(1:16) ) - b(1:16)
 
@@ -3833,25 +3833,25 @@ subroutine p19_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ), dimension ( 16 ) :: a = (/ &
+  double precision, dimension ( 16 ) :: a = (/ &
     0.0D+00,  1.0D+00,  2.0D+00,  3.0D+00,  4.0D+00,  &
     5.0D+00, 6.0D+00,  8.0D+00, 10.0D+00, 12.0D+00, &
    15.0D+00, 20.0D+00, 25.0D+00, 30.0D+00, 40.0D+00, 50.0D+00 /)
-  real ( kind = 8 ) fjac(m,n)
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  double precision x(n)
 
   fjac(1:m,1) =                 sin ( x(2) * a(1:m) )
   fjac(1:m,2) = a(1:m) * x(1) * cos ( x(2) * a(1:m) )
@@ -3878,22 +3878,22 @@ subroutine p19_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution 
+!    Output, integer KNOWN, 1 or 0, if the solution 
 !    is known or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -3920,15 +3920,15 @@ subroutine p19_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:2) = (/ 10.0D+00, 0.15D+00 /)
 
@@ -3961,29 +3961,29 @@ subroutine p20_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ), dimension ( 16 ) :: a = (/ &
+  double precision, dimension ( 16 ) :: a = (/ &
     0.0D+00,  1.0D+00,  2.0D+00,  3.0D+00,  4.0D+00, & 
     5.0D+00,  6.0D+00,  8.0D+00, 10.0D+00, 12.0D+00, &
    15.0D+00, 20.0D+00, 25.0D+00, 30.0D+00, 40.0D+00, 50.0D+00 /)
-  real ( kind = 8 ), dimension ( 16 ) :: b = (/ &
+  double precision, dimension ( 16 ) :: b = (/ &
     0.0D+00,  1.0D+00,  2.0D+00,  3.0D+00,  5.0D+00, &
     6.0D+00,  8.0D+00, 11.0D+00, 13.0D+00, 12.0D+00, &
     9.0D+00,  6.0D+00,  3.0D+00,  2.0D+00,  1.5D+00,  1.0D+00 /)
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  double precision x(n)
 
   f(1:m) = x(1) * exp ( x(2) * a(1:m) ) * sin ( x(3) * a(1:m) ) - b(1:m)
 
@@ -4009,26 +4009,26 @@ subroutine p20_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ), dimension ( 16 ) :: a = (/ &
+  double precision, dimension ( 16 ) :: a = (/ &
     0.0D+00,  1.0D+00,  2.0D+00,  3.0D+00,  4.0D+00, &
     5.0D+00,  6.0D+00,  8.0D+00, 10.0D+00, 12.0D+00, &
    15.0D+00, 20.0D+00, 25.0D+00, 30.0D+00, 40.0D+00, 50.0D+00 /)
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  double precision x(n)
 
   do i = 1, m
     fjac(i,1) =               exp ( x(2) * a(i) ) * sin ( x(3) * a(i) )
@@ -4058,22 +4058,22 @@ subroutine p20_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -4100,15 +4100,15 @@ subroutine p20_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:3) = (/ 25.0D+00, -0.1D+00, 0.1D+00 /)
 
@@ -4141,32 +4141,32 @@ subroutine p21_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ), dimension ( 3 ) :: a = (/ &
+  double precision, dimension ( 3 ) :: a = (/ &
     0.13294D+00, -0.244378D+00, 0.325895D+00 /)
-  real ( kind = 8 ), dimension ( 2, 2 ) :: b = reshape ( &
+  double precision, dimension ( 2, 2 ) :: b = reshape ( &
     (/ 5.66598D+00, 2.77141D+00, 2.77141D+00, 2.12413D+00 /), (/ 2, 2 /) )
-  real ( kind = 8 ), dimension ( 3, 2 ) :: c = reshape ( &
+  double precision, dimension ( 3, 2 ) :: c = reshape ( &
     (/ &
     -0.564255D+00, -0.404979D+00, -0.0735084D+00, &
      0.392417D+00,  0.927589D+00, 0.535493D+00 /), (/ 3, 2 /) )
-  real ( kind = 8 ), dimension ( 3 ) :: d = (/ &
+  double precision, dimension ( 3 ) :: d = (/ &
     2.5074D+00, -1.36401D+00, 1.02282D+00 /)
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ) x(n)
-  real ( kind = 8 ) xbx
+  double precision f(m)
+  double precision x(n)
+  double precision xbx
 
   xbx = dot_product ( x(1:n), matmul ( b(1:n,1:n), x(1:n) ) )
 
@@ -4194,31 +4194,31 @@ subroutine p21_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ), dimension ( 2, 2 ) :: b = reshape ( &
+  double precision, dimension ( 2, 2 ) :: b = reshape ( &
     (/ 5.66598D+00, 2.77141D+00, 2.77141D+00, 2.12413D+00 /), (/ 2, 2 /) )
-  real ( kind = 8 ), dimension ( 3, 2 ) :: c = reshape ( &
+  double precision, dimension ( 3, 2 ) :: c = reshape ( &
     (/ -0.564255D+00, -0.404979D+00, -0.0735084D+00, 0.392417D+00,  &
     0.927589D+00, 0.535493D+00 /), (/ 3, 2 /) )
-  real ( kind = 8 ), dimension ( 3 ) :: d = (/ &
+  double precision, dimension ( 3 ) :: d = (/ &
     2.5074D+00, -1.36401D+00, 1.02282D+00 /)
-  real ( kind = 8 ) fjac(m,n)
-  real ( kind = 8 ) hfac(n)
-  integer ( kind = 4 ) j
-  integer ( kind = 4 ) k
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  double precision hfac(n)
+  integer j
+  integer k
+  double precision x(n)
 
   do j = 1, n
     hfac(j) = 0.0D+00
@@ -4253,22 +4253,22 @@ subroutine p21_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -4295,15 +4295,15 @@ subroutine p21_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:n) = 0.1D+00
 
@@ -4336,34 +4336,34 @@ subroutine p22_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ), dimension ( 4 ) :: a = &
+  double precision, dimension ( 4 ) :: a = &
     (/ 0.14272D+00, -0.184918D+00, -0.521869D+00, -0.685306D+00 /)
-  real ( kind = 8 ), dimension ( 3, 3 ) :: b = reshape ( (/ &
+  double precision, dimension ( 3, 3 ) :: b = reshape ( (/ &
      2.95137D+00,  4.87407D+00, -2.0506D+00, &
      4.87407D+00,  9.39321D+00, -3.93189D+00, &
     -2.0506D+00,  -3.93189D+00, 2.64745D+00 /), (/ 3, 3 /) )
-  real ( kind = 8 ), dimension ( 4, 3 ) :: c = reshape ( (/ &
+  double precision, dimension ( 4, 3 ) :: c = reshape ( (/ &
     -0.564255D+00,  0.927589D+00,   0.658799D+00, -0.869487D+00, &
      0.392417D+00, -0.0735083D+00, -0.636666D+00,  0.586387D+00, &
     -0.404979D+00,  0.535493D+00,  -0.681091D+00,  0.289826D+00 /), (/ 4, 3 /) )
-  real ( kind = 8 ), dimension ( 4 ) :: d = (/ 1.75168D+00, -1.35195D+00, &
+  double precision, dimension ( 4 ) :: d = (/ 1.75168D+00, -1.35195D+00, &
     -0.479048D+00, -0.3648D+00 /)
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ) x(n)
-  real ( kind = 8 ) xbx
+  double precision f(m)
+  double precision x(n)
+  double precision xbx
 
   xbx = dot_product ( x(1:n), matmul ( b(1:n,1:n), x(1:n) ) )
 
@@ -4391,34 +4391,34 @@ subroutine p22_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ), dimension ( 3, 3 ) :: b = reshape ( (/ &
+  double precision, dimension ( 3, 3 ) :: b = reshape ( (/ &
      2.95137D+00,  4.87407D+00, -2.0506D+00, &
      4.87407D+00,  9.39321D+00, -3.93189D+00, &
     -2.0506D+00,  -3.93189D+00, 2.64745D+00 /), (/ 3, 3 /) )
-  real ( kind = 8 ), dimension ( 4, 3 ) :: c = reshape ( (/ &
+  double precision, dimension ( 4, 3 ) :: c = reshape ( (/ &
     -0.564255D+00,  0.927589D+00,   0.658799D+00, -0.869487D+00, &
      0.392417D+00, -0.0735083D+00, -0.636666D+00,  0.586387D+00, &
     -0.404979D+00,  0.535493D+00,  -0.681091D+00,  0.289826D+00 /), (/ 4, 3 /) )
-  real ( kind = 8 ), dimension ( 4 ) :: d = (/ 1.75168D+00, -1.35195D+00, &
+  double precision, dimension ( 4 ) :: d = (/ 1.75168D+00, -1.35195D+00, &
     -0.479048D+00, -0.3648D+00 /)
-  real ( kind = 8 ) fjac(m,n)
-  real ( kind = 8 ) hfac(n)
-  integer ( kind = 4 ) j
-  integer ( kind = 4 ) k
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  double precision hfac(n)
+  integer j
+  integer k
+  double precision x(n)
 
   do j = 1, n
     hfac(j) = 0.0D+00
@@ -4453,22 +4453,22 @@ subroutine p22_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -4495,15 +4495,15 @@ subroutine p22_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:n) = 0.1D+00
 
@@ -4536,30 +4536,30 @@ subroutine p23_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ), dimension ( 10 ) :: a = (/ &
+  double precision, dimension ( 10 ) :: a = (/ &
     0.0426149D+00, 0.0352053D+00, 0.0878058D+00, 0.0330812D+00, 0.0580924D+00, &
     0.649704D+00,  0.344144D+00, -0.627443D+00,  0.001828D+00, -0.224783D+00 /)
-  real ( kind = 8 ), dimension ( 5, 5 ) :: b = reshape ( (/ &
+  double precision, dimension ( 5, 5 ) :: b = reshape ( (/ &
      0.354033D+00, -0.230349D-01, -0.211938D+00, -0.554288D-01,  0.220429D+00, &
     -0.230349D-01,  0.291350D+00, -0.180333D-02, -0.111141D+00,  0.485461D-01, &
     -0.211938D+00, -0.180333D-02,  0.815808D+00, -0.133538D+00, -0.380670D+00, &
     -0.554288D-01, -0.111141D+00, -0.133538D+00,  0.389198D+00, -0.131586D+00, &
      0.220429D+00,  0.485461D-01, -0.380670D+00, -0.131586D+00,  0.534706D+00 &
     /), (/ 5, 5 /) )
-  real ( kind = 8 ), dimension ( 10, 5 ) :: c = reshape ( (/ &
+  double precision, dimension ( 10, 5 ) :: c = reshape ( (/ &
     -0.564255D+00,  0.535493D+00,  0.586387D+00,  0.608734D+00,  0.774227D+00, &
     -0.435033D+00,  0.759468D+00, -0.152448D+00, -0.821772D+00,  0.819831D+00, &
      0.392417D+00,  0.658799D+00,  0.289826D+00,  0.984915D+00,  0.325421D+00, &
@@ -4571,12 +4571,12 @@ subroutine p23_f ( m, n, x, f )
     -0.735083D-01, -0.869487D+00,  0.949721D+00,  0.463136D+00,  0.149926D+00, &
      0.413248D+00, -0.182537D-01,  0.887866D+00,  0.662362D+00, -0.978666D+00 &
     /), (/ 10, 5 /) )
-  real ( kind = 8 ), dimension ( 10 ) :: d = (/ &
+  double precision, dimension ( 10 ) :: d = (/ &
     0.234659D+01, 0.284048D+01,  0.113888D+01, 0.302286D+01,  0.172139D+01, &
     0.153917D+00, 0.290577D+00, -0.159378D+00, 0.546910D+02, -0.444873D+00 /)
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ) x(n)
-  real ( kind = 8 ) xbx
+  double precision f(m)
+  double precision x(n)
+  double precision xbx
 
   xbx = dot_product ( x(1:n), matmul ( b(1:n,1:n), x(1:n) ) )
   f(1:m) = a(1:m) + matmul ( c(1:m,1:n), x(1:n) ) + 0.5D+00 * d(1:m) * xbx
@@ -4603,27 +4603,27 @@ subroutine p23_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ), dimension ( 5, 5 ) :: b = reshape ( (/ &
+  double precision, dimension ( 5, 5 ) :: b = reshape ( (/ &
      0.354033D+00, -0.230349D-01, -0.211938D+00, -0.554288D-01,  0.220429D+00, &
     -0.230349D-01,  0.291350D+00, -0.180333D-02, -0.111141D+00,  0.485461D-01, &
     -0.211938D+00, -0.180333D-02,  0.815808D+00, -0.133538D+00, -0.380670D+00, &
     -0.554288D-01, -0.111141D+00, -0.133538D+00,  0.389198D+00, -0.131586D+00, &
      0.220429D+00,  0.485461D-01, -0.380670D+00, -0.131586D+00,  0.534706D+00 &
     /), (/ 5, 5 /) )
-  real ( kind = 8 ), dimension ( 10, 5 ) :: c = reshape ( (/ &
+  double precision, dimension ( 10, 5 ) :: c = reshape ( (/ &
     -0.564255D+00,  0.535493D+00,  0.586387D+00,  0.608734D+00,  0.774227D+00, &
     -0.435033D+00,  0.759468D+00, -0.152448D+00, -0.821772D+00,  0.819831D+00, &
      0.392417D+00,  0.658799D+00,  0.289826D+00,  0.984915D+00,  0.325421D+00, &
@@ -4635,14 +4635,14 @@ subroutine p23_j ( m, n, x, fjac )
     -0.735083D-01, -0.869487D+00,  0.949721D+00,  0.463136D+00,  0.149926D+00, &
      0.413248D+00, -0.182537D-01,  0.887866D+00,  0.662362D+00, -0.978666D+00 &
     /), (/ 10, 5 /) )
-  real ( kind = 8 ), dimension ( 10 ) :: d = (/ &
+  double precision, dimension ( 10 ) :: d = (/ &
     0.234659D+01, 0.284048D+01,  0.113888D+01, 0.302286D+01,  0.172139D+01, &
     0.153917D+00, 0.290577D+00, -0.159378D+00, 0.546910D+02, -0.444873D+00 /)
-  real ( kind = 8 ) fjac(m,n)
-  real ( kind = 8 ) hfac(n)
-  integer ( kind = 4 ) j
-  integer ( kind = 4 ) k
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  double precision hfac(n)
+  integer j
+  integer k
+  double precision x(n)
 
   do j = 1, n
     hfac(j) = 0.0D+00
@@ -4677,22 +4677,22 @@ subroutine p23_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -4719,15 +4719,15 @@ subroutine p23_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:n) = 0.1D+00
 
@@ -4760,23 +4760,23 @@ subroutine p24_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) ti
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  integer i
+  double precision ti
+  double precision x(n)
 
   do i = 1, m
     ti = real ( i - 1, kind = 8 ) / 10.0D+00
@@ -4807,23 +4807,23 @@ subroutine p24_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) ti
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  double precision ti
+  double precision x(n)
 
   do i = 1, m
 
@@ -4858,22 +4858,22 @@ subroutine p24_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -4900,15 +4900,15 @@ subroutine p24_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:4) = (/ 1.0D+00, 8.0D+00, 4.0D+00, 4.412D+00 /)
 
@@ -4941,23 +4941,23 @@ subroutine p25_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) ti
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  integer i
+  double precision ti
+  double precision x(n)
 
   do i = 1, m
 
@@ -4993,23 +4993,23 @@ subroutine p25_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  integer ( kind = 4 ) i
-  real ( kind = 8 ) ti
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  integer i
+  double precision ti
+  double precision x(n)
 
   do i = 1, m
 
@@ -5054,22 +5054,22 @@ subroutine p25_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 0
   x(1:n) = 0.0D+00
@@ -5096,15 +5096,15 @@ subroutine p25_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:5) = (/ 45.0D+00, 2.0D+00, 2.5D+00, 1.5D+00, 0.9D+00 /)
 
@@ -5137,21 +5137,21 @@ subroutine p26_f ( m, n, x, f )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of functions.
+!    Input, integer M, the number of functions.
 !
-!    Input, integer ( kind = 4 ) N, the number of unknowns.
+!    Input, integer N, the number of unknowns.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) F(M), the value of the functions evaluated at X.
+!    Output, double precision F(M), the value of the functions evaluated at X.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) f(m)
-  real ( kind = 8 ) x(n)
+  double precision f(m)
+  double precision x(n)
 
   f(1) = x(1)**2 + x(2)**2 + x(1) * x(2)
   f(2) = sin ( x(1) )
@@ -5179,21 +5179,21 @@ subroutine p26_j ( m, n, x, fjac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Input, real ( kind = 8 ) X(N), the evaluation point.
+!    Input, double precision X(N), the evaluation point.
 !
-!    Output, real ( kind = 8 ) FJAC(M,N), the jacobian matrix.
+!    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
 
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) n
+  integer m
+  integer n
 
-  real ( kind = 8 ) fjac(m,n)
-  real ( kind = 8 ) x(n)
+  double precision fjac(m,n)
+  double precision x(n)
 
   fjac(1,1) = 2.0D+00 * x(1) + x(2)
   fjac(2,1) = cos ( x(1) )
@@ -5225,22 +5225,22 @@ subroutine p26_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) M, the number of equations.
+!    Input, integer M, the number of equations.
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, integer ( kind = 4 ) KNOWN, 1 or 0, if the solution is known
+!    Output, integer KNOWN, 1 or 0, if the solution is known
 !    or not.
 !
-!    Output, real ( kind = 8 ) X(N), the solution, if known.
+!    Output, double precision X(N), the solution, if known.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  integer ( kind = 4 ) known
-  integer ( kind = 4 ) m
-  real ( kind = 8 ) x(n)
+  integer known
+  integer m
+  double precision x(n)
 
   known = 1
   x(1:n) = (/ -0.155489D+00, 0.694560D+00 /)
@@ -5267,15 +5267,15 @@ subroutine p26_start ( n, x )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of variables.
+!    Input, integer N, the number of variables.
 !
-!    Output, real ( kind = 8 ) X(N), a starting point for the problem.
+!    Output, double precision X(N), a starting point for the problem.
 !
   implicit none
 
-  integer ( kind = 4 ) n
+  integer n
 
-  real ( kind = 8 ) x(n)
+  double precision x(n)
 
   x(1:n) = (/ 3.0D+00, 1.0D+00 /)
 
@@ -5301,11 +5301,11 @@ function r8_pi ( )
 !
 !  Parameters:
 !
-!    Output, real ( kind = 8 ) R8_PI, the value of pi.
+!    Output, double precision R8_PI, the value of pi.
 !
   implicit none
 
-  real ( kind = 8 ) r8_pi
+  double precision r8_pi
 
   r8_pi = 3.141592653589793D+00
 
