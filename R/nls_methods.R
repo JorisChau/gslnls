@@ -520,7 +520,7 @@ anova.gsl_nls <- function(object, ...) {
 #' @return A matrix with columns giving the lower and upper confidence limits for each parameter.
 #' @details
 #' Method \code{"asymptotic"} assumes (approximate) normality of the errors in the model and calculates
-#' standard asymptotic confidence intervals based on the quantiles of a t-distritbution. Method \code{"profile"}
+#' standard asymptotic confidence intervals based on the quantiles of a t-distribution. Method \code{"profile"}
 #' calculates profile likelihood confidence intervals using the \code{\link[MASS:confint]{confint.nls}} method
 #' in the \CRANpkg{MASS} package and for this reason is only available for \code{"gsl_nls"} objects that
 #' are \emph{also} of class \code{"nls"}.

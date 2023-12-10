@@ -845,7 +845,7 @@ gsl_nls.function <- function(fn, y, start,
 #' indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}
 #' @param mstart_n positive integer, number of quasirandom points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 25.
 #' @param mstart_p positive integer, number of iterations of inexpensive local search to concentrate the sample, parameter \code{p} in Hickernell and Yuan (1997). Default is 2.
-#' @param mstart_q positiver integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is 5.
+#' @param mstart_q positive integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is 5.
 #' @param mstart_r positive integer, scaling factor of number of stationary points determining when the multi-start algorithm terminates, parameter \code{r} in Hickernell and Yuan (1997). Default is 3.
 #' @param mstart_s positive integer, minimum number of iterations a point needs to be retained before starting an efficient local search, parameter \code{s} in Hickernell and Yuan (1997). Default is 2.
 #' @param mstart_tol numeric value, tolerance used as criterion to start an efficient local search (epsilon in Algorithm 2.1, Hickernell and Yuan (1997)).
