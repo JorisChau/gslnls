@@ -571,7 +571,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   nls.out$call$algorithm <- algorithm
   nls.out$call$control <- nls.control() ## needed for profiler
   nls.out$call$trace <- trace
-  nls.out$call$formula <- nls.out$call$fn ## needed for external generics
+  nls.out$call$formula <- nls.out$m$formula() ## needed for external generics
   if(trace) {
     nls.out$partrace <- cFit$partrace[seq_len(cFit$niter + 1L), , drop = FALSE]
     nls.out$devtrace <- cFit$ssrtrace[seq_len(cFit$niter + 1L)]
@@ -779,7 +779,7 @@ gsl_nls.function <- function(fn, y, start,
   nls.out <- list(m = m, data = c(list(y = y), list(...)), convInfo = convInfo, call = match.call())
   nls.out$call$algorithm <- algorithm
   nls.out$call$trace <- trace
-  nls.out$call$formula <- nls.out$call$fn ## needed for external generics
+  nls.out$call$formula <- nls.out$m$formula() ## needed for external generics
   if(trace) {
     nls.out$partrace <- cFit$partrace[seq_len(cFit$niter + 1L), , drop = FALSE]
     nls.out$devtrace <- cFit$ssrtrace[seq_len(cFit$niter + 1L)]
