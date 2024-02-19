@@ -6,19 +6,30 @@
 #' the GNU Scientific Library (GSL).
 #'
 #' @section Multi-start algorithm:
-#' If \code{start} is a list or matrix of parameter ranges, a modified version of the multi-start algorithm described in
+#' If \code{start} is a list or matrix of parameter ranges, or contains any missing values, a modified version of the multi-start algorithm described in
 #' Hickernell and Yuan (1997) is applied. Note that the \code{start} parameter ranges are only used to bound the domain for the
-#' starting values, i.e. the resulting parameter estimates are not constrained to lie within these bounds. Quasi-random starting values
-#' are sampled in the unit hypercube from a Sobol sequence if \code{p < 41} and from a Halton sequence otherwise. The initial starting values
-#' are scaled to the specified parameter ranges using an inverse (scaled) logistic function favoring starting values near the center of the
+#' starting values, i.e. the resulting parameter estimates are not constrained to lie within these bounds, use \code{lower} and/or \code{upper} for
+#' this purpose instead. Quasi-random starting values are sampled in the unit hypercube from a Sobol sequence if \code{p < 41} and from a Halton sequence (up to \code{p = 1229}) otherwise.
+#' The initial starting values are scaled to the specified parameter ranges using an inverse (scaled) logistic function favoring starting values near the center of the
 #' (scaled) domain. The trust region algorithm as specified by \code{algorithm} used for the inexpensive and expensive local search (see Algorithm 2.1 of Hickernell
 #' and Yuan (1997)) are the same, only differing in the number of search iterations \code{mstart_p} versus \code{mstart_maxiter}, where
-#' \code{mstart_p} is typically very small, e.g. 2 or 3. When a new stationary point is detected, the scaling step from the unit hypercube to
-#' the starting value domain is updated using the diagonal of the estimated scaling matrix \code{D} in the trust region algorithm, which is
-#' especially useful in sampling starting values when the parameters are living on very different scales. The multi-start algorithm terminates when NSP (number of stationary points)
+#' \code{mstart_p} is typically much smaller than \code{mstart_maxiter}. When a new stationary point is detected, the scaling step from the unit hypercube to
+#' the starting value domain is updated using the diagonal of the estimated trust method's scaling matrix \code{D}, which improves optimization performance
+#' especially when the parameters live on very different scales. The multi-start algorithm terminates when NSP (number of stationary points)
 #' is larger than or equal to \code{mstart_minsp} and NWSP (number of worse stationary points) is larger than or equal to \code{mstart_r} times NSP,
 #' or when the maximum number of major iterations \code{mstart_maxstart} is reached. After termination of the multi-start algorithm, a full
-#' single-start optimization is executed starting from the optimal parameter values observed during the multi-start procedure.
+#' single-start optimization is executed starting from the best multi-start solution.
+#'
+#' @section Missing starting values:
+#' If \code{start} contains missing (or infinite) values, the multi-start algorithm is executed without fixed parameter ranges for the missing parameters.
+#' The ranges for the missing parameters are initialized to the unit interval and dynamically increased or decreased in each major iteration
+#' of the multi-start algorithm. The decision to increase or decrease a parameter range is driven by the minimum and maximum parameter values
+#' attained by the first \code{mstart_q} inexpensive local searches ordered by their squared loss, which typically provide a decent indication of the
+#' order of magnitude of the parameter range in which to search for the optimal solution. Note that this procedure is not expected to always
+#' return a global minimum of the nonlinear least-squares objective. Especially when the objective function contains many local optima,
+#' the algorithm may be unable to select parameter ranges that include the global minimizing solution. In this case, it may help to increase
+#' the values of \code{mstart_n}, \code{mstart_r} or \code{mstart_minsp} to avoid early termination of the algorithm at the cost of
+#' increased computational effort.
 #'
 #' @param fn a nonlinear model defined either as a two-sided \link{formula} including variables and parameters,
 #' or as a \link{function} returning a numeric vector, with first argument the vector of parameters to be estimated.
@@ -27,22 +38,26 @@
 #' defined as a \link{formula}. Can also be a list or an environment, but not a matrix.
 #' @param y numeric response vector if \code{fn} is defined as a \link{function}, equal in
 #' length to the vector returned by evaluation of the function \code{fn}.
-#' @param start initial parameter values (single-start) or parameter ranges (multi-start). The following choices are supported:
+#' @param start a vector, list or matrix of initial parameter values or parameter ranges. \code{start} is only allowed to be missing
+#' if \code{fn} is a \code{\link{selfStart}} model. The following choices are supported:
 #' \itemize{
-#'   \item \emph{single-start}: a named list or named vector of numeric starting values. \code{start} is only allowed to
-#'   be missing if \code{fn} is a \code{\link{selfStart}} model.
-#'   \item \emph{multi-start}: a named list with the (multi-start) parameter starting ranges in the form of length-2
-#'   numeric vectors. Can also be a (\code{2} by \code{p}) named matrix with as columns the numeric starting ranges for the parameters.
-#'   Ill-defined parameter ranges such as \code{c(0, Inf)} or \code{c(NA, 0)} are not allowed.
+#'  \item a named list or named vector of numeric starting values. If \code{start} has no missing values, a standard single-start optimization
+#'  is performed. If \code{start} contains missing values for one or more parameters, a multi-start algorithm (see \sQuote{Details}) with
+#'  dynamic starting ranges for the undefined parameters and fixed starting values for the remaining parameters is executed.
+#'  If \code{start} is a named list or vector containing \emph{only} missing values, the multi-start algorithm considers dynamically changing starting
+#'  ranges for all parameters. Note that there is no guarantee that the optimizing solution is a global minimum of the least-squares objective.
+#'  \item a named list with starting parameter ranges in the form of length-2 numeric vectors. Can also be a (\code{2} by \code{p}) named matrix with as columns
+#' the numeric starting ranges for the parameters. If \code{start} contains no missing values, a multi-start algorithm with fixed
+#' starting ranges for the parameters is executed. Otherwise, if \code{start} contains infinities or missing values (e.g. \code{c(0, Inf)} or \code{c(NA, NA)}),
+#' the multi-start algorithm considers dynamically changing starting ranges for the parameters with infinite and/or missing ranges.
 #' }
 #' @param algorithm character string specifying the algorithm to use. The following choices are supported:
 #' \itemize{
-#' \item \code{"lm"} Levenberg-Marquardt algorithm (default)
+#' \item \code{"lm"} Levenberg-Marquardt algorithm (default).
 #' \item \code{"lmaccel"} Levenberg-Marquardt algorithm with geodesic acceleration.
-#' Can be faster than \code{"lm"} but less stable. Stability is controlled by the
-#' \code{avmax} parameter in \code{control}, setting \code{avmax} to zero is analogous
-#' to not using geodesic acceleration.
-#' \item \code{"dogleg"} Powell's dogleg algorithm
+#' Stability is controlled by the \code{avmax} parameter in \code{control}, setting \code{avmax}
+#' to zero is analogous to not using geodesic acceleration.
+#' \item \code{"dogleg"} Powell's dogleg algorithm.
 #' \item \code{"ddogleg"} Double dogleg algorithm, an improvement over \code{"dogleg"}
 #' by including information about the Gauss-Newton step while the iteration is still
 #' far from the minimum.
@@ -52,6 +67,8 @@
 #' }
 #' @param control an optional list of control parameters to tune the least squares iterations and multistart algorithm.
 #' See \code{\link{gsl_nls_control}} for the available control parameters and their default values.
+#' @param lower	a named list or named numeric vector of parameter lower bounds. If missing (default), the parameters are unconstrained from below.
+#' @param upper a named list or named numeric vector of parameter upper bounds. If missing (default), the parameters are unconstrained from above.
 #' @param jac either \code{NULL} (default) or a \link{function} returning the \code{n} by \code{p} dimensional Jacobian matrix of
 #' the nonlinear model \code{fn}, where \code{n} is the number of observations and \code{p} the
 #' number of parameters. If a function, the first argument must be the vector of parameters of length \code{p}.
@@ -100,7 +117,7 @@
 #'
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' x <- (seq_len(n) - 1) * 3 / (n - 1)
 #' f <- function(A, lam, b, x) A * exp(-lam * x) + b
 #' y <- f(A = 5, lam = 1.5, b = 1, x) + rnorm(n, sd = 0.25)
@@ -119,6 +136,12 @@
 #'   fn = y ~ A * exp(-lam * x) + b,                             ## model formula
 #'   data = data.frame(x = x, y = y),                            ## model fit data
 #'   start = list(A = c(0, 100), lam = c(0, 10), b = c(-10, 10)) ## starting ranges
+#' )
+#' ## missing starting values
+#' gsl_nls(
+#'   fn = y ~ A * exp(-lam * x) + b,                        ## model formula
+#'   data = data.frame(x = x, y = y),                       ## model fit data
+#'   start = c(A = NA, lam = NA, b = NA)                    ## unknown start
 #' )
 #'
 #' ## analytic Jacobian 1
@@ -150,7 +173,7 @@
 #'
 #' ## data
 #' set.seed(1)
-#' n <- 300
+#' n <- 100
 #' x <- seq_len(n) / n
 #' f <- function(a, b, c, x) a * exp(-(x - b)^2 / (2 * c^2))
 #' y <- f(a = 5, b = 0.4, c = 0.15, x) * rnorm(n, mean = 1, sd = 0.1)
@@ -225,21 +248,30 @@
 #'   algorithm = "dogleg"           ## algorithm
 #' )
 #'
-#' # Other example problems
-#'
+#' # Available example problems
 #' nls_test_list()
 #'
-#' misra1a <- nls_test_problem(name = "Misra1a")
-#'
-#' misra1a_fit <- with(misra1a,
-#'   gsl_nls(
-#'     fn = fn,
-#'     data = data,
-#'     start = start
-#'   )
+#' ## BOD regression
+#' ## (https://www.itl.nist.gov/div898/strd/nls/nls_main.shtml)
+#' (boxbod <- nls_test_problem(name = "BoxBOD"))
+#' with(boxbod,
+#'      gsl_nls(
+#'        fn = fn,
+#'        data = data,
+#'        start = list(b1 = NA, b2 = NA)
+#'      )
 #' )
 #'
-#' all.equal(coef(misra1a_fit), misra1a$target)
+#' ## Rosenbrock function
+#' (rosenbrock <- nls_test_problem(name = "Rosenbrock"))
+#' with(rosenbrock,
+#'      gsl_nls(
+#'        fn = fn,
+#'        y = y,
+#'        start = c(x1 = NA, x2 = NA),
+#'        jac = jac
+#'      )
+#' )
 #'
 #' @export
 gsl_nls <- function (fn, ...) {
@@ -255,8 +287,8 @@ gsl_nls <- function (fn, ...) {
 #' @export
 gsl_nls.formula <- function(fn, data = parent.frame(), start,
                             algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
-                            control = gsl_nls_control(), jac = NULL, fvv = NULL, trace = FALSE,
-                            subset, weights, na.action, model = FALSE, ...) {
+                            control = gsl_nls_control(), lower, upper, jac = NULL, fvv = NULL,
+                            trace = FALSE, subset, weights, na.action, model = FALSE, ...) {
 
   ## adapted from src/library/stats/nls.R
   formula <- as.formula(fn)
@@ -323,14 +355,55 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
       nnn <- names(n[not.there])
       if(missing(start)) {
         stop("No starting values specified for parameters. Specify 'start' or use a selfStart model")
-      }
-      else                        # has 'start' but forgot some
+      } else {
+        # has 'start' but forgot some
         stop(gettextf("parameters without starting value in 'data': %s",
                       paste(nnn, collapse=", ")), domain = NA)
+      }
     }
-  }
-  else { ## length(varNames) == 0
+  } else { ## length(varNames) == 0
     stop("No parameters to fit and/or no data variables present")
+  }
+
+  ## Transform multi-start starting values to matrix
+  if(!missing(start)) {
+    if(is.list(start) && any(lengths(start) > 1)) {
+      if(!all(is.element(lengths(start), c(1L, 2L)))) {
+        stop("List elements of 'start' must be of length 1 or 2 to specify (multi-start) parameter values or ranges")
+      }
+      if(any(len1 <- lengths(start) < 2)) {
+        start[len1] <- lapply(start[len1], rep, times = 2L)
+      }
+      start <- as.matrix(data.frame(start))
+    } else if(is.matrix(start) && nrow(start) != 2L) {
+      stop("Matrix 'start' must have exactly 2 rows to specify (multi-start) parameter ranges")
+    }
+    ## Handle infinite/missing start values
+    if(is.vector(start)) {
+      if(any((napars <- sapply(start, Negate(is.finite))))) {
+        start <- vapply(names(start), function(nm) if(napars[[nm]]) c(0, 1) else rep(start[[nm]], 2L), numeric(2))
+        .has_start <- sapply(!napars, rep, times = 2L)
+      } else {
+        .has_start <- !napars  ## not used (single-start)
+      }
+    } else if(is.matrix(start)) {
+      if(any(napars <- apply(start, 2L, Negate(is.finite)))) {
+        start[1L, napars[1L, ]]  <- 0
+        start[2L, napars[2L, ]] <- 1
+      }
+      .has_start <- !napars
+    } else {
+      stop("Unrecognized format for starting values and/or ranges defined in 'start'")
+    }
+    ## Check start ranges
+    if(is.matrix(start)) {
+      if(length(pnames) > 1229L)
+        stop("GSL quasi-random Halton sequences in multi-start are only available up to 1229 parameters")
+      if(any(start[1L, ] > start[2L, ]))
+        stop("Multi-start parameter lower bounds cannot be larger than upper bounds")
+      else if(!any(start[1L, ] < start[2L, ]))
+        start <- start[1L, ]  ## single-start
+    }
   }
 
   ## If its length is a multiple of the response or LHS of the formula,
@@ -352,7 +425,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
         start <- getInitial(formula, data=mf, control=control, trace=trace)
       startEnv <- new.env(hash = FALSE, parent = environment(formula)) # small
       if(is.matrix(start)) {
-        for(i in rownames(start)) {
+        for(i in colnames(start)) {
           startEnv[[i]] <- (start[1L, i] + start[2L, i]) / 2
         }
       } else {
@@ -371,7 +444,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
         as.formula(paste("~", paste(vNms, collapse = "+")),
                    env = environment(formula))
       mf$start <- mf$control <- mf$algorithm <- mf$trace <- mf$model <-
-        mf$fn <- mf$jac <- mf$fvv <- NULL
+        mf$fn <- mf$jac <- mf$fvv <-mf$lower <- mf$upper <- NULL
       ## need stats:: for non-standard evaluation
       mf[[1L]] <- quote(stats::model.frame)
       mf <- eval.parent(mf)
@@ -387,30 +460,50 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   }
 
   ## set up iteration
-  if(missing(start))
+  if(missing(start)) {
     start <- getInitial(formula, data=mf, control=control, trace=trace)
+    .has_start <- structure(rep(TRUE, times = length(start)), names = names(start)) ## not used (single-start)
+  }
   for(var in varNames[!varIndex])
     mf[[var]] <- eval(as.name(var), data, env)
   varNamesRHS <- varNamesRHS[ varNamesRHS %in% varNames[varIndex] ]
 
-  ## Transform multi-start starting values to matrix
-  if(is.list(start) && any(lengths(start) > 1)) {
-    if(any(lengths(start) != 2L)) {
-      stop("List elements of 'start' must have exactly length 2 to specify (multi-start) parameter ranges")
+  ## parameter constraints
+  if(!missing(lower) || !missing(upper)) {
+    if(missing(lower)) lower <- structure(rep(-Inf, names = pnames))
+    if(missing(upper)) upper <- structure(rep(Inf, names = pnames))
+    if(is.list(lower)) {
+      if(any(lengths(lower) != 1L))
+        stop("List elements of 'lower' must have exactly length 1 to specify parameter lower bounds")
+      lower <- unlist(lower)
     }
-    start <- as.matrix(data.frame(start))
-  } else if(is.matrix(start) && nrow(start) != 2L) {
-    stop("Matrix 'start' must have exactly 2 rows to specify (multi-start) parameter ranges")
-  }
-
-  ## check lower/upper bounds
-  if(is.matrix(start)) {
-    if(length(pnames) > 1229L)
-      stop("GSL quasi-random Halton sequences in multi-start are only available up to 1229 parameters")
-    if(any(start[1L, ] > start[2L, ]))
-      stop("Multi-start parameter lower bounds cannot be larger than upper bounds")
-    else if(!any(start[1L, ] < start[2L, ]))
-      start <- start[1L, ]  ## single-start
+    if(is.list(upper)) {
+      if(any(lengths(upper) != 1L))
+        stop("List elements of 'upper' must have exactly length 1 to specify parameter upper bounds")
+      upper <- unlist(upper)
+    }
+    if(any(is.na(match(names(lower), pnames))))
+      stop("Unrecognized parameter names present in 'lower'")
+    if(any(is.na(match(names(upper), pnames))))
+      stop("Unrecognized parameter names present in 'upper'")
+    if(is.matrix(start))
+      startnames <- colnames(start)
+    else
+      startnames <- names(start)
+    .lupars <- matrix(rep(c(-Inf, Inf), times = length(startnames)), nrow = 2L, ncol = length(startnames), dimnames = list(NULL, startnames))
+    .lupars[1, match(names(lower), pnames)] <- unname(lower)
+    .lupars[2, match(names(upper), pnames)] <- unname(upper)
+    if(any(.lupars[1L, ] > .lupars[2L, ]))
+      stop("Parameter lower bounds cannot be larger than upper bounds")
+    if(is.matrix(start) && (any(start[1, ] < .lupars[1, ] | start[2, ] > .lupars[2, ])))
+      stop("Starting parameter ranges must be contained within 'lower' and 'upper' bounds")
+    else if(!is.matrix(start) && any(vapply(startnames, function(nm) start[[nm]] < .lupars[1, nm] || start[[nm]] > .lupars[2, nm], logical(1))))
+      stop("Starting parameters must be contained within 'lower' and/or 'upper' bounds")
+    if(all(is.infinite(.lupars))) {
+      .lupars <- NULL
+    }
+  } else {
+    .lupars <- NULL
   }
 
   ## function call
@@ -449,6 +542,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
       }
     }
   }
+
   if(is.function(jac)) {
     .jac <- function(par) jac(par, ...)
     if(is.matrix(start)) {
@@ -487,10 +581,12 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
         }
       }
     }
+
     if(is.function(fvv)) {
       .fvv <- function(par, v) fvv(par, v, ...)
       if(is.matrix(start)) {
-        .fvvcall <- tryCatch(.fn((start[1L, ] + start[2L, ]) / 2, structure(rep(1, nrow(start)), names = rownames(start))), error = function(err) err)
+        .fvvcall <- tryCatch(.fvv((start[1L, ] + start[2L, ]) / 2, structure(rep(1, ncol(start)), names = colnames(start))),
+                             error = function(err) err)
       } else {
         .fvvcall <- tryCatch(.fvv(start, structure(rep(1, length(start)), names = names(start))), error = function(err) err)
       }
@@ -546,12 +642,16 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     as.integer(.ctrl$mstart_s),
     as.integer(.ctrl$mstart_maxiter),
     as.integer(.ctrl$mstart_maxstart),
-    as.integer(.ctrl$mstart_minsp)
+    as.integer(.ctrl$mstart_minsp),
+    as.integer(!is.list(start))
   )
   .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol", "mstart_r", "mstart_tol")])
+  if(!all(.has_start)) {
+    .ctrl_dbl[["mstart_r"]] <- 10 * .ctrl_dbl[["mstart_r"]]
+  }
 
   ## optimize
-  cFit <- .Call(C_nls, .fn, .lhs, .jac, .fvv, environment(), start, wts, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
+  cFit <- .Call(C_nls, .fn, .lhs, .jac, .fvv, environment(), start, wts, .lupars, .ctrl_int, .ctrl_dbl, .has_start, PACKAGE = "gslnls")
 
   ## convert to nls object
   m <- nlsModel(formula, mf, cFit$par, wts, jac)
@@ -582,6 +682,10 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     nls.out$model <- mf
   if(!mWeights)
     nls.out$weights <- wts
+  if(!is.null(.lupars)) {
+    nls.out$lower <- .lupars[1L, ]
+    nls.out$upper <- .lupars[2L, ]
+  }
   class(nls.out) <- c("gsl_nls", "nls")
 
   return(nls.out)
@@ -602,25 +706,50 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
 #' @export
 gsl_nls.function <- function(fn, y, start,
                              algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
-                             control = gsl_nls_control(), jac = NULL, fvv = NULL, trace = FALSE,
-                             weights, ...) {
+                             control = gsl_nls_control(), lower, upper, jac = NULL, fvv = NULL,
+                             trace = FALSE, weights, ...) {
 
   ## algorithm
   algorithm <- match.arg(algorithm, c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"))
 
   ## starting values
-  if(missing(start)) {
-    stop("starting values need to be provided if 'fn' is defined as a function")
-  }
-
-  ## Transform multi-start starting values to matrix
-  if(is.list(start) && any(lengths(start) > 1)) {
-    if(any(lengths(start) != 2L)) {
-      stop("List elements of 'start' must have exactly length 2 to specify (multi-start) parameter ranges")
+  .start <- start   ## do not modify start argument
+  if(is.list(.start) && any(lengths(.start) > 1)) {
+    if(!all(is.element(lengths(.start), c(1L, 2L)))) {
+      stop("List elements of 'start' must be of length 1 or 2 to specify (multi-start) parameter values or ranges")
     }
-    start <- as.matrix(data.frame(start))
-  } else if(is.matrix(start) && nrow(start) != 2L) {
+    if(any(len1 <- lengths(.start) < 2)) {
+      .start[len1] <- lapply(.start[len1], rep, times = 2L)
+    }
+    .start <- as.matrix(data.frame(.start))
+  } else if(is.matrix(.start) && nrow(.start) != 2L) {
     stop("Matrix 'start' must have exactly 2 rows to specify (multi-start) parameter ranges")
+  }
+  ## Handle infinite/missing start values
+  if(is.vector(.start)) {
+    if(any((napars <- sapply(.start, Negate(is.finite))))) {
+      .start <- vapply(names(.start), function(nm) if(napars[[nm]]) c(0, 1) else rep(.start[[nm]], 2L), numeric(2))
+      .has_start <- sapply(!napars, rep, times = 2L)
+    } else {
+      .has_start <- !napars  ## not used (single-start)
+    }
+  } else if(is.matrix(.start)) {
+    if(any(napars <- apply(.start, 2L, Negate(is.finite)))) {
+      .start[1L, napars[1L, ]]  <- 0
+      .start[2L, napars[2L, ]] <- 1
+    }
+    .has_start <- !napars
+  } else {
+    stop("Unrecognized format for starting values and/or ranges defined in 'start'")
+  }
+  ## Check start ranges
+  if(is.matrix(.start)) {
+    if(ncol(.start) > 1229L)
+      stop("GSL quasi-random Halton sequences in multi-start are only available up to 1229 parameters")
+    if(any(.start[1L, ] > .start[2L, ]))
+      stop("Multi-start parameter lower bounds cannot be larger than upper bounds")
+    else if(!any(.start[1L, ] < .start[2L, ]))
+      start <- .start <- start[1L, ] ## single-start
   }
 
   ## function call
@@ -628,27 +757,57 @@ gsl_nls.function <- function(fn, y, start,
     stop("'y' should be a numeric response vector")
 
   ## n >= p
-  p <- ifelse(is.matrix(start), ncol(start), length(start))
+  p <- ifelse(is.matrix(.start), ncol(.start), length(.start))
   if(length(y) < p) {
     stop("negative residual degrees of freedom, cannot fit a model with less observations than parameters")
   }
 
-  ## check lower/upper bounds
-  if(is.matrix(start)) {
-    if(length(p) > 1229L)
-      stop("GSL quasi-random Halton sequences in multi-start are only available up to 1229 parameters")
-    if(any(start[1L, ] > start[2L, ]))
-      stop("Multi-start parameter lower bounds cannot be larger than upper bounds")
-    else if(!any(start[1L, ] < start[2L, ]))
-      start <- start[1L, ]  ## single-start
+  ## parameter constraints
+  if(!missing(lower) || !missing(upper)) {
+    if(is.matrix(.start))
+      pnames <- colnames(.start)
+    else
+      pnames <- names(.start)
+    if(missing(lower)) lower <- structure(rep(-Inf, names = pnames))
+    if(missing(upper)) upper <- structure(rep(Inf, names = pnames))
+    if(is.list(lower)) {
+      if(any(lengths(lower) != 1L))
+        stop("List elements of 'lower' must have exactly length 1 to specify parameter lower bounds")
+      lower <- unlist(lower)
+    }
+    if(is.list(upper)) {
+      if(any(lengths(upper) != 1L))
+        stop("List elements of 'upper' must have exactly length 1 to specify parameter upper bounds")
+      upper <- unlist(upper)
+    }
+    if(any(is.na(match(names(lower), pnames))))
+      stop("Unrecognized parameter names present in 'lower'")
+    if(any(is.na(match(names(upper), pnames))))
+      stop("Unrecognized parameter names present in 'upper'")
+    .lupars <- matrix(rep(c(-Inf, Inf), times = length(pnames)), nrow = 2L, ncol = length(pnames), dimnames = list(NULL, pnames))
+    .lupars[1, match(names(lower), pnames)] <- unname(lower)
+    .lupars[2, match(names(upper), pnames)] <- unname(upper)
+    if(any(.lupars[1L, ] > .lupars[2L, ]))
+      stop("Parameter lower bounds cannot be larger than upper bounds")
+    if(is.matrix(.start) && (any(.start[1, ] < .lupars[1, ] | .start[2, ] > .lupars[2, ])))
+      stop("Starting parameter ranges must be contained within 'lower' and 'upper' bounds")
+    else if(!is.matrix(.start) && any(vapply(pnames, function(nm) .start[[nm]] < .lupars[1, nm] || .start[[nm]] > .lupars[2, nm], logical(1))))
+      stop("Starting parameters must be contained within 'lower' and/or 'upper' bounds")
+    if(all(is.infinite(.lupars))) {
+      .lupars <- NULL
+    }
+  } else {
+    .lupars <- NULL
   }
 
   ## function call
   .fn <- function(par) fn(par, ...)
-  if(is.matrix(start)) {
-    .fcall <- tryCatch(.fn((start[1L, ] + start[2L, ]) / 2), error = function(err) err)
+  if(is.matrix(.start) && is.list(start)) {
+    .fcall <- tryCatch(.fn(as.list((.start[1L, ] + .start[2L, ]) / 2)), error = function(err) err)
+  } else if(is.matrix(.start)) {
+    .fcall <- tryCatch(.fn((.start[1L, ] + .start[2L, ]) / 2), error = function(err) err)
   } else {
-    .fcall <- tryCatch(.fn(start), error = function(err) err)
+    .fcall <- tryCatch(.fn(.start), error = function(err) err)
   }
   if(inherits(.fcall, "error"))
     stop(sprintf("failed to evaluate 'fn' at starting values: %s", .fcall$message))
@@ -664,10 +823,12 @@ gsl_nls.function <- function(fn, y, start,
 
   if(is.function(jac)) {
     .jac <- function(par) jac(par, ...)
-    if(is.matrix(start)) {
-      .dfcall <- tryCatch(.jac((start[1L, ] + start[2L, ]) / 2), error = function(err) err)
+    if(is.matrix(.start) && is.list(start)) {
+      .dfcall <- tryCatch(.jac(as.list((.start[1L, ] + .start[2L, ]) / 2)), error = function(err) err)
+    } else if(is.matrix(.start)) {
+      .dfcall <- tryCatch(.jac((.start[1L, ] + .start[2L, ]) / 2), error = function(err) err)
     } else {
-      .dfcall <- tryCatch(.jac(start), error = function(err) err)
+      .dfcall <- tryCatch(.jac(.start), error = function(err) err)
     }
     if(inherits(.dfcall, "error"))
       stop(sprintf("failed to evaluate 'jac' at starting values: %s", .dfcall$message))
@@ -690,10 +851,12 @@ gsl_nls.function <- function(fn, y, start,
     }
     if(is.function(fvv)) {
       .fvv <- function(par, v) fvv(par, v, ...)
-      if(is.matrix(start)) {
-        .fvvcall <- tryCatch(.fn((start[1L, ] + start[2L, ]) / 2, structure(rep(1, p), names = rownames(start))), error = function(err) err)
+      if(is.matrix(.start) && is.list(start)) {
+        .fvvcall <- tryCatch(.fvv(as.list((.start[1L, ] + .start[2L, ]) / 2), structure(rep(1, p), names = colnames(.start))), error = function(err) err)
+      } else if(is.matrix(.start)) {
+        .fvvcall <- tryCatch(.fvv((.start[1L, ] + .start[2L, ]) / 2, structure(rep(1, p), names = colnames(.start))), error = function(err) err)
       } else {
-        .fvvcall <- tryCatch(.fvv(start, structure(rep(1, p), names = names(start))), error = function(err) err)
+        .fvvcall <- tryCatch(.fvv(.start, structure(rep(1, p), names = names(.start))), error = function(err) err)
       }
       if(inherits(.fvvcall, "error"))
         stop(sprintf("failed to evaluate 'fvv' at starting values: %s", .fvvcall$message))
@@ -747,9 +910,13 @@ gsl_nls.function <- function(fn, y, start,
     as.integer(.ctrl$mstart_s),
     as.integer(.ctrl$mstart_maxiter),
     as.integer(.ctrl$mstart_maxstart),
-    as.integer(.ctrl$mstart_minsp)
+    as.integer(.ctrl$mstart_minsp),
+    as.integer(!is.list(start))
   )
   .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol", "mstart_r", "mstart_tol")])
+  if(!all(.has_start)) {
+    .ctrl_dbl[["mstart_r"]] <- 10 * .ctrl_dbl[["mstart_r"]]
+  }
 
   ## weights
   if(!missing(weights)) {
@@ -762,8 +929,9 @@ gsl_nls.function <- function(fn, y, start,
   }
 
   ## optimize
-  cFit <- .Call(C_nls, .fn, y, .jac, .fvv, environment(), start, weights, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
-  m <- gslModel(fn, y, cFit, if(is.matrix(start)) start[1L, ] else start, weights, jac, ...)
+  cFit <- .Call(C_nls, .fn, y, .jac, .fvv, environment(), .start, weights, .lupars, .ctrl_int, .ctrl_dbl, .has_start, PACKAGE = "gslnls")
+
+  m <- gslModel(fn, y, cFit, if(!all(.has_start) && is.list(start)) as.list(.start[1L, ]) else if(!all(.has_start) || is.matrix(start)) .start[1L, ] else .start, weights, jac, ...)
 
   ## mimick nls object
   convInfo <- list(
@@ -787,6 +955,10 @@ gsl_nls.function <- function(fn, y, start,
   nls.out$control <- .ctrl
   if(!is.null(weights))
     nls.out$weights <- weights
+  if(!is.null(.lupars)) {
+    nls.out$lower <- .lupars[1L, ]
+    nls.out$upper <- .lupars[2L, ]
+  }
   class(nls.out) <- "gsl_nls"
 
   return(nls.out)
@@ -844,13 +1016,14 @@ gsl_nls.function <- function(fn, y, start,
 #' @param gtol numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
 #' indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}
 #' @param mstart_n positive integer, number of quasirandom points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 25.
-#' @param mstart_p positive integer, number of iterations of inexpensive local search to concentrate the sample, parameter \code{p} in Hickernell and Yuan (1997). Default is 2.
+#' @param mstart_p positive integer, number of iterations of inexpensive local search to concentrate the sample, parameter \code{p} in Hickernell and Yuan (1997). Default is 5.
 #' @param mstart_q positive integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is 5.
 #' @param mstart_r positive integer, scaling factor of number of stationary points determining when the multi-start algorithm terminates, parameter \code{r} in Hickernell and Yuan (1997). Default is 3.
+#' If the starting ranges for one or more parameters are unbounded and updated dynamically, \code{mstart_r} is multiplied by a factor 10 to avoid early termination.
 #' @param mstart_s positive integer, minimum number of iterations a point needs to be retained before starting an efficient local search, parameter \code{s} in Hickernell and Yuan (1997). Default is 2.
-#' @param mstart_tol numeric value, tolerance used as criterion to start an efficient local search (epsilon in Algorithm 2.1, Hickernell and Yuan (1997)).
-#' @param mstart_maxiter positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to \code{maxiter \%/\% 3}.
-#' @param mstart_maxstart positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 100.
+#' @param mstart_tol numeric value, multiplicative tolerance \code{(1 + mstart_tol)} used as criterion to start an efficient local search (epsilon in Algorithm 2.1, Hickernell and Yuan (1997)).
+#' @param mstart_maxiter positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to \code{maxiter \%/\% 10}.
+#' @param mstart_maxstart positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 1000.
 #' @param mstart_minsp positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.
 #' @importFrom stats nls.control
 #' @seealso \code{\link[stats]{nls.control}}
@@ -887,13 +1060,13 @@ gsl_nls.function <- function(fn, y, start,
 #' @references M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
 #' @references Hickernell, F.J. and Yuan, Y. (1997) \emph{“A simple multistart algorithm for global optimization”}, OR Transactions, Vol. 1 (2).
 #' @export
-gsl_nls_control <- function(maxiter = 50, scale = "more", solver = "qr",
+gsl_nls_control <- function(maxiter = 100, scale = "more", solver = "qr",
                             fdtype = "forward", factor_up = 2, factor_down = 3, avmax = 0.75,
                             h_df = sqrt(.Machine$double.eps), h_fvv = 0.02, xtol = sqrt(.Machine$double.eps),
                             ftol = sqrt(.Machine$double.eps), gtol = .Machine$double.eps^(1/3),
-                            mstart_n = 25, mstart_p = 2, mstart_q = 5, mstart_r = 3, mstart_s = 2,
-                            mstart_tol = 0.1, mstart_maxiter = maxiter %/% 3,
-                            mstart_maxstart = 100, mstart_minsp = 1) {
+                            mstart_n = 25, mstart_p = 5, mstart_q = 5, mstart_r = 3, mstart_s = 2,
+                            mstart_tol = 0.5, mstart_maxiter = maxiter %/% 10,
+                            mstart_maxstart = 1000, mstart_minsp = 1) {
 
   scale <- match.arg(scale, c("more", "levenberg", "marquardt"))
   solver <- match.arg(solver, c("qr", "cholesky", "svd"))
@@ -947,7 +1120,7 @@ nlsModel <- function(form, data, start, wts, jac, upper=NULL) {
   getPars <- getPars.noVarying
   internalPars <- getPars()
 
-  if(!is.null(upper)) upper <- rep_len(upper, parLength)
+  if(!is.null(upper)) upper <- rep_len(upper, parLength)  ## currently not used
   useParams <- rep_len(TRUE, parLength)
   lhs <- eval(form[[2L]], envir = env)
   rhs <- eval(form[[3L]], envir = env)

@@ -21,7 +21,7 @@ Returns the fitted model coefficients from a \code{"gsl_nls"} object.
 \examples{
 ## data
 set.seed(1)
-n <- 50
+n <- 25
 xy <- data.frame(
   x = (1:n) / n,
   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)

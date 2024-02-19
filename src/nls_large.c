@@ -3,6 +3,27 @@
 #include <string.h>
 #include "gsl_nls.h"
 
+/* static function declarations */
+static int gsl_multilarge_nlinear_driver2(const R_len_t maxiter,
+                                          const double xtol,
+                                          const double gtol,
+                                          const double ftol,
+                                          void (*callback)(const R_len_t iter, void *params,
+                                                           const gsl_multilarge_nlinear_workspace *w),
+                                          void *callback_params,
+                                          int *info,
+                                          double *chisq0,
+                                          double *chisq1,
+                                          gsl_multilarge_nlinear_workspace *w);
+
+static int gsl_f_large(const gsl_vector *x, void *params, gsl_vector *f);
+
+static int gsl_df_large(CBLAS_TRANSPOSE_t TransJ, const gsl_vector *x, const gsl_vector *u, void *params, gsl_vector *v, gsl_matrix *JTJ);
+
+static int gsl_fvv_large(const gsl_vector *x, const gsl_vector *v, void *params, gsl_vector *fvv);
+
+static void callback_large(const R_len_t iter, void *params, const gsl_multilarge_nlinear_workspace *w);
+
 /* helper to match sparse matrix class */
 static int match_dg_class(SEXP obj)
 {
@@ -174,7 +195,7 @@ SEXP C_nls_large_internal(void *data)
 
     /* define the function to be minimized */
     gsl_multilarge_nlinear_fdf fdf;
-    fdf.f = gsl_f;
+    fdf.f = gsl_f_large;
     fdf.df = gsl_df_large;
     fdf.fvv = NULL; // not using geodesic acceleration
     fdf.n = n;
@@ -187,7 +208,7 @@ SEXP C_nls_large_internal(void *data)
         SEXP vpar = Rf_install("v");
         SEXP fvvcall = PROTECT(Rf_lang3(pars->fvv, xpar, vpar));
         params.fvv = fvvcall;
-        fdf.fvv = gsl_fvv;
+        fdf.fvv = gsl_fvv_large;
         nprotect++;
     }
 
@@ -444,7 +465,7 @@ GSL_EBADFUNC if function evaluation failed
 GSL_MAXITER if maxiter exceeded without converging
 GSL_ENOPROG if no accepted step found on first iteration
 */
-int gsl_multilarge_nlinear_driver2(const R_len_t maxiter,
+static int gsl_multilarge_nlinear_driver2(const R_len_t maxiter,
                                    const double xtol,
                                    const double gtol,
                                    const double ftol,
@@ -517,7 +538,55 @@ int gsl_multilarge_nlinear_driver2(const R_len_t maxiter,
     return status;
 } /* gsl_multilarge_nlinear_driver() */
 
-int gsl_df_large(CBLAS_TRANSPOSE_t TransJ, const gsl_vector *x, const gsl_vector *u, void *params, gsl_vector *v, gsl_matrix *JTJ)
+static int gsl_f_large(const gsl_vector *x, void *params, gsl_vector *f)
+{
+    /* construct parameter vector */
+    SEXP par = NULL;
+    R_len_t p = ((fdata_large *)params)->p;
+    SEXP start = ((fdata_large *)params)->start;
+    if (Rf_isNumeric(start))
+    {
+        par = PROTECT(Rf_allocVector(REALSXP, p));
+        for (R_len_t k = 0; k < p; k++)
+            SET_REAL_ELT(par, k, gsl_vector_get(x, k));
+    }
+    else
+    {
+        par = PROTECT(Rf_allocVector(VECSXP, p));
+        for (R_len_t k = 0; k < p; k++)
+            SET_VECTOR_ELT(par, k, Rf_ScalarReal(gsl_vector_get(x, k)));
+    }
+    Rf_setAttrib(par, R_NamesSymbol, Rf_getAttrib(start, R_NamesSymbol));
+
+    /* evaluate function f */
+    SETCADR(((fdata_large *)params)->f, par);
+    SEXP fval = PROTECT(Rf_eval(((fdata_large *)params)->f, ((fdata_large *)params)->rho));
+
+    /* function checks */
+    R_len_t n = ((fdata_large *)params)->n;
+    if (TYPEOF(fval) != REALSXP || Rf_length(fval) != n)
+    {
+        Rf_warning("Evaluating fn does not return numeric vector of expected length n");
+        UNPROTECT(2);
+        return GSL_EBADFUNC;
+    }
+
+    /* set gsl residuals */
+    double *fvalptr = REAL(fval);
+    double *yptr = REAL(((fdata_large *)params)->y);
+    for (R_len_t i = 0; i < n; i++)
+    {
+        if (R_IsNaN(fvalptr[i]) || !R_finite(fvalptr[i]))
+            gsl_vector_set(f, i, (double)GSL_POSINF);
+        else
+            gsl_vector_set(f, i, fvalptr[i] - yptr[i]);
+    }
+
+    UNPROTECT(2);
+    return GSL_SUCCESS;
+}
+
+static int gsl_df_large(CBLAS_TRANSPOSE_t TransJ, const gsl_vector *x, const gsl_vector *u, void *params, gsl_vector *v, gsl_matrix *JTJ)
 {
     /* construct parameter vector */
     int nprotect = 2;
@@ -698,7 +767,67 @@ int gsl_df_large(CBLAS_TRANSPOSE_t TransJ, const gsl_vector *x, const gsl_vector
     return GSL_SUCCESS;
 }
 
-void callback_large(const R_len_t iter, void *params, const gsl_multilarge_nlinear_workspace *w)
+static int gsl_fvv_large(const gsl_vector *x, const gsl_vector *v, void *params, gsl_vector *fvv)
+{
+    /* populate parameter vector */
+    SEXP par = NULL;
+    R_len_t p = ((fdata_large *)params)->p;
+    SEXP start = ((fdata_large *)params)->start;
+    SEXP parnames = PROTECT(Rf_getAttrib(start, R_NamesSymbol));
+    if (Rf_isNumeric(start))
+    {
+        par = PROTECT(Rf_allocVector(REALSXP, p));
+        for (R_len_t k = 0; k < p; k++)
+            SET_REAL_ELT(par, k, gsl_vector_get(x, k));
+    }
+    else
+    {
+        par = PROTECT(Rf_allocVector(VECSXP, p));
+        for (R_len_t k = 0; k < p; k++)
+            SET_VECTOR_ELT(par, k, Rf_ScalarReal(gsl_vector_get(x, k)));
+    }
+    Rf_setAttrib(par, R_NamesSymbol, parnames);
+
+    /* populate v vector */
+    SEXP vpar = PROTECT(Rf_allocVector(REALSXP, p));
+    for (R_len_t k = 0; k < p; k++)
+        SET_REAL_ELT(vpar, k, gsl_vector_get(v, k));
+    Rf_setAttrib(vpar, R_NamesSymbol, parnames);
+
+    /* evaluate fvv function */
+    SETCADR(((fdata_large *)params)->fvv, par);
+    SETCADDR(((fdata_large *)params)->fvv, vpar);
+    SEXP fvvval = PROTECT(Rf_eval(((fdata_large *)params)->fvv, ((fdata_large *)params)->rho));
+
+    /* function checks */
+    R_len_t n = ((fdata_large *)params)->n;
+    if (TYPEOF(fvvval) != REALSXP || Rf_length(fvvval) != n)
+    {
+        Rf_warning("Evaluating fvv does not return numeric vector of expected length n");
+        UNPROTECT(4);
+        return GSL_EBADFUNC;
+    }
+
+    double *fvvvalptr = REAL(fvvval);
+    for (R_len_t i = 0; i < n; i++)
+    {
+        if (R_IsNaN(fvvvalptr[i]) || !R_finite(fvvvalptr[i]))
+        {
+            Rf_warning("Missing/infinite values not allowed when evaluating fvv");
+            UNPROTECT(4);
+            return GSL_EBADFUNC;
+        }
+    }
+
+    /* set fvv vector */
+    for (R_len_t i = 0; i < n; i++)
+        gsl_vector_set(fvv, i, fvvvalptr[i]);
+
+    UNPROTECT(4);
+    return GSL_SUCCESS;
+}
+
+static void callback_large(const R_len_t iter, void *params, const gsl_multilarge_nlinear_workspace *w)
 {
     /* ssr trace */
     double chisq = ((fdata_large *)params)->chisq;

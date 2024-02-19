@@ -4270,7 +4270,7 @@ subroutine p21_sol ( m, n, known, x )
   integer m
   double precision x(n)
 
-  known = 0
+  known = 1
   x(1:n) = 0.0D+00
 
   return
@@ -4470,7 +4470,7 @@ subroutine p22_sol ( m, n, known, x )
   integer m
   double precision x(n)
 
-  known = 0
+  known = 1
   x(1:n) = 0.0D+00
 
   return
@@ -4694,7 +4694,7 @@ subroutine p23_sol ( m, n, known, x )
   integer m
   double precision x(n)
 
-  known = 0
+  known = 1
   x(1:n) = 0.0D+00
 
   return

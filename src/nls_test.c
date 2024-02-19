@@ -5,7 +5,7 @@
 SEXP C_nls_test_f(SEXP id, SEXP p, SEXP n, SEXP x)
 {
     // inputs/outputs
-    int nprob = INTEGER_ELT(id, 0) - 27; // problem number
+    int nprob = INTEGER_ELT(id, 0) - 33; // problem number
     int m_f = INTEGER_ELT(n, 0);         // # equations
     int n_f = INTEGER_ELT(p, 0);         // # parameters
     double *x_f = (double *)R_alloc(n_f, sizeof(double));
@@ -30,7 +30,7 @@ SEXP C_nls_test_f(SEXP id, SEXP p, SEXP n, SEXP x)
 SEXP C_nls_test_j(SEXP id, SEXP p, SEXP n, SEXP x)
 {
     // inputs/outputs
-    int nprob = INTEGER_ELT(id, 0) - 27; // problem number
+    int nprob = INTEGER_ELT(id, 0) - 33; // problem number
     int m_f = INTEGER_ELT(n, 0);         // # equations
     int n_f = INTEGER_ELT(p, 0);         // # parameters
     double *x_f = (double *)R_alloc(n_f, sizeof(double));
@@ -57,7 +57,7 @@ SEXP C_nls_test_j(SEXP id, SEXP p, SEXP n, SEXP x)
 SEXP C_nls_test_start_sol(SEXP id, SEXP p, SEXP n)
 {
     // inputs/outputs
-    int nprob = INTEGER_ELT(id, 0) - 27; // problem number
+    int nprob = INTEGER_ELT(id, 0) - 33; // problem number
     int m_f = INTEGER_ELT(n, 0);         // # equations
     int n_f = INTEGER_ELT(p, 0);         // # parameters
     int known_f;

@@ -1,3 +1,11 @@
+# gslnls 1.3.0
+
+* Missing starting values/ranges allowed in `gsl_nls()`
+* `lower` and `upper` parameter constraints included in `gsl_nls()` 
+* Added 3 regression problems from Bates & Watts (1988)
+* Updated multi-start algorithm in `gsl_nls()`
+* Several minor changes
+
 # glsnls 1.2.0
 
 * Added multi-start algorithm to `gsl_nls()`

@@ -1,5 +1,5 @@
 
-AC_INIT([gslnls],[1.2.0])
+AC_INIT([gslnls],[1.3.0])
 
 AC_PROG_CC
 

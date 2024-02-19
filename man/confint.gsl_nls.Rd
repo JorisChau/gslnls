@@ -29,7 +29,7 @@ fitted \code{"gsl_nls"} object.
 }
 \details{
 Method \code{"asymptotic"} assumes (approximate) normality of the errors in the model and calculates
-standard asymptotic confidence intervals based on the quantiles of a t-distritbution. Method \code{"profile"}
+standard asymptotic confidence intervals based on the quantiles of a t-distribution. Method \code{"profile"}
 calculates profile likelihood confidence intervals using the \code{\link[MASS:confint]{confint.nls}} method
 in the \CRANpkg{MASS} package and for this reason is only available for \code{"gsl_nls"} objects that
 are \emph{also} of class \code{"nls"}.
@@ -37,7 +37,7 @@ are \emph{also} of class \code{"nls"}.
 \examples{
 ## data
 set.seed(1)
-n <- 50
+n <- 25
 xy <- data.frame(
   x = (1:n) / n,
   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)

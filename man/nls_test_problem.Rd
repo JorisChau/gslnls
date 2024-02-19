@@ -42,6 +42,9 @@ Fetches the model definition and model data required to solve a single NLS test 
 (or \code{\link[stats]{nls}} if the model is defined as a \link{formula}). Use \code{\link{nls_test_list}} to
 list the names of the available NLS test problems.
 }
+\note{
+For several problems the optimal least-squares objective of the target solution can be obtained at multiple different parameter locations.
+}
 \examples{
 ## example regression problem
 ratkowsky2 <- nls_test_problem(name = "Ratkowsky2")
@@ -65,6 +68,8 @@ with(rosenbrock,
 )
 }
 \references{
+D.M. Bates and Watts, D.G. (1988). \emph{Nonlinear Regression Analysis and Its Applications}, Wiley, ISBN: 0471816434.
+
 J.J. Moré, Garbow, B.S. and Hillstrom, K.E. (1981). \emph{Testing unconstrained optimization software}, ACM Transactions on Mathematical Software, 7(1), 17-41.
 }
 \seealso{

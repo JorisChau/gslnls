@@ -22,14 +22,16 @@ a \link{data.frame} with high-level information about the available test problem
 }
 }
 \description{
-Returns an overview of 56 NLS test problems originating primarily from the NIST Statistical Reference Datasets (StRD)
-archive and More, Garbow and Hillstrom (1981).
+Returns an overview of 59 NLS test problems originating primarily from the NIST Statistical Reference Datasets (StRD)
+archive; Bates and Watts (1988); and More, Garbow and Hillstrom (1981).
 }
 \examples{
 ## available test problems
 nls_test_list()
 }
 \references{
+D.M. Bates and Watts, D.G. (1988). \emph{Nonlinear Regression Analysis and Its Applications}, Wiley, ISBN: 0471816434.
+
 J.J. Moré, Garbow, B.S. and Hillstrom, K.E. (1981). \emph{Testing unconstrained optimization software}, ACM Transactions on Mathematical Software, 7(1), 17-41.
 }
 \seealso{

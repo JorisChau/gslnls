@@ -10,12 +10,12 @@
 #' is a \code{formula}, a naive guess for \code{start} is tried, but this should not be relied on.
 #' @param algorithm character string specifying the algorithm to use. The following choices are supported:
 #' \itemize{
-#' \item \code{"lm"} Levenberg-Marquardt algorithm (default)
+#' \item \code{"lm"} Levenberg-Marquardt algorithm (default).
 #' \item \code{"lmaccel"} Levenberg-Marquardt algorithm with geodesic acceleration.
 #' Can be faster than \code{"lm"} but less stable. Stability is controlled by the
 #' \code{avmax} parameter in \code{control}, setting \code{avmax} to zero is analogous
 #' to not using geodesic acceleration.
-#' \item \code{"dogleg"} Powell's dogleg algorithm
+#' \item \code{"dogleg"} Powell's dogleg algorithm.
 #' \item \code{"ddogleg"} Double dogleg algorithm, an improvement over \code{"dogleg"}
 #' by including information about the Gauss-Newton step while the iteration is still
 #' far from the minimum.

@@ -8,7 +8,7 @@
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -31,7 +31,7 @@ coef.gsl_nls <- function(object, ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -59,7 +59,7 @@ fitted.gsl_nls <- function(object, ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -84,7 +84,7 @@ nobs.gsl_nls <- function(object, ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -106,7 +106,7 @@ deviance.gsl_nls <- function(object, ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -135,7 +135,7 @@ sigma.gsl_nls <- function(object, ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -161,7 +161,7 @@ formula.gsl_nls <- function(x, ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -257,7 +257,7 @@ print.gsl_nls <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -311,7 +311,7 @@ predict.gsl_nls <- function(object, newdata, scale = NULL, interval = c("none", 
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -349,7 +349,7 @@ residuals.gsl_nls <- function(object, type = c("response", "pearson"), ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -384,7 +384,7 @@ logLik.gsl_nls <- function(object, REML = FALSE, ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -410,7 +410,7 @@ df.residual.gsl_nls <- function(object, ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -436,7 +436,7 @@ vcov.gsl_nls <- function(object, ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + 1 + rnorm(n, sd = 0.1)
@@ -528,7 +528,7 @@ anova.gsl_nls <- function(object, ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
@@ -556,7 +556,7 @@ confint.gsl_nls <- function(object, parm, level = 0.95, method = c("asymptotic",
     cf <- coef(object)
     pnames <- names(cf)
     if(missing(parm))
-      parm <- seq_along(pnames)
+      parm <- pnames
     else if(is.numeric(parm))
       parm <- pnames[parm]
     a <- c((1 - level) / 2, (1 + level) / 2)
@@ -564,6 +564,13 @@ confint.gsl_nls <- function(object, parm, level = 0.95, method = c("asymptotic",
     pct <- paste(format(100 * a, trim = TRUE, scientific = FALSE, digits = 3L), "%")
     ci <- array(NA_real_, dim = c(length(parm), 2), dimnames = list(parm, pct))
     ci[] <- cf[parm] + ses %o% qt(a, df.residual(object))
+    ## artifically limit intervals
+    if(!is.null(object$lower) && any(ci[parm, 1L] < object$lower)) {
+      ci[parm, 1L] <- pmax(ci[parm, 1L], object$lower)
+    }
+    if(!is.null(object$upper) && any(ci[parm, 2L] > object$upper)) {
+      ci[parm, 2L] <- pmin(ci[parm, 2L], object$upper)
+    }
     return(ci)
   }
 }
@@ -607,7 +614,7 @@ confintd <- function(object, expr, level = 0.95, ...) {
 #' @examples
 #' ## data
 #' set.seed(1)
-#' n <- 50
+#' n <- 25
 #' xy <- data.frame(
 #'   x = (1:n) / n,
 #'   y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)

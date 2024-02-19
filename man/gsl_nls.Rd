@@ -12,6 +12,8 @@ gsl_nls(fn, ...)
   start,
   algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
   control = gsl_nls_control(),
+  lower,
+  upper,
   jac = NULL,
   fvv = NULL,
   trace = FALSE,
@@ -28,6 +30,8 @@ gsl_nls(fn, ...)
   start,
   algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
   control = gsl_nls_control(),
+  lower,
+  upper,
   jac = NULL,
   fvv = NULL,
   trace = FALSE,
@@ -46,23 +50,27 @@ defined as a \link{formula}. Can also be a list or an environment, but not a mat
 \item{y}{numeric response vector if \code{fn} is defined as a \link{function}, equal in
 length to the vector returned by evaluation of the function \code{fn}.}
 
-\item{start}{initial parameter values (single-start) or parameter ranges (multi-start). The following choices are supported:
+\item{start}{a vector, list or matrix of initial parameter values or parameter ranges. \code{start} is only allowed to be missing
+if \code{fn} is a \code{\link{selfStart}} model. The following choices are supported:
 \itemize{
-  \item \emph{single-start}: a named list or named vector of numeric starting values. \code{start} is only allowed to
-  be missing if \code{fn} is a \code{\link{selfStart}} model.
-  \item \emph{multi-start}: a named list with the (multi-start) parameter starting ranges in the form of length-2
-  numeric vectors. Can also be a (\code{2} by \code{p}) named matrix with as columns the numeric starting ranges for the parameters.
-  Ill-defined parameter ranges such as \code{c(0, Inf)} or \code{c(NA, 0)} are not allowed.
+ \item a named list or named vector of numeric starting values. If \code{start} has no missing values, a standard single-start optimization
+ is performed. If \code{start} contains missing values for one or more parameters, a multi-start algorithm (see \sQuote{Details}) with
+ dynamic starting ranges for the undefined parameters and fixed starting values for the remaining parameters is executed.
+ If \code{start} is a named list or vector containing \emph{only} missing values, the multi-start algorithm considers dynamically changing starting
+ ranges for all parameters. Note that there is no guarantee that the optimizing solution is a global minimum of the least-squares objective.
+ \item a named list with starting parameter ranges in the form of length-2 numeric vectors. Can also be a (\code{2} by \code{p}) named matrix with as columns
+the numeric starting ranges for the parameters. If \code{start} contains no missing values, a multi-start algorithm with fixed
+starting ranges for the parameters is executed. Otherwise, if \code{start} contains infinities or missing values (e.g. \code{c(0, Inf)} or \code{c(NA, NA)}),
+the multi-start algorithm considers dynamically changing starting ranges for the parameters with infinite and/or missing ranges.
 }}
 
 \item{algorithm}{character string specifying the algorithm to use. The following choices are supported:
 \itemize{
-\item \code{"lm"} Levenberg-Marquardt algorithm (default)
+\item \code{"lm"} Levenberg-Marquardt algorithm (default).
 \item \code{"lmaccel"} Levenberg-Marquardt algorithm with geodesic acceleration.
-Can be faster than \code{"lm"} but less stable. Stability is controlled by the
-\code{avmax} parameter in \code{control}, setting \code{avmax} to zero is analogous
-to not using geodesic acceleration.
-\item \code{"dogleg"} Powell's dogleg algorithm
+Stability is controlled by the \code{avmax} parameter in \code{control}, setting \code{avmax}
+to zero is analogous to not using geodesic acceleration.
+\item \code{"dogleg"} Powell's dogleg algorithm.
 \item \code{"ddogleg"} Double dogleg algorithm, an improvement over \code{"dogleg"}
 by including information about the Gauss-Newton step while the iteration is still
 far from the minimum.
@@ -73,6 +81,10 @@ on some problems.
 
 \item{control}{an optional list of control parameters to tune the least squares iterations and multistart algorithm.
 See \code{\link{gsl_nls_control}} for the available control parameters and their default values.}
+
+\item{lower}{a named list or named numeric vector of parameter lower bounds. If missing (default), the parameters are unconstrained from below.}
+
+\item{upper}{a named list or named numeric vector of parameter upper bounds. If missing (default), the parameters are unconstrained from above.}
 
 \item{jac}{either \code{NULL} (default) or a \link{function} returning the \code{n} by \code{p} dimensional Jacobian matrix of
 the nonlinear model \code{fn}, where \code{n} is the number of observations and \code{p} the
@@ -133,7 +145,7 @@ Therefore, all generic functions applicable to objects of class \code{nls}, such
 \code{residuals}, \code{summary}, \code{vcov} and \code{weights} are also applicable to the returned list object.
 In addition, a method \code{confintd} is available for inference of derived parameters.
 
-\item \code{gsl_nls(`function`)}: If \code{fn} is a \code{function}, the first argument must be the vector of parameters and
+\item \code{gsl_nls(function)}: If \code{fn} is a \code{function}, the first argument must be the vector of parameters and
 the function should return a numeric vector containing the nonlinear model evaluations at
 the provided parameter and predictor or covariate vectors. In addition, the argument \code{y}
 needs to contain the numeric vector of observed responses, equal in length to the numeric
@@ -147,19 +159,32 @@ is available for inference of derived parameters.
 }}
 \section{Multi-start algorithm}{
 
-If \code{start} is a list or matrix of parameter ranges, a modified version of the multi-start algorithm described in
+If \code{start} is a list or matrix of parameter ranges, or contains any missing values, a modified version of the multi-start algorithm described in
 Hickernell and Yuan (1997) is applied. Note that the \code{start} parameter ranges are only used to bound the domain for the
-starting values, i.e. the resulting parameter estimates are not constrained to lie within these bounds. Quasi-random starting values
-are sampled in the unit hypercube from a Sobol sequence if \code{p < 41} and from a Halton sequence otherwise. The initial starting values
-are scaled to the specified parameter ranges using an inverse (scaled) logistic function favoring starting values near the center of the
+starting values, i.e. the resulting parameter estimates are not constrained to lie within these bounds, use \code{lower} and/or \code{upper} for
+this purpose instead. Quasi-random starting values are sampled in the unit hypercube from a Sobol sequence if \code{p < 41} and from a Halton sequence (up to \code{p = 1229}) otherwise.
+The initial starting values are scaled to the specified parameter ranges using an inverse (scaled) logistic function favoring starting values near the center of the
 (scaled) domain. The trust region algorithm as specified by \code{algorithm} used for the inexpensive and expensive local search (see Algorithm 2.1 of Hickernell
 and Yuan (1997)) are the same, only differing in the number of search iterations \code{mstart_p} versus \code{mstart_maxiter}, where
-\code{mstart_p} is typically very small, e.g. 2 or 3. When a new stationary point is detected, the scaling step from the unit hypercube to
-the starting value domain is updated using the diagonal of the estimated scaling matrix \code{D} in the trust region algorithm, which is
-especially useful in sampling starting values when the parameters are living on very different scales. The multi-start algorithm terminates when NSP (number of stationary points)
+\code{mstart_p} is typically much smaller than \code{mstart_maxiter}. When a new stationary point is detected, the scaling step from the unit hypercube to
+the starting value domain is updated using the diagonal of the estimated trust method's scaling matrix \code{D}, which improves optimization performance
+especially when the parameters live on very different scales. The multi-start algorithm terminates when NSP (number of stationary points)
 is larger than or equal to \code{mstart_minsp} and NWSP (number of worse stationary points) is larger than or equal to \code{mstart_r} times NSP,
 or when the maximum number of major iterations \code{mstart_maxstart} is reached. After termination of the multi-start algorithm, a full
-single-start optimization is executed starting from the optimal parameter values observed during the multi-start procedure.
+single-start optimization is executed starting from the best multi-start solution.
+}
+
+\section{Missing starting values}{
+
+If \code{start} contains missing (or infinite) values, the multi-start algorithm is executed without fixed parameter ranges for the missing parameters.
+The ranges for the missing parameters are initialized to the unit interval and dynamically increased or decreased in each major iteration
+of the multi-start algorithm. The decision to increase or decrease a parameter range is driven by the minimum and maximum parameter values
+attained by the first \code{mstart_q} inexpensive local searches ordered by their squared loss, which typically provide a decent indication of the
+order of magnitude of the parameter range in which to search for the optimal solution. Note that this procedure is not expected to always
+return a global minimum of the nonlinear least-squares objective. Especially when the objective function contains many local optima,
+the algorithm may be unable to select parameter ranges that include the global minimizing solution. In this case, it may help to increase
+the values of \code{mstart_n}, \code{mstart_r} or \code{mstart_minsp} to avoid early termination of the algorithm at the cost of
+increased computational effort.
 }
 
 \examples{
@@ -168,7 +193,7 @@ single-start optimization is executed starting from the optimal parameter values
 
 ## data
 set.seed(1)
-n <- 50
+n <- 25
 x <- (seq_len(n) - 1) * 3 / (n - 1)
 f <- function(A, lam, b, x) A * exp(-lam * x) + b
 y <- f(A = 5, lam = 1.5, b = 1, x) + rnorm(n, sd = 0.25)
@@ -187,6 +212,12 @@ gsl_nls(
   fn = y ~ A * exp(-lam * x) + b,                             ## model formula
   data = data.frame(x = x, y = y),                            ## model fit data
   start = list(A = c(0, 100), lam = c(0, 10), b = c(-10, 10)) ## starting ranges
+)
+## missing starting values
+gsl_nls(
+  fn = y ~ A * exp(-lam * x) + b,                        ## model formula
+  data = data.frame(x = x, y = y),                       ## model fit data
+  start = c(A = NA, lam = NA, b = NA)                    ## unknown start
 )
 
 ## analytic Jacobian 1
@@ -218,7 +249,7 @@ gsl_nls(
 
 ## data
 set.seed(1)
-n <- 300
+n <- 100
 x <- seq_len(n) / n
 f <- function(a, b, c, x) a * exp(-(x - b)^2 / (2 * c^2))
 y <- f(a = 5, b = 0.4, c = 0.15, x) * rnorm(n, mean = 1, sd = 0.1)
@@ -293,21 +324,30 @@ gsl_nls(
   algorithm = "dogleg"           ## algorithm
 )
 
-# Other example problems
-
+# Available example problems
 nls_test_list()
 
-misra1a <- nls_test_problem(name = "Misra1a")
-
-misra1a_fit <- with(misra1a,
-  gsl_nls(
-    fn = fn,
-    data = data,
-    start = start
-  )
+## BOD regression
+## (https://www.itl.nist.gov/div898/strd/nls/nls_main.shtml)
+(boxbod <- nls_test_problem(name = "BoxBOD"))
+with(boxbod,
+     gsl_nls(
+       fn = fn,
+       data = data,
+       start = list(b1 = NA, b2 = NA)
+     )
 )
 
-all.equal(coef(misra1a_fit), misra1a$target)
+## Rosenbrock function
+(rosenbrock <- nls_test_problem(name = "Rosenbrock"))
+with(rosenbrock,
+     gsl_nls(
+       fn = fn,
+       y = y,
+       start = c(x1 = NA, x2 = NA),
+       jac = jac
+     )
+)
 
 }
 \references{

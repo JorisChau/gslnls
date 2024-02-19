@@ -19,3 +19,4 @@ README.Rmd
 *.gz
 *.status
 *.html
+*.txt

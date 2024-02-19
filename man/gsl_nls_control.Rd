@@ -5,7 +5,7 @@
 \title{Tunable Nonlinear Least Squares iteration parameters}
 \usage{
 gsl_nls_control(
-  maxiter = 50,
+  maxiter = 100,
   scale = "more",
   solver = "qr",
   fdtype = "forward",
@@ -18,13 +18,13 @@ gsl_nls_control(
   ftol = sqrt(.Machine$double.eps),
   gtol = .Machine$double.eps^(1/3),
   mstart_n = 25,
-  mstart_p = 2,
+  mstart_p = 5,
   mstart_q = 5,
   mstart_r = 3,
   mstart_s = 2,
-  mstart_tol = 0.1,
-  mstart_maxiter = maxiter\%/\%3,
-  mstart_maxstart = 100,
+  mstart_tol = 0.5,
+  mstart_maxiter = maxiter\%/\%10,
+  mstart_maxstart = 1000,
   mstart_minsp = 1
 )
 }
@@ -88,19 +88,20 @@ indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}}
 
 \item{mstart_n}{positive integer, number of quasirandom points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 25.}
 
-\item{mstart_p}{positive integer, number of iterations of inexpensive local search to concentrate the sample, parameter \code{p} in Hickernell and Yuan (1997). Default is 2.}
+\item{mstart_p}{positive integer, number of iterations of inexpensive local search to concentrate the sample, parameter \code{p} in Hickernell and Yuan (1997). Default is 5.}
 
-\item{mstart_q}{positiver integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is 5.}
+\item{mstart_q}{positive integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is 5.}
 
-\item{mstart_r}{positive integer, scaling factor of number of stationary points determining when the multi-start algorithm terminates, parameter \code{r} in Hickernell and Yuan (1997). Default is 3.}
+\item{mstart_r}{positive integer, scaling factor of number of stationary points determining when the multi-start algorithm terminates, parameter \code{r} in Hickernell and Yuan (1997). Default is 3.
+If the starting ranges for one or more parameters are unbounded and updated dynamically, \code{mstart_r} is multiplied by a factor 10 to avoid early termination.}
 
 \item{mstart_s}{positive integer, minimum number of iterations a point needs to be retained before starting an efficient local search, parameter \code{s} in Hickernell and Yuan (1997). Default is 2.}
 
-\item{mstart_tol}{numeric value, tolerance used as criterion to start an efficient local search (epsilon in Algorithm 2.1, Hickernell and Yuan (1997)).}
+\item{mstart_tol}{numeric value, multiplicative tolerance \code{(1 + mstart_tol)} used as criterion to start an efficient local search (epsilon in Algorithm 2.1, Hickernell and Yuan (1997)).}
 
-\item{mstart_maxiter}{positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to \code{maxiter \%/\% 3}.}
+\item{mstart_maxiter}{positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to \code{maxiter \%/\% 10}.}
 
-\item{mstart_maxstart}{positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 100.}
+\item{mstart_maxstart}{positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 1000.}
 
 \item{mstart_minsp}{positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.}
 }

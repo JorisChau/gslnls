@@ -1,8 +1,8 @@
 #' Available NLS test problems
 #'
 #' @description
-#' Returns an overview of 56 NLS test problems originating primarily from the NIST Statistical Reference Datasets (StRD)
-#' archive and More, Garbow and Hillstrom (1981).
+#' Returns an overview of 59 NLS test problems originating primarily from the NIST Statistical Reference Datasets (StRD)
+#' archive; Bates and Watts (1988); and More, Garbow and Hillstrom (1981).
 #'
 #' @param fields optional character vector to return a subset of columns in the \link{data.frame}.
 #' @return a \link{data.frame} with high-level information about the available test problems. The following columns are returned by default:
@@ -18,6 +18,7 @@
 #' @seealso \code{\link{nls_test_problem}}
 #' @seealso \url{https://www.itl.nist.gov/div898/strd/nls/nls_main.shtml}
 #' @seealso \url{https://people.math.sc.edu/Burkardt/f_src/test_nls/test_nls.html}
+#' @references D.M. Bates and Watts, D.G. (1988). \emph{Nonlinear Regression Analysis and Its Applications}, Wiley, ISBN: 0471816434.
 #' @references J.J. Moré, Garbow, B.S. and Hillstrom, K.E. (1981). \emph{Testing unconstrained optimization software}, ACM Transactions on Mathematical Software, 7(1), 17-41.
 #' @examples
 #' ## available test problems
@@ -30,8 +31,9 @@ nls_test_list <- function(fields = c("name", "class", "p", "n", "check")) {
              "Gauss1", "Gauss2", "DanWood", "Misra1b", "Kirby2", "Hahn1",
              "Nelson", "MGH17", "Lanczos1", "Lanczos2", "Gauss3", "Misra1c",
              "Misra1d", "Roszman1", "ENSO", "MGH09", "Thurber", "BoxBOD",
-             "Ratkowsky2", "MGH10", "Eckerle4", "Ratkowsky3", "Bennett5", "Linear, full rank",
-             "Linear, rank 1", "Linear, rank 1, zero columns and rows", "Rosenbrock",
+             "Ratkowsky2", "MGH10", "Eckerle4", "Ratkowsky3", "Bennett5", "Isomerization",
+             "Lubricant", "Sulfisoxazole", "Leaves", "Chloride", "Tetracycline",
+             "Linear, full rank", "Linear, rank 1", "Linear, rank 1, zero columns and rows", "Rosenbrock",
              "Helical valley", "Powell singular", "Freudenstein/Roth", "Bard",
              "Kowalik and Osborne", "Meyer", "Watson", "Box 3-dimensional",
              "Jennrich and Sampson", "Brown and Dennis", "Chebyquad", "Brown almost-linear",
@@ -43,6 +45,7 @@ nls_test_list <- function(fields = c("name", "class", "p", "n", "check")) {
               "formula", "formula", "formula", "formula", "formula", "formula",
               "formula", "formula", "formula", "formula", "formula", "formula",
               "formula", "formula", "formula", "formula", "formula", "formula",
+              "formula", "formula", "formula", "formula", "formula", "formula",
               "function", "function", "function", "function", "function", "function",
               "function", "function", "function", "function", "function", "function",
               "function", "function", "function", "function", "function", "function",
@@ -50,11 +53,14 @@ nls_test_list <- function(fields = c("name", "class", "p", "n", "check")) {
               "function", "function"),
     p = c(2L, 3L, 3L, 6L, 8L, 8L,
           2L, 2L, 5L, 7L, 3L, 5L, 6L, 6L, 8L, 2L, 2L, 4L, 9L, 4L, 7L, 2L,
-          3L, 3L, 3L, 4L, 3L, 5L, 5L, 5L, 2L, 3L, 4L, 2L, 3L, 4L, 3L, 6L,
+          3L, 3L, 3L, 4L, 3L, 4L, 9L, 4L, 4L, 3L, 4L,
+          5L, 5L, 5L, 2L, 3L, 4L, 2L, 3L, 4L, 3L, 6L,
           3L, 2L, 4L, 5L, 10L, 5L, 11L, 2L, 3L, 2L, 3L, 5L, 4L, 5L, 2L),
     n = c(14L, 54L, 214L, 24L, 250L, 250L, 6L, 14L,
           151L, 236L, 128L, 33L, 24L, 24L, 250L, 14L, 14L, 25L, 168L,
-          11L, 37L, 6L, 9L, 16L, 35L, 15L, 154L, 10L, 10L, 10L, 2L,
+          11L, 37L, 6L, 9L, 16L, 35L, 15L, 154L,
+          24L, 53L, 12L, 15L, 54L, 9L,
+          10L, 10L, 10L, 2L,
           3L, 4L, 2L, 15L, 11L, 16L, 31L, 10L, 10L, 20L, 10L, 10L,
           33L, 65L, 16L, 16L, 3L, 4L, 10L, 24L, 16L, 3L),
     check = c("p, n fixed",
@@ -63,13 +69,14 @@ nls_test_list <- function(fields = c("name", "class", "p", "n", "check")) {
               "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed",
               "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed",
               "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed",
-              "p, n fixed", "p <= n free", "p <= n free", "p <= n free",
+              "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed",
+              "p, n fixed", "p, n fixed",
+              "p <= n free", "p <= n free", "p <= n free",
               "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed",
               "p, n fixed", "p, n fixed", "p, n fixed", "p <= n free",
               "p <= n free", "p <= n free", "p <= n free", "p == n free",
               "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed",
-              "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed"
-    )
+              "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed", "p, n fixed")
   )
   return(properties[, fields])
 }
@@ -112,7 +119,9 @@ nls_test_list <- function(fields = c("name", "class", "p", "n", "check")) {
 #' @seealso \code{\link{nls_test_list}}
 #' @seealso \url{https://www.itl.nist.gov/div898/strd/nls/nls_main.shtml}
 #' @seealso \url{https://people.math.sc.edu/Burkardt/f_src/test_nls/test_nls.html}
+#' @references D.M. Bates and Watts, D.G. (1988). \emph{Nonlinear Regression Analysis and Its Applications}, Wiley, ISBN: 0471816434.
 #' @references J.J. Moré, Garbow, B.S. and Hillstrom, K.E. (1981). \emph{Testing unconstrained optimization software}, ACM Transactions on Mathematical Software, 7(1), 17-41.
+#' @note For several problems the optimal least-squares objective of the target solution can be obtained at multiple different parameter locations.
 #' @examples
 #' ## example regression problem
 #' ratkowsky2 <- nls_test_problem(name = "Ratkowsky2")
@@ -141,15 +150,11 @@ nls_test_problem <- function(name, p = NA, n = NA) {
   properties <- nls_test_list()
   name <- match.arg(name, choices = properties$name)
   fid <- match(name, properties$name)
-  if(is.na(p)) {
-    p <- properties[fid, "p"]
-  }
-  if(is.na(n)) {
-    n <- properties[fid, "n"]
-  }
+  p <- ifelse(is.na(p), properties[fid, "p"], as.integer(p))
+  n <- ifelse(is.na(n), properties[fid, "n"], as.integer(n))
   stopifnot(
-    "p must be a positive integer" = is.integer(p) && p >= 1L,
-    "n must be a positive integer" = is.integer(n) && n >= 1L
+    "p must be a positive integer" = p >= 1L,
+    "n must be a positive integer" = n >= 1L
   )
   check <- properties[fid, "check"]
   if(identical(check, "p, n fixed")) {
@@ -431,11 +436,11 @@ nls_test_problem <- function(name, p = NA, n = NA) {
       .fn <- as.formula("y ~ (b1 + b2*x + b3*x**2) / (1 + b4*x + b5*x**2)", env = environment())
       .start <- c(b1 = 2, b2 = -0.1, b3 = 0.003, b4 = -0.001, b5 = 0.00001)
       .target <- c(
-        b1 = 8.7989634338E-02,
-        b2 = 4.1182041386E-03,
-        b3 = 4.1856520458E-05,
-        b4 = 5.8931897355E-05,
-        b5 = 2.0129761919E-07
+        b1 = 1.6745063063E+00,
+        b2 = -1.3927397867E-01,
+        b3 = 2.5961181191E-03,
+        b4 = -1.7241811870E-03,
+        b5 = 2.1664802578E-05
       )
     } else if(identical(name, "Hahn1")) {
       .data <- data.frame(y = c(0.591, 1.547, 2.902, 2.894, 4.703, 6.307,
@@ -544,40 +549,6 @@ nls_test_problem <- function(name, p = NA, n = NA) {
         b1 = 2.5906836021E+00,
         b2 = 5.6177717026E-09,
         b3 = -5.7701013174E-02
-      )
-    } else if(identical(name, "MGH17")) {
-      .data <- data.frame(y = c(0.844, 0.908, 0.932, 0.936, 0.925, 0.908,
-                                0.881, 0.85, 0.818, 0.784, 0.751, 0.718, 0.685, 0.658, 0.628,
-                                0.603, 0.58, 0.558, 0.538, 0.522, 0.506, 0.49, 0.478, 0.467,
-                                0.457, 0.448, 0.438, 0.431, 0.424, 0.42, 0.414, 0.411, 0.406),
-                          x = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120,
-                                130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240,
-                                250, 260, 270, 280, 290, 300, 310, 320))
-      .fn <- as.formula("y ~ b1 + b2*exp(-x*b4) + b3*exp(-x*b5)", env = environment())
-      .start <- c(b1 = 50, b2 = 150, b3 = -100, b4 = 1, b5 = 2)
-      .target <- c(
-        b1 = 3.7541005211E-01,
-        b2 = 1.9358469127E+00,
-        b3 = -1.4646871366E+00,
-        b4 = 1.2867534640E-02,
-        b5 = 2.2122699662E-02
-      )
-    } else if(identical(name, "MGH17")) {
-      .data <- data.frame(y = c(0.844, 0.908, 0.932, 0.936, 0.925, 0.908,
-                                0.881, 0.85, 0.818, 0.784, 0.751, 0.718, 0.685, 0.658, 0.628,
-                                0.603, 0.58, 0.558, 0.538, 0.522, 0.506, 0.49, 0.478, 0.467,
-                                0.457, 0.448, 0.438, 0.431, 0.424, 0.42, 0.414, 0.411, 0.406),
-                          x = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120,
-                                130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240,
-                                250, 260, 270, 280, 290, 300, 310, 320))
-      .fn <- as.formula("y ~ b1 + b2*exp(-x*b4) + b3*exp(-x*b5)", env = environment())
-      .start <- c(b1 = 50, b2 = 150, b3 = -100, b4 = 1, b5 = 2)
-      .target <- c(
-        b1 = 3.7541005211E-01,
-        b2 = 1.9358469127E+00,
-        b3 = -1.4646871366E+00,
-        b4 = 1.2867534640E-02,
-        b5 = 2.2122699662E-02
       )
     } else if(identical(name, "MGH17")) {
       .data <- data.frame(y = c(0.844, 0.908, 0.932, 0.936, 0.925, 0.908,
@@ -914,7 +885,99 @@ nls_test_problem <- function(name, p = NA, n = NA) {
       .fn <- as.formula("y ~ b1 * (b2 + x)^(-1 / b3)", env = environment())
       .start <- c(b1 = -2000, b2 = 50, b3 = 0.8)
       .target <- c(b1 = -2.5235058043E+03, b2 = 4.6736564644E+01, b3 = 9.3218483193E-01)
+    } else if(identical(name, "Isomerization")) {
+      .data <- data.frame(
+        x1 = c(205.8, 404.8, 209.7, 401.6, 224.9, 402.6, 212.7, 406.2, 133.3, 470.9, 300.0, 301.6, 297.3,
+               314.0, 305.7, 300.1, 305.4, 305.2, 300.1, 106.6, 417.2, 251.0, 250.3, 145.1),
+        x2 = c(90.9, 92.9, 174.9, 187.2, 92.7, 102.2, 186.9, 192.6, 140.8, 144.2, 68.3, 214.6, 142.2,
+               146.7, 142.0, 143.7, 141.1, 141.5, 83.0, 209.6, 83.9, 294.4, 148.0, 291.0),
+        x3 = c(37.1, 36.3, 49.4, 44.9, 116.3, 128.9, 134.4, 134.9, 87.6, 86.9, 81.7, 101.7,
+               10.5, 157.1, 86.0, 90.2, 87.4, 87.0, 66.4, 33.0, 32.9, 41.5, 14.7, 50.2),
+        y = c(3.541, 2.397, 6.694, 4.722, 0.593, 0.268, 2.797, 2.451, 3.196, 2.021, 0.896, 5.084,
+              5.686, 1.193, 2.648, 3.303, 3.054, 3.302, 1.271, 11.648, 2.002, 9.604, 7.754, 11.590)
+      )
+      .fn <- as.formula("y ~ (b1 * b3 * (x2 - x3 / 1.632)) / (1 + b2 * x1 + b3 * x2 + b4 * x3)", env = environment())
+      .start <- c(b1 = 10, b2 = 0, b3 = 0, b4 = 0)
+      .target <- c(b1 = 35.9202075907984, b2 = 0.0708438158538416, b3 = 0.0377302429939232, b4 = 0.167135941532392)
+    } else if(identical(name, "Lubricant")) {
+      .data <- data.frame(
+        y = c(5.10595, 6.38705, 7.38511, 5.79057,
+              5.10716, 6.36113, 7.97329, 10.4725, 11.9272, 12.4262, 9.1563,
+              4.54223, 5.82452, 6.70515, 7.71659, 5.29782, 6.22654, 7.57338,
+              10.354, 11.9844, 12.4435, 9.52333, 8.34496, 5.17275, 6.64963,
+              5.80754, 7.74101, 6.23206, 4.6606, 4.29865, 7.96731, 9.34225,
+              10.5109, 11.8215, 13.068, 8.80445, 6.8553, 6.11898, 3.38099,
+              4.45783, 5.20675, 6.29101, 7.32719, 5.76988, 4.08766, 3.37417,
+              5.83919, 6.72635, 7.76883, 8.91362, 9.98334, 8.32329, 7.1321),
+        x1 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 25, 25, 25,
+               25, 25, 25, 25, 25, 25, 25, 25, 37.7777777778, 37.7777777778,
+               37.7777777778, 37.7777777778, 37.7777777778, 37.7777777778,
+               37.7777777778, 37.7777777778, 37.7777777778, 37.7777777778,
+               37.7777777778, 37.7777777778, 37.7777777778, 37.7777777778,
+               37.7777777778, 98.8888888889, 98.8888888889, 98.8888888889,
+               98.8888888889, 98.8888888889, 98.8888888889, 98.8888888889,
+               98.8888888889, 98.8888888889, 98.8888888889, 98.8888888889,
+               98.8888888889, 98.8888888889, 98.8888888889, 98.8888888889
+        ),
+        x2 = c(1, 740.803, 1407.47, 363.166, 1,
+               805.5, 1868.09, 3285.1, 3907.47, 4125.47, 2572.03, 1, 805.5,
+               1505.92, 2339.96, 422.941, 1168.37, 2237.29, 4216.89, 5064.29,
+               5280.88, 3647.27, 2813.94, 516.822, 1737.99, 1008.73, 2749.24,
+               1375.82, 191.084, 1, 2922.94, 4044.6, 4849.8, 5605.78, 6273.85,
+               3636.72, 1948.96, 1298.47, 1, 685.95, 1423.64, 2791.43, 4213.37,
+               2103.67, 402.195, 1, 2219.7, 3534.75, 4937.71, 6344.17, 7469.35,
+               5640.94, 4107.89) / 1000
+      )
+      .fn <- as.formula("y ~ b1 / (b2 + x1) + b3 * x2 + b4 * x2**2 + b5 * x2**3 + (b6 * x2 + b7 * x2**3) * exp(-x1 / (b8 + b9 * x2**2))", env = environment())
+      .start <- c(b1 = 1000, b2 = 1, b3 = 1, b4 = 1, b5 = 0, b6 = 1, b7 = 0, b8 = 1, b9 = 0)
+      .target <- c(b1 = 1054.54053185586, b2 = 206.545778895884, b3 = 1.46031478978246,
+                   b4 = -0.259654831213851, b5 = 0.0225737061160327, b6 = 0.401384284921933,
+                   b7 = 0.0352840506436575, b8 = 57.404631430396, b9 = -0.476721102261905)
+    } else if(identical(name, "Sulfisoxazole")) {
+      .data <- data.frame(
+        x = c(0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 12, 24, 48),
+        y = c(215.6, 189.2, 176, 162.8, 138.6, 121, 101.2, 88, 61.6, 22, 4.4, 0.1)
+      )
+      .fn <- as.formula("y ~ b1 * exp(-b2 * x) + b3 * exp(-b4 * x)", env = environment())
+      .start <- c(b1 = 100, b2 = 1, b3 = 0, b4 = 0)
+      .target <- c(b1 = 81.2440378005701, b2 = 1.30598900748147, b3 = 162.594414330483, b4 = 0.161785643456763)
+    } else if(identical(name, "Leaves")) {
+      .data <- data.frame(
+        x = c(0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
+              8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5),
+        y = c(1.3, 1.3,  1.9, 3.4, 5.3, 7.1, 10.6, 16,
+              16.4, 18.3, 20.9, 20.5, 21.3, 21.2, 20.9)
+      )
+      .fn <- as.formula("y ~ b1 / (1 + b2 * exp(-b3 * x))**(1 / b4)", env = environment())
+      .start <- c(b1 = 10, b2 = 250, b3 = 1, b4 = 1)
+      .target <- c(b1 = 21.2040375905717, b2 = 296.449927062274, b3 = 0.777218543698019, b4 = 1.61890922917627)
+    } else if(identical(name, "Chloride")) {
+      .data <- data.frame(
+        y = c(17.3, 17.6, 17.9, 18.3, 18.5, 18.9, 19,
+              19.3, 19.8, 19.9, 20.2, 20.5, 20.6, 21.1, 21.5, 21.9, 22, 22.3,
+              22.6, 22.8, 23, 23.2, 23.4, 23.7, 24, 24.2, 24.5, 25, 25.4, 25.5,
+              25.9, 25.9, 26.3, 26.2, 26.5, 26.5, 26.6, 27, 27, 27, 27, 27.3,
+              27.8, 28.1, 28.1, 28.1, 28.4, 28.6, 29, 29.2, 29.3, 29.4, 29.4, 29.4),
+        x = c(2.45, 2.55, 2.65, 2.75, 2.85, 2.95, 3.05, 3.15,
+              3.25, 3.35, 3.45, 3.55, 3.65, 3.75, 3.85, 3.95, 4.05, 4.15, 4.25,
+              4.35, 4.45, 4.55, 4.65, 4.75, 4.85, 4.95, 5.05, 5.15, 5.25, 5.35,
+              5.45, 5.55, 5.65, 5.75, 5.85, 5.95, 6.05, 6.15, 6.25, 6.35, 6.45,
+              6.55, 6.65, 6.75, 6.85, 6.95, 7.05, 7.15, 7.25, 7.35, 7.45, 7.55,
+              7.65, 7.75)
+      )
+      .fn <- as.formula("y ~ b1 * (1 - b2 * exp(-b3 * x))", env = environment())
+      .start <- c(b1 = 10, b2 = 1, b3 = 0)
+      .target <- c(b1 = 39.0948975505463, b2 = 0.828436576821748, b3 = 0.158522388849914)
+    } else if(identical(name, "Tetracycline")) {
+      .data <- data.frame(
+        x = c(1, 2, 3, 4, 6, 8, 10, 12, 16),
+        y= c(0.7, 1.2, 1.4, 1.4, 1.1, 0.8, 0.6, 0.5, 0.3)
+      )
+      .fn <- as.formula("y ~ b3 * (exp(-b1 * (x - b4)) - exp(-b2 * (x - b4)))", env = environment())
+      .start <- c(b1 = 0, b2 = 0, b3 = 1, b4 = 0)
+      .target <- c(b1 = 0.148801441927812, b2 = 0.715743513376835, b3 = 2.64966476940712, b4 = 0.412231010811697)
     }
+
     return(
       structure(
         list(
@@ -944,9 +1007,50 @@ nls_test_problem <- function(name, p = NA, n = NA) {
       colnames(jacval) <- names(x)
       return(jacval)
     }
-    .start_sol <- .Call("C_nls_test_start_sol", id = fid, p = as.integer(p), n = as.integer(n), PACKAGE = "gslnls")
-    names(.start_sol[["start"]]) <- paste0("x", seq_len(p))
-    names(.start_sol[["target"]]) <- paste0("x", seq_len(p))
+    if(identical(check, "p, n fixed") || (p == properties[fid, "p"] && n == properties[fid, "n"])) {
+      ## fortran start/target values
+      .start_sol <- .Call("C_nls_test_start_sol", id = fid, p = as.integer(p), n = as.integer(n), PACKAGE = "gslnls")
+      names(.start_sol[["start"]]) <- paste0("x", seq_len(p))
+      names(.start_sol[["target"]]) <- paste0("x", seq_len(p))
+      ## complete target solutions for default p, n
+      if(identical(name, "Bard")) {
+        .start_sol[["target"]] <- c(x1 = 0.082410559205674, x2 = 1.13303607641391, x3 = 2.34369519368503)
+      } else if(identical(name, "Kowalik and Osborne")) {
+        .start_sol[["target"]] <- c(x1 = 0.192806933062332, x2 = 0.191282334026554, x3 = 0.123056495197012, x4 = 0.136062334411325)
+      } else if(identical(name, "Meyer")) {
+        .start_sol[["target"]] <- c(x1 = 0.0056096363281157, x2 = 6181.34636748647, x3 = 345.223635336449)
+      } else if(identical(name, "Watson")) {
+        .start_sol[["target"]] <- c(x1 = -0.0157250959480399, x2 = 1.01243486077537, x3 = -0.232991564688241,
+                                    x4 = 1.26042992304726, x5 = -1.5137287597865, x6 = 0.992996361989885)
+      } else if(identical(name, "Brown and Dennis")) {
+        .start_sol[["target"]] <- c(x1 = -11.594436774009, x2 = 13.2036289039192, x3 = -0.403439671815375,
+                                    x4 = 0.236778987189955)
+      } else if(identical(name, "Chebyquad")) {
+        .start_sol[["target"]] <- c(x1 = 0.0845197234842066, x2 = 0.915480280334846, x3 = 0.741423111649444,
+                                    x4 = 0.50000000, x5 = 0.258576892300304)
+      } else if(identical(name, "Osborne 1")) {
+        .start_sol[["target"]] <- c(x1 = 0.375410049869887, x2 = -1.46468686469542, x3 = 1.93584664236735,
+                                    x4 = 0.0221227007674338, x5 = 0.012867534096761)
+      } else if(identical(name, "Osborne 2")) {
+        .start_sol[["target"]] <- c(x1 = 1.30997715328786, x2 = 0.633661697904263, x3 = 0.599430531018239,
+                                    x4 = 0.431553792022525, x5 = 0.754183220356582, x6 = 1.36581181488186,
+                                    x7 = 4.82369886594852, x8 = 0.904288595549707, x9 = 4.56887459992441,
+                                    x10 = 5.67534147196337, x11 = 2.39868486617073)
+      } else if(identical(name, "Hanson 1")) {
+        .start_sol[["target"]] <- c(x1 = 8.84420349211553, x2 = 0.123190563700324)
+      } else if(identical(name, "Hanson 2")) {
+        .start_sol[["target"]] <- c(x1 = 26.0785277317674, x2 = -0.0648890754465511, x3 = 0.0820989362396577)
+      } else if(identical(name, "Devilliers and Glasser 1")) {
+        .start_sol[["target"]] <- c(x1 = 60.137, x2 = 1.371, x3 = 3.112, x4 = 1.761)
+      } else if(identical(name, "Devilliers and Glasser 2")) {
+        .start_sol[["target"]] <- c(x1 = 53.81, x2 = 1.27, x3 = 3.012, x4 = 2.13, x5 = 0.507)
+      }
+    } else {
+      .start_sol <- list(
+        start = structure(rep(NA_real_, times = p), names = paste0("x", seq_len(p))),
+        target =  structure(rep(NA_real_, times = p), names = paste0("x", seq_len(p)))
+      )
+    }
     return(
       structure(
         list(
