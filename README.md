@@ -8,6 +8,7 @@
 [![CRAN
 version](http://www.r-pkg.org/badges/version/gslnls)](https://cran.r-project.org/package=gslnls)
 [![R-CMD-check](https://github.com/JorisChau/gslnls/workflows/R-CMD-check/badge.svg)](https://github.com/JorisChau/gslnls/actions)
+[![codecov](https://codecov.io/gh/JorisChau/gslnls/branch/master/graph/badge.svg)](https://app.codecov.io/gh/JorisChau/gslnls)
 [![Total
 Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gslnls)](https://cran.r-project.org/package=gslnls)
 <!-- badges: end -->
@@ -26,17 +27,17 @@ matrix.
 The following trust region methods to solve nonlinear least-squares
 problems are available in `gsl_nls()` (and `gsl_nls_large()`):
 
--   [Levenberg-Marquardt](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt)
--   [Levenberg-Marquardt with geodesic
-    acceleration](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt-with-geodesic-acceleration)
--   [Dogleg](https://www.gnu.org/software/gsl/doc/html/nls.html#dogleg)
--   [Double
-    dogleg](https://www.gnu.org/software/gsl/doc/html/nls.html#double-dogleg)
--   [Two Dimensional
-    Subspace](https://www.gnu.org/software/gsl/doc/html/nls.html#two-dimensional-subspace)
--   [Steihaug-Toint Conjugate
-    Gradient](https://www.gnu.org/software/gsl/doc/html/nls.html#steihaug-toint-conjugate-gradient)
-    (only available in `gsl_nls_large()`)
+- [Levenberg-Marquardt](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt)
+- [Levenberg-Marquardt with geodesic
+  acceleration](https://www.gnu.org/software/gsl/doc/html/nls.html#levenberg-marquardt-with-geodesic-acceleration)
+- [Dogleg](https://www.gnu.org/software/gsl/doc/html/nls.html#dogleg)
+- [Double
+  dogleg](https://www.gnu.org/software/gsl/doc/html/nls.html#double-dogleg)
+- [Two Dimensional
+  Subspace](https://www.gnu.org/software/gsl/doc/html/nls.html#two-dimensional-subspace)
+- [Steihaug-Toint Conjugate
+  Gradient](https://www.gnu.org/software/gsl/doc/html/nls.html#steihaug-toint-conjugate-gradient)
+  (only available in `gsl_nls_large()`)
 
 The [Tunable
 parameters](https://www.gnu.org/software/gsl/doc/html/nls.html#tunable-parameters)
@@ -53,12 +54,12 @@ relevant mathematical background.
 
 ### System requirements
 
-When installing the R-package from source, verify that GSL (>= 2.2) is
+When installing the R-package from source, verify that GSL (\>= 2.2) is
 installed on the system, e.g. on Ubuntu/Debian Linux:
 
     gsl-config --version
 
-If GSL (>= 2.2) is not available on the system, install GSL from a
+If GSL (\>= 2.2) is not available on the system, install GSL from a
 pre-compiled binary package (see the examples below) or install GSL from
 source by downloading the latest stable release
 (<https://www.gnu.org/software/gsl/>) and following the installation
@@ -121,36 +122,32 @@ install.packages("gslnls")
 The code below simulates
 ![n = 50](https://latex.codecogs.com/png.latex?n%20%3D%2050 "n = 50")
 noisy observations
-![y_1,\\ldots,y_n](https://latex.codecogs.com/png.latex?y_1%2C%5Cldots%2Cy_n "y_1,\ldots,y_n")
+![y_1,\ldots,y_n](https://latex.codecogs.com/png.latex?y_1%2C%5Cldots%2Cy_n "y_1,\ldots,y_n")
 from an exponential model with additive (i.i.d.) Gaussian noise
 according to:
 
-![
-\\left\\{
-\\begin{aligned}
-f_i & = A \\cdot \\exp(-\\lambda \\cdot x_i) + b, & i = 1,\\ldots, n \\\\
-y_i & = f_i + \\epsilon_i, & \\epsilon_i \\overset{\\text{iid}}{\\sim} N(0,\\sigma^2)
-\\end{aligned}
-\\right.
-](https://latex.codecogs.com/png.latex?%0A%5Cleft%5C%7B%0A%5Cbegin%7Baligned%7D%0Af_i%20%26%20%3D%20A%20%5Ccdot%20%5Cexp%28-%5Clambda%20%5Ccdot%20x_i%29%20%2B%20b%2C%20%26%20i%20%3D%201%2C%5Cldots%2C%20n%20%5C%5C%0Ay_i%20%26%20%3D%20f_i%20%2B%20%5Cepsilon_i%2C%20%26%20%5Cepsilon_i%20%5Coverset%7B%5Ctext%7Biid%7D%7D%7B%5Csim%7D%20N%280%2C%5Csigma%5E2%29%0A%5Cend%7Baligned%7D%0A%5Cright.%0A "
-\left\{
+![\left\\
 \begin{aligned}
 f_i & = A \cdot \exp(-\lambda \cdot x_i) + b, & i = 1,\ldots, n \\
 y_i & = f_i + \epsilon_i, & \epsilon_i \overset{\text{iid}}{\sim} N(0,\sigma^2)
 \end{aligned}
-\right.
-")
+\right.](https://latex.codecogs.com/png.latex?%5Cleft%5C%7B%0A%5Cbegin%7Baligned%7D%0Af_i%20%26%20%3D%20A%20%5Ccdot%20%5Cexp%28-%5Clambda%20%5Ccdot%20x_i%29%20%2B%20b%2C%20%26%20i%20%3D%201%2C%5Cldots%2C%20n%20%5C%5C%0Ay_i%20%26%20%3D%20f_i%20%2B%20%5Cepsilon_i%2C%20%26%20%5Cepsilon_i%20%5Coverset%7B%5Ctext%7Biid%7D%7D%7B%5Csim%7D%20N%280%2C%5Csigma%5E2%29%0A%5Cend%7Baligned%7D%0A%5Cright. "\left\{
+\begin{aligned}
+f_i & = A \cdot \exp(-\lambda \cdot x_i) + b, & i = 1,\ldots, n \\
+y_i & = f_i + \epsilon_i, & \epsilon_i \overset{\text{iid}}{\sim} N(0,\sigma^2)
+\end{aligned}
+\right.")
 
 The exponential model parameters are set to
 ![A = 5](https://latex.codecogs.com/png.latex?A%20%3D%205 "A = 5"),
-![\\lambda = 1.5](https://latex.codecogs.com/png.latex?%5Clambda%20%3D%201.5 "\lambda = 1.5"),
+![\lambda = 1.5](https://latex.codecogs.com/png.latex?%5Clambda%20%3D%201.5 "\lambda = 1.5"),
 ![b = 1](https://latex.codecogs.com/png.latex?b%20%3D%201 "b = 1"), with
 a noise standard deviation of
-![\\sigma = 0.25](https://latex.codecogs.com/png.latex?%5Csigma%20%3D%200.25 "\sigma = 0.25").
+![\sigma = 0.25](https://latex.codecogs.com/png.latex?%5Csigma%20%3D%200.25 "\sigma = 0.25").
 
 ``` r
 set.seed(1)
-n <- 50
+n <- 25
 x <- (seq_len(n) - 1) * 3 / (n - 1)
 f <- function(A, lam, b, x) A * exp(-lam * x) + b
 y <- f(A = 5, lam = 1.5, b = 1, x) + rnorm(n, sd = 0.25)
@@ -163,7 +160,7 @@ y <- f(A = 5, lam = 1.5, b = 1, x) + rnorm(n, sd = 0.25)
 The exponential model is fitted to the data using the `gsl_nls()`
 function by passing the nonlinear model as a two-sided `formula` and
 providing starting parameters for the model parameters
-![A, \\lambda, b](https://latex.codecogs.com/png.latex?A%2C%20%5Clambda%2C%20b "A, \lambda, b")
+![A, \lambda, b](https://latex.codecogs.com/png.latex?A%2C%20%5Clambda%2C%20b "A, \lambda, b")
 analogous to an `nls()` function call.
 
 ``` r
@@ -179,14 +176,14 @@ ex1_fit
 #> Nonlinear regression model
 #>   model: y ~ A * exp(-lam * x) + b
 #>    data: data.frame(x = x, y = y)
-#>      A    lam      b 
-#> 4.9905 1.4564 0.9968 
-#>  residual sum-of-squares: 2.104
+#>     A   lam     b 
+#> 4.893 1.417 1.010 
+#>  residual sum-of-squares: 1.316
 #> 
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 8 
-#> Achieved convergence tolerance: 9.503e-11
+#> Number of iterations to convergence: 7 
+#> Achieved convergence tolerance: 4.939e-10
 ```
 
 Here, the nonlinear least squares problem has been solved with the
@@ -197,7 +194,7 @@ interface using the following `control` parameters:
 ## default control parameters
 gsl_nls_control()
 #> $maxiter
-#> [1] 50
+#> [1] 100
 #> 
 #> $scale
 #> [1] "more"
@@ -209,10 +206,10 @@ gsl_nls_control()
 #> [1] "forward"
 #> 
 #> $factor_up
-#> [1] 3
+#> [1] 2
 #> 
 #> $factor_down
-#> [1] 2
+#> [1] 3
 #> 
 #> $avmax
 #> [1] 0.75
@@ -231,6 +228,33 @@ gsl_nls_control()
 #> 
 #> $gtol
 #> [1] 6.055454e-06
+#> 
+#> $mstart_n
+#> [1] 25
+#> 
+#> $mstart_p
+#> [1] 5
+#> 
+#> $mstart_q
+#> [1] 5
+#> 
+#> $mstart_r
+#> [1] 3
+#> 
+#> $mstart_s
+#> [1] 2
+#> 
+#> $mstart_tol
+#> [1] 0.5
+#> 
+#> $mstart_maxiter
+#> [1] 10
+#> 
+#> $mstart_maxstart
+#> [1] 1000
+#> 
+#> $mstart_minsp
+#> [1] 1
 ```
 
 Run `?gsl_nls_control` or check the [GSL reference
@@ -255,23 +279,23 @@ summary(ex1_fit)
 #> 
 #> Parameters:
 #>     Estimate Std. Error t value Pr(>|t|)    
-#> A    4.99050    0.11809   42.26   <2e-16 ***
-#> lam  1.45641    0.08316   17.51   <2e-16 ***
-#> b    0.99677    0.06609   15.08   <2e-16 ***
+#> A     4.8930     0.1811  27.014  < 2e-16 ***
+#> lam   1.4169     0.1304  10.865 2.61e-10 ***
+#> b     1.0097     0.1092   9.246 4.92e-09 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
-#> Residual standard error: 0.2116 on 47 degrees of freedom
+#> Residual standard error: 0.2446 on 22 degrees of freedom
 #> 
-#> Number of iterations to convergence: 8 
-#> Achieved convergence tolerance: 9.503e-11
+#> Number of iterations to convergence: 7 
+#> Achieved convergence tolerance: 4.939e-10
 
 ## asymptotic confidence intervals
 confint(ex1_fit)
-#>       2.5 %   97.5 %
-#> 1 4.7529300 5.228067
-#> 2 1.2891176 1.623696
-#> 3 0.8638162 1.129723
+#>         2.5 %   97.5 %
+#> A   4.5173851 5.268653
+#> lam 1.1464130 1.687314
+#> b   0.7832685 1.236216
 ```
 
 The `predict` method extends the existing `predict.nls` method by
@@ -283,11 +307,11 @@ response:
 ## asymptotic prediction intervals
 predict(ex1_fit, interval = "prediction", level = 0.95)
 #>            fit       lwr      upr
-#>  [1,] 5.987268 5.4935305 6.481006
-#>  [2,] 5.561539 5.0897270 6.033351
-#>  [3,] 5.172128 4.7147493 5.629507
-#>  [4,] 4.815937 4.3675472 5.264327
-#>  [5,] 4.490132 4.0469689 4.933295
+#>  [1,] 5.902761 5.2670164 6.538506
+#>  [2,] 5.108572 4.5388042 5.678340
+#>  [3,] 4.443289 3.8987833 4.987794
+#>  [4,] 3.885987 3.3479065 4.424069
+#>  [5,] 3.419142 2.8812429 3.957042
 ....
 ```
 
@@ -302,9 +326,9 @@ parameters:
 ## delta method confidence intervals
 confintd(ex1_fit, expr = c("b", "A + b", "log(lam)"), level = 0.95)
 #>                fit       lwr       upr
-#> b        0.9967696 0.8638162 1.1297229
-#> A + b    5.9872681 5.7370725 6.2374637
-#> log(lam) 0.3759724 0.2611080 0.4908368
+#> b        1.0097421 0.7832685 1.2362157
+#> A + b    5.9027614 5.5194280 6.2860948
+#> log(lam) 0.3484456 0.1575659 0.5393253
 ```
 
 #### Jacobian calculation
@@ -315,22 +339,18 @@ subproblem](https://www.gnu.org/software/gsl/doc/html/nls.html#solving-the-trust
 is approximated by forward (or centered) finite differences. Instead, an
 analytic Jacobian can be passed to `jac` by defining a function that
 returns the
-![(n \\times p)](https://latex.codecogs.com/png.latex?%28n%20%5Ctimes%20p%29 "(n \times p)")-dimensional
+![(n \times p)](https://latex.codecogs.com/png.latex?%28n%20%5Ctimes%20p%29 "(n \times p)")-dimensional
 Jacobian matrix of the nonlinear model `fn`, where the first argument
 must be the vector of parameters of length
 ![p](https://latex.codecogs.com/png.latex?p "p").
 
 In the exponential model example, the Jacobian matrix is a
-![(50 \\times 3)](https://latex.codecogs.com/png.latex?%2850%20%5Ctimes%203%29 "(50 \times 3)")-dimensional
+![(50 \times 3)](https://latex.codecogs.com/png.latex?%2850%20%5Ctimes%203%29 "(50 \times 3)")-dimensional
 matrix
-![\[\\boldsymbol{J}\_{ij}\]\_{ij}](https://latex.codecogs.com/png.latex?%5B%5Cboldsymbol%7BJ%7D_%7Bij%7D%5D_%7Bij%7D "[\boldsymbol{J}_{ij}]_{ij}")
+![\[\boldsymbol{J}\_{ij}\]\_{ij}](https://latex.codecogs.com/png.latex?%5B%5Cboldsymbol%7BJ%7D_%7Bij%7D%5D_%7Bij%7D "[\boldsymbol{J}_{ij}]_{ij}")
 with rows:
 
-![
-\\boldsymbol{J}\_i \\ = \\ \\left\[ \\frac{\\partial f_i}{\\partial A}, \\frac{\\partial f_i}{\\partial \\lambda}, \\frac{\\partial f_i}{\\partial b} \\right\] \\ = \\ \\left\[ \\exp(-\\lambda \\cdot x_i), -A \\cdot \\exp(-\\lambda \\cdot x_i) \\cdot x_i, 1 \\right\]
-](https://latex.codecogs.com/png.latex?%0A%5Cboldsymbol%7BJ%7D_i%20%5C%20%3D%20%5C%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%20f_i%7D%7B%5Cpartial%20A%7D%2C%20%5Cfrac%7B%5Cpartial%20f_i%7D%7B%5Cpartial%20%5Clambda%7D%2C%20%5Cfrac%7B%5Cpartial%20f_i%7D%7B%5Cpartial%20b%7D%20%5Cright%5D%20%5C%20%3D%20%5C%20%5Cleft%5B%20%5Cexp%28-%5Clambda%20%5Ccdot%20x_i%29%2C%20-A%20%5Ccdot%20%5Cexp%28-%5Clambda%20%5Ccdot%20x_i%29%20%5Ccdot%20x_i%2C%201%20%5Cright%5D%0A "
-\boldsymbol{J}_i \ = \ \left[ \frac{\partial f_i}{\partial A}, \frac{\partial f_i}{\partial \lambda}, \frac{\partial f_i}{\partial b} \right] \ = \ \left[ \exp(-\lambda \cdot x_i), -A \cdot \exp(-\lambda \cdot x_i) \cdot x_i, 1 \right]
-")
+![\boldsymbol{J}\_i \\= \\\left\[ \frac{\partial f_i}{\partial A}, \frac{\partial f_i}{\partial \lambda}, \frac{\partial f_i}{\partial b} \right\] \\= \\\left\[ \exp(-\lambda \cdot x_i), -A \cdot \exp(-\lambda \cdot x_i) \cdot x_i, 1 \right\]](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BJ%7D_i%20%5C%20%3D%20%5C%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%20f_i%7D%7B%5Cpartial%20A%7D%2C%20%5Cfrac%7B%5Cpartial%20f_i%7D%7B%5Cpartial%20%5Clambda%7D%2C%20%5Cfrac%7B%5Cpartial%20f_i%7D%7B%5Cpartial%20b%7D%20%5Cright%5D%20%5C%20%3D%20%5C%20%5Cleft%5B%20%5Cexp%28-%5Clambda%20%5Ccdot%20x_i%29%2C%20-A%20%5Ccdot%20%5Cexp%28-%5Clambda%20%5Ccdot%20x_i%29%20%5Ccdot%20x_i%2C%201%20%5Cright%5D "\boldsymbol{J}_i \ = \ \left[ \frac{\partial f_i}{\partial A}, \frac{\partial f_i}{\partial \lambda}, \frac{\partial f_i}{\partial b} \right] \ = \ \left[ \exp(-\lambda \cdot x_i), -A \cdot \exp(-\lambda \cdot x_i) \cdot x_i, 1 \right]")
 
 which is encoded in the following call to `gsl_nls()`:
 
@@ -346,14 +366,14 @@ gsl_nls(
 #> Nonlinear regression model
 #>   model: y ~ A * exp(-lam * x) + b
 #>    data: data.frame(x = x, y = y)
-#>      A    lam      b 
-#> 4.9905 1.4564 0.9968 
-#>  residual sum-of-squares: 2.104
+#>     A   lam     b 
+#> 4.893 1.417 1.010 
+#>  residual sum-of-squares: 1.316
 #> 
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 8 
-#> Achieved convergence tolerance: 9.496e-11
+#> Number of iterations to convergence: 7 
+#> Achieved convergence tolerance: 4.946e-10
 ```
 
 If the model formula `fn` can be derived with `stats::deriv()`, then the
@@ -372,14 +392,14 @@ gsl_nls(
 #> Nonlinear regression model
 #>   model: y ~ A * exp(-lam * x) + b
 #>    data: data.frame(x = x, y = y)
-#>      A    lam      b 
-#> 4.9905 1.4564 0.9968 
-#>  residual sum-of-squares: 2.104
+#>     A   lam     b 
+#> 4.893 1.417 1.010 
+#>  residual sum-of-squares: 1.316
 #> 
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 8 
-#> Achieved convergence tolerance: 9.496e-11
+#> Number of iterations to convergence: 7 
+#> Achieved convergence tolerance: 4.946e-10
 ```
 
 Alternatively, a self-starting nonlinear model (see `?selfStart`) can be
@@ -398,13 +418,13 @@ ss_fit
 #>   model: y ~ SSasymp(x, Asym, R0, lrc)
 #>    data: data.frame(x = x, y = y)
 #>   Asym     R0    lrc 
-#> 0.9968 5.9873 0.3760 
-#>  residual sum-of-squares: 2.104
+#> 1.0097 5.9028 0.3484 
+#>  residual sum-of-squares: 1.316
 #> 
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 1 
-#> Achieved convergence tolerance: 1.831e-12
+#> Achieved convergence tolerance: 1.068e-13
 ```
 
 The self-starting model `SSasymp()` uses a different model
@@ -418,10 +438,10 @@ model parameterization can be evaluated with the `confintd` method:
 ``` r
 ## delta method confidence intervals
 confintd(ss_fit, expr = c("R0 - Asym", "exp(lrc)", "Asym"), level = 0.95)
-#>                 fit       lwr      upr
-#> R0 - Asym 4.9904986 4.7529300 5.228067
-#> exp(lrc)  1.4564071 1.2891178 1.623696
-#> Asym      0.9967697 0.8638164 1.129723
+#>                fit       lwr      upr
+#> R0 - Asym 4.893019 4.5173851 5.268653
+#> exp(lrc)  1.416863 1.1464128 1.687314
+#> Asym      1.009742 0.7832683 1.236216
 ```
 
 ### Example 2: Gaussian function
@@ -431,38 +451,34 @@ confintd(ss_fit, expr = c("R0 - Asym", "exp(lrc)", "Asym"), level = 0.95)
 The following code generates
 ![n = 300](https://latex.codecogs.com/png.latex?n%20%3D%20300 "n = 300")
 noisy observations
-![y_1,\\ldots,y_n](https://latex.codecogs.com/png.latex?y_1%2C%5Cldots%2Cy_n "y_1,\ldots,y_n")
+![y_1,\ldots,y_n](https://latex.codecogs.com/png.latex?y_1%2C%5Cldots%2Cy_n "y_1,\ldots,y_n")
 from a Gaussian function with multiplicative independent Gaussian noise
 according to the model:
 
-![
-\\left\\{
-\\begin{aligned}
-f_i & = a \\cdot \\exp\\left(-\\frac{(x_i - b)^2}{2c^2}\\right), & i = 1,\\ldots, n \\\\
-y_i & = f_i \\cdot \\epsilon_i, & \\epsilon_i \\overset{\\text{iid}}{\\sim} N(1,\\sigma^2)
-\\end{aligned}
-\\right.
-](https://latex.codecogs.com/png.latex?%0A%5Cleft%5C%7B%0A%5Cbegin%7Baligned%7D%0Af_i%20%26%20%3D%20a%20%5Ccdot%20%5Cexp%5Cleft%28-%5Cfrac%7B%28x_i%20-%20b%29%5E2%7D%7B2c%5E2%7D%5Cright%29%2C%20%26%20i%20%3D%201%2C%5Cldots%2C%20n%20%5C%5C%0Ay_i%20%26%20%3D%20f_i%20%5Ccdot%20%5Cepsilon_i%2C%20%26%20%5Cepsilon_i%20%5Coverset%7B%5Ctext%7Biid%7D%7D%7B%5Csim%7D%20N%281%2C%5Csigma%5E2%29%0A%5Cend%7Baligned%7D%0A%5Cright.%0A "
-\left\{
+![\left\\
 \begin{aligned}
 f_i & = a \cdot \exp\left(-\frac{(x_i - b)^2}{2c^2}\right), & i = 1,\ldots, n \\
 y_i & = f_i \cdot \epsilon_i, & \epsilon_i \overset{\text{iid}}{\sim} N(1,\sigma^2)
 \end{aligned}
-\right.
-")
+\right.](https://latex.codecogs.com/png.latex?%5Cleft%5C%7B%0A%5Cbegin%7Baligned%7D%0Af_i%20%26%20%3D%20a%20%5Ccdot%20%5Cexp%5Cleft%28-%5Cfrac%7B%28x_i%20-%20b%29%5E2%7D%7B2c%5E2%7D%5Cright%29%2C%20%26%20i%20%3D%201%2C%5Cldots%2C%20n%20%5C%5C%0Ay_i%20%26%20%3D%20f_i%20%5Ccdot%20%5Cepsilon_i%2C%20%26%20%5Cepsilon_i%20%5Coverset%7B%5Ctext%7Biid%7D%7D%7B%5Csim%7D%20N%281%2C%5Csigma%5E2%29%0A%5Cend%7Baligned%7D%0A%5Cright. "\left\{
+\begin{aligned}
+f_i & = a \cdot \exp\left(-\frac{(x_i - b)^2}{2c^2}\right), & i = 1,\ldots, n \\
+y_i & = f_i \cdot \epsilon_i, & \epsilon_i \overset{\text{iid}}{\sim} N(1,\sigma^2)
+\end{aligned}
+\right.")
 
 The parameters of the Gaussian model function are set to
 ![a = 5](https://latex.codecogs.com/png.latex?a%20%3D%205 "a = 5"),
 ![b = 0.4](https://latex.codecogs.com/png.latex?b%20%3D%200.4 "b = 0.4"),
 ![c = 0.15](https://latex.codecogs.com/png.latex?c%20%3D%200.15 "c = 0.15"),
 with noise standard deviation
-![\\sigma = 0.1](https://latex.codecogs.com/png.latex?%5Csigma%20%3D%200.1 "\sigma = 0.1")
+![\sigma = 0.1](https://latex.codecogs.com/png.latex?%5Csigma%20%3D%200.1 "\sigma = 0.1")
 (see also
 <https://www.gnu.org/software/gsl/doc/html/nls.html#geodesic-acceleration-example-2>).
 
 ``` r
 set.seed(1)
-n <- 300
+n <- 100
 x <- seq_len(n) / n
 f <- function(a, b, c, x) a * exp(-(x - b)^2 / (2 * c^2))
 y <- f(a = 5, b = 0.4, c = 0.15, x) * rnorm(n, mean = 1, sd = 0.1)
@@ -488,41 +504,40 @@ ex2a_fit <- gsl_nls(
   start = c(a = 1, b = 0, c = 1),           ## starting values
   trace = TRUE                              ## verbose output
 )
-#> iter   1: ssr = 997.455, par = (2.07301, 3.44185, -4.13269)
-#> iter   2: ssr = 969.039, par = (1.85608, 2.96819, -5.64562)
-#> iter   3: ssr = 954.562, par = (1.92691, 2.49884, -6.31566)
-#> iter   4: ssr = 948.377, par = (1.83317, 1.48054, -7.39849)
-#> iter   5: ssr = 944.512, par = (1.85867, 0.68953, -7.69123)
-#> iter   6: ssr = 938.632, par = (1.86112, -1.46277, -7.61441)
-#> iter   7: ssr = 929.886, par = (2.03302, -2.61142, -6.30741)
-#> iter   8: ssr = 920.215, par = (2.2643, -3.03203, -5.2392)
-#> iter   9: ssr = 913.041, par = (2.44368, -3.06967, -4.72612)
-#> iter  10: ssr = 903.168, par = (2.71854, -3.04364, -3.85494)
-#> iter  11: ssr = 887.731, par = (3.0702, -2.68982, -3.07925)
-#> iter  12: ssr = 870.975, par = (3.48438, -2.29855, -2.43302)
-#> iter  13: ssr = 857.044, par = (4.12382, -1.64294, -1.60539)
-#> iter  14: ssr = 840.912, par = (4.06894, -1.32611, -1.48701)
-#> iter  15: ssr = 819, par = (3.14727, -0.556378, -1.07772)
-#> iter  16: ssr = 697.562, par = (2.17065, 0.341907, -0.532942)
-#> iter  17: ssr = 662.46, par = (2.207, 0.329739, -0.487881)
-#> iter  18: ssr = 544.788, par = (2.33695, 0.339819, -0.362125)
-#> iter  19: ssr = 320.234, par = (2.76919, 0.414858, -0.207191)
-#> iter  20: ssr = 102.909, par = (3.77419, 0.388022, -0.171865)
-#> iter  21: ssr = 23.9699, par = (4.60478, 0.401484, -0.156265)
-#> iter  22: ssr = 16.4605, par = (4.91124, 0.398076, -0.152281)
-#> iter  23: ssr = 16.347, par = (4.95455, 0.398237, -0.151567)
-#> iter  24: ssr = 16.3468, par = (4.95652, 0.398226, -0.151533)
-#> iter  25: ssr = 16.3468, par = (4.95655, 0.398225, -0.151532)
-#> iter  26: ssr = 16.3468, par = (4.95655, 0.398225, -0.151532)
+#> iter   1: ssr = 339.291, par = (2.10471, 3.44068, -4.13922)
+#> iter   2: ssr = 330.119, par = (1.86889, 2.96584, -5.67394)
+#> iter   3: ssr = 325.042, par = (1.9442, 2.48742, -6.34815)
+#> iter   4: ssr = 322.908, par = (1.85083, 1.44909, -7.43335)
+#> iter   5: ssr = 321.567, par = (1.87774, 0.64233, -7.71663)
+#> iter   6: ssr = 319.514, par = (1.88378, -1.55933, -7.58996)
+#> iter   7: ssr = 316.382, par = (2.07121, -2.72618, -6.20417)
+#> iter   8: ssr = 312.761, par = (2.3348, -3.12549, -5.08135)
+#> iter   9: ssr = 309.995, par = (2.53367, -3.1161, -4.57662)
+#> iter  10: ssr = 306.424, par = (2.82487, -3.02358, -3.70877)
+#> iter  11: ssr = 303.663, par = (3.43302, -2.42306, -2.38995)
+#> iter  12: ssr = 291.482, par = (3.81318, -1.95412, -2.10297)
+#> iter  13: ssr = 288.792, par = (4.29134, -1.3864, -1.40092)
+#> iter  14: ssr = 283.978, par = (3.8767, -1.11145, -1.35879)
+#> iter  15: ssr = 266.364, par = (2.32619, 0.00863008, -0.817272)
+#> iter  16: ssr = 188.845, par = (2.47857, 0.30237, -0.383137)
+#> iter  17: ssr = 160.525, par = (2.58287, 0.344461, -0.330347)
+#> iter  18: ssr = 96.2152, par = (2.92015, 0.4045, -0.225393)
+#> iter  19: ssr = 36.2279, par = (3.75813, 0.399011, -0.170978)
+#> iter  20: ssr = 7.2443, par = (4.60596, 0.402466, -0.15752)
+#> iter  21: ssr = 4.01617, par = (4.96151, 0.401811, -0.151909)
+#> iter  22: ssr = 3.9438, par = (5.02047, 0.401927, -0.151065)
+#> iter  23: ssr = 3.94359, par = (5.02385, 0.401936, -0.151002)
+#> iter  24: ssr = 3.94359, par = (5.02391, 0.401937, -0.151)
+#> iter  25: ssr = 3.94359, par = (5.02391, 0.401937, -0.151)
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt'
-#> number of iterations: 26
+#> number of iterations: 25
 #> reason for stopping: output range error
-#> initial ssr = 1192.49
-#> final ssr = 16.3468
-#> ssr/dof = 0.0550398
-#> ssr achieved tolerance = 7.61702e-12
-#> function evaluations: 126
+#> initial ssr = 408.097
+#> final ssr = 3.94359
+#> ssr/dof = 0.0406556
+#> ssr achieved tolerance = 8.87068e-12
+#> function evaluations: 120
 #> jacobian evaluations: 0
 #> fvv evaluations: 0
 #> status = success
@@ -533,13 +548,13 @@ ex2a_fit
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
 #>    data: data.frame(x = x, y = y)
 #>       a       b       c 
-#>  4.9565  0.3982 -0.1515 
-#>  residual sum-of-squares: 16.35
+#>  5.0239  0.4019 -0.1510 
+#>  residual sum-of-squares: 3.944
 #> 
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 26 
-#> Achieved convergence tolerance: 7.617e-12
+#> Number of iterations to convergence: 25 
+#> Achieved convergence tolerance: 8.871e-12
 ```
 
 #### Geodesic acceleration
@@ -558,24 +573,24 @@ ex2b_fit <- gsl_nls(
   algorithm = "lmaccel",                    ## algorithm
   trace = TRUE                              ## verbose output
 )
-#> iter   1: ssr = 902.787, par = (1.5621, 0.512233, 0.527845)
-#> iter   2: ssr = 726.988, par = (1.7993, 0.369273, 0.417081)
-#> iter   3: ssr = 444.339, par = (2.42399, 0.393548, 0.278246)
-#> iter   4: ssr = 151.97, par = (3.51974, 0.395544, 0.209829)
-#> iter   5: ssr = 30.071, par = (4.4884, 0.397546, 0.16718)
-#> iter   6: ssr = 16.5987, par = (4.88957, 0.398378, 0.153295)
-#> iter   7: ssr = 16.3475, par = (4.95309, 0.398252, 0.151615)
-#> iter   8: ssr = 16.3468, par = (4.95649, 0.398227, 0.151534)
-#> iter   9: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
-#> iter  10: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
+#> iter   1: ssr = 308.361, par = (1.57385, 0.517022, 0.525652)
+#> iter   2: ssr = 251.21, par = (1.79669, 0.376601, 0.42549)
+#> iter   3: ssr = 157.541, par = (2.3964, 0.393096, 0.284184)
+#> iter   4: ssr = 55.7059, par = (3.48328, 0.397307, 0.213232)
+#> iter   5: ssr = 9.84516, par = (4.49527, 0.399941, 0.168801)
+#> iter   6: ssr = 4.07138, par = (4.94171, 0.401667, 0.153199)
+#> iter   7: ssr = 3.94401, par = (5.01919, 0.401909, 0.151117)
+#> iter   8: ssr = 3.94359, par = (5.02382, 0.401936, 0.151003)
+#> iter   9: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
+#> iter  10: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt+accel'
 #> number of iterations: 10
 #> reason for stopping: output range error
-#> initial ssr = 1192.49
-#> final ssr = 16.3468
-#> ssr/dof = 0.0550398
-#> ssr achieved tolerance = 4.29523e-11
+#> initial ssr = 408.097
+#> final ssr = 3.94359
+#> ssr/dof = 0.0406556
+#> ssr achieved tolerance = 2.4666e-11
 #> function evaluations: 66
 #> jacobian evaluations: 0
 #> fvv evaluations: 0
@@ -587,13 +602,13 @@ ex2b_fit
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
 #>    data: data.frame(x = x, y = y)
 #>      a      b      c 
-#> 4.9565 0.3982 0.1515 
-#>  residual sum-of-squares: 16.35
+#> 5.0239 0.4019 0.1510 
+#>  residual sum-of-squares: 3.944
 #> 
 #> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 10 
-#> Achieved convergence tolerance: 4.295e-11
+#> Achieved convergence tolerance: 2.467e-11
 ```
 
 With geodesic acceleration enabled the method converges after 10
@@ -622,20 +637,17 @@ For the Gaussian model function, the matrix of second partial
 derivatives, i.e. the Hessian, is given by
 (cf. <https://www.gnu.org/software/gsl/doc/html/nls.html#geodesic-acceleration-example-2>):
 
-![
-\\boldsymbol{H}\_{f_i} \\ = \\ 
-\\left\[\\begin{matrix} 
-\\frac{\\partial^2 f_i}{\\partial a^2} & \\frac{\\partial^2 f_i}{\\partial a \\partial b} & \\frac{\\partial^2 f_i}{\\partial a \\partial c} \\\\
-& \\frac{\\partial^2 f_i}{\\partial b^2} & \\frac{\\partial^2 f_i}{\\partial b \\partial c} \\\\
-& & \\frac{\\partial^2 f_i}{\\partial c^2}
-\\end{matrix}\\right\] \\ = \\ 
-\\left\[\\begin{matrix}
-0 & \\frac{z_i}{c} e_i & \\frac{z_i^2}{c} e_i \\\\
-& -\\frac{a}{c^2} (1 - z_i^2) e_i & -\\frac{a}{c^2} z_i (2 - z_i^2) e_i \\\\
-& & -\\frac{a}{c^2} z_i^2 (3 - z_i^2) e_i 
-\\end{matrix}\\right\]
-](https://latex.codecogs.com/png.latex?%0A%5Cboldsymbol%7BH%7D_%7Bf_i%7D%20%5C%20%3D%20%5C%20%0A%5Cleft%5B%5Cbegin%7Bmatrix%7D%20%0A%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%5E2%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20b%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20c%7D%20%5C%5C%0A%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%5E2%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%20%5Cpartial%20c%7D%20%5C%5C%0A%26%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20c%5E2%7D%0A%5Cend%7Bmatrix%7D%5Cright%5D%20%5C%20%3D%20%5C%20%0A%5Cleft%5B%5Cbegin%7Bmatrix%7D%0A0%20%26%20%5Cfrac%7Bz_i%7D%7Bc%7D%20e_i%20%26%20%5Cfrac%7Bz_i%5E2%7D%7Bc%7D%20e_i%20%5C%5C%0A%26%20-%5Cfrac%7Ba%7D%7Bc%5E2%7D%20%281%20-%20z_i%5E2%29%20e_i%20%26%20-%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%20%282%20-%20z_i%5E2%29%20e_i%20%5C%5C%0A%26%20%26%20-%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%5E2%20%283%20-%20z_i%5E2%29%20e_i%20%0A%5Cend%7Bmatrix%7D%5Cright%5D%0A "
-\boldsymbol{H}_{f_i} \ = \ 
+![\boldsymbol{H}\_{f_i} \\= \\
+\left\[\begin{matrix} 
+\frac{\partial^2 f_i}{\partial a^2} & \frac{\partial^2 f_i}{\partial a \partial b} & \frac{\partial^2 f_i}{\partial a \partial c} \\
+& \frac{\partial^2 f_i}{\partial b^2} & \frac{\partial^2 f_i}{\partial b \partial c} \\
+& & \frac{\partial^2 f_i}{\partial c^2}
+\end{matrix}\right\] \\= \\
+\left\[\begin{matrix}
+0 & \frac{z_i}{c} e_i & \frac{z_i^2}{c} e_i \\
+& -\frac{a}{c^2} (1 - z_i^2) e_i & -\frac{a}{c^2} z_i (2 - z_i^2) e_i \\
+& & -\frac{a}{c^2} z_i^2 (3 - z_i^2) e_i 
+\end{matrix}\right\]](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BH%7D_%7Bf_i%7D%20%5C%20%3D%20%5C%20%0A%5Cleft%5B%5Cbegin%7Bmatrix%7D%20%0A%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%5E2%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20b%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20c%7D%20%5C%5C%0A%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%5E2%7D%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%20%5Cpartial%20c%7D%20%5C%5C%0A%26%20%26%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20c%5E2%7D%0A%5Cend%7Bmatrix%7D%5Cright%5D%20%5C%20%3D%20%5C%20%0A%5Cleft%5B%5Cbegin%7Bmatrix%7D%0A0%20%26%20%5Cfrac%7Bz_i%7D%7Bc%7D%20e_i%20%26%20%5Cfrac%7Bz_i%5E2%7D%7Bc%7D%20e_i%20%5C%5C%0A%26%20-%5Cfrac%7Ba%7D%7Bc%5E2%7D%20%281%20-%20z_i%5E2%29%20e_i%20%26%20-%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%20%282%20-%20z_i%5E2%29%20e_i%20%5C%5C%0A%26%20%26%20-%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%5E2%20%283%20-%20z_i%5E2%29%20e_i%20%0A%5Cend%7Bmatrix%7D%5Cright%5D "\boldsymbol{H}_{f_i} \ = \ 
 \left[\begin{matrix} 
 \frac{\partial^2 f_i}{\partial a^2} & \frac{\partial^2 f_i}{\partial a \partial b} & \frac{\partial^2 f_i}{\partial a \partial c} \\
 & \frac{\partial^2 f_i}{\partial b^2} & \frac{\partial^2 f_i}{\partial b \partial c} \\
@@ -645,42 +657,33 @@ derivatives, i.e. the Hessian, is given by
 0 & \frac{z_i}{c} e_i & \frac{z_i^2}{c} e_i \\
 & -\frac{a}{c^2} (1 - z_i^2) e_i & -\frac{a}{c^2} z_i (2 - z_i^2) e_i \\
 & & -\frac{a}{c^2} z_i^2 (3 - z_i^2) e_i 
-\end{matrix}\right]
-")
+\end{matrix}\right]")
 
 where the lower half of the Hessian matrix is omitted since it is
 symmetric and where we use the notation,
 
-![
-\\begin{aligned}
-z_i & \\ = \\ \\frac{x_i - b}{c} \\\\
-e_i & \\ = \\ \\exp\\left(-\\frac{1}{2}z_i^2 \\right)
-\\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Az_i%20%26%20%5C%20%3D%20%5C%20%5Cfrac%7Bx_i%20-%20b%7D%7Bc%7D%20%5C%5C%0Ae_i%20%26%20%5C%20%3D%20%5C%20%5Cexp%5Cleft%28-%5Cfrac%7B1%7D%7B2%7Dz_i%5E2%20%5Cright%29%0A%5Cend%7Baligned%7D%0A "
-\begin{aligned}
+![\begin{aligned}
+z_i & \\= \\\frac{x_i - b}{c} \\
+e_i & \\= \\\exp\left(-\frac{1}{2}z_i^2 \right)
+\end{aligned}](https://latex.codecogs.com/png.latex?%5Cbegin%7Baligned%7D%0Az_i%20%26%20%5C%20%3D%20%5C%20%5Cfrac%7Bx_i%20-%20b%7D%7Bc%7D%20%5C%5C%0Ae_i%20%26%20%5C%20%3D%20%5C%20%5Cexp%5Cleft%28-%5Cfrac%7B1%7D%7B2%7Dz_i%5E2%20%5Cright%29%0A%5Cend%7Baligned%7D "\begin{aligned}
 z_i & \ = \ \frac{x_i - b}{c} \\
 e_i & \ = \ \exp\left(-\frac{1}{2}z_i^2 \right)
-\end{aligned}
-")
+\end{aligned}")
 
 Based on the Hessian matrix, the second directional derivative of
 ![f_i](https://latex.codecogs.com/png.latex?f_i "f_i"), with
-![i = 1,\\ldots,n](https://latex.codecogs.com/png.latex?i%20%3D%201%2C%5Cldots%2Cn "i = 1,\ldots,n"),
+![i = 1,\ldots,n](https://latex.codecogs.com/png.latex?i%20%3D%201%2C%5Cldots%2Cn "i = 1,\ldots,n"),
 becomes:
 
-![
-\\begin{aligned}
-D_v^2 f_i & \\ = \\ \\sum\_{j,k} v\_{\\theta_j}v\_{\\theta_k} \\frac{\\partial^2 f_i}{\\partial \\theta_j \\partial \\theta_k} \\\\
-& \\ = \\ v_a^2 \\frac{\\partial^2 f_i}{\\partial a^2} + 2 v_av_b\\frac{\\partial^2 f_i}{\\partial a \\partial b} + 2v_av_c\\frac{\\partial^2 f_i}{\\partial a \\partial c} + v_b^2\\frac{\\partial^2 f_i}{\\partial b^2} + 2v_bv_c\\frac{\\partial^2 f_i}{\\partial b \\partial c} + v_c^2\\frac{\\partial^2 f_i}{\\partial c^2} \\\\
-& \\ = \\ 2v_a v_b\\frac{z_i}{c} e_i + 2v_av_c \\frac{z_i^2}{c} e_i - v_b^2\\frac{a}{c^2} (1 - z_i^2) e_i - 2v_bv_c \\frac{a}{c^2} z_i (2 - z_i^2) e_i - v_c^2\\frac{a}{c^2} z_i^2 (3 - z_i^2) e_i
-\\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AD_v%5E2%20f_i%20%26%20%5C%20%3D%20%5C%20%5Csum_%7Bj%2Ck%7D%20v_%7B%5Ctheta_j%7Dv_%7B%5Ctheta_k%7D%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20%5Ctheta_j%20%5Cpartial%20%5Ctheta_k%7D%20%5C%5C%0A%26%20%5C%20%3D%20%5C%20v_a%5E2%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%5E2%7D%20%2B%202%20v_av_b%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20b%7D%20%2B%202v_av_c%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20c%7D%20%2B%20v_b%5E2%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%5E2%7D%20%2B%202v_bv_c%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%20%5Cpartial%20c%7D%20%2B%20v_c%5E2%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20c%5E2%7D%20%5C%5C%0A%26%20%5C%20%3D%20%5C%202v_a%20v_b%5Cfrac%7Bz_i%7D%7Bc%7D%20e_i%20%2B%202v_av_c%20%5Cfrac%7Bz_i%5E2%7D%7Bc%7D%20e_i%20-%20v_b%5E2%5Cfrac%7Ba%7D%7Bc%5E2%7D%20%281%20-%20z_i%5E2%29%20e_i%20-%202v_bv_c%20%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%20%282%20-%20z_i%5E2%29%20e_i%20-%20v_c%5E2%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%5E2%20%283%20-%20z_i%5E2%29%20e_i%0A%5Cend%7Baligned%7D%0A "
-\begin{aligned}
+![\begin{aligned}
+D_v^2 f_i & \\= \\\sum\_{j,k} v\_{\theta_j}v\_{\theta_k} \frac{\partial^2 f_i}{\partial \theta_j \partial \theta_k} \\
+& \\= \\v_a^2 \frac{\partial^2 f_i}{\partial a^2} + 2 v_av_b\frac{\partial^2 f_i}{\partial a \partial b} + 2v_av_c\frac{\partial^2 f_i}{\partial a \partial c} + v_b^2\frac{\partial^2 f_i}{\partial b^2} + 2v_bv_c\frac{\partial^2 f_i}{\partial b \partial c} + v_c^2\frac{\partial^2 f_i}{\partial c^2} \\
+& \\= \\2v_a v_b\frac{z_i}{c} e_i + 2v_av_c \frac{z_i^2}{c} e_i - v_b^2\frac{a}{c^2} (1 - z_i^2) e_i - 2v_bv_c \frac{a}{c^2} z_i (2 - z_i^2) e_i - v_c^2\frac{a}{c^2} z_i^2 (3 - z_i^2) e_i
+\end{aligned}](https://latex.codecogs.com/png.latex?%5Cbegin%7Baligned%7D%0AD_v%5E2%20f_i%20%26%20%5C%20%3D%20%5C%20%5Csum_%7Bj%2Ck%7D%20v_%7B%5Ctheta_j%7Dv_%7B%5Ctheta_k%7D%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20%5Ctheta_j%20%5Cpartial%20%5Ctheta_k%7D%20%5C%5C%0A%26%20%5C%20%3D%20%5C%20v_a%5E2%20%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%5E2%7D%20%2B%202%20v_av_b%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20b%7D%20%2B%202v_av_c%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20a%20%5Cpartial%20c%7D%20%2B%20v_b%5E2%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%5E2%7D%20%2B%202v_bv_c%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20b%20%5Cpartial%20c%7D%20%2B%20v_c%5E2%5Cfrac%7B%5Cpartial%5E2%20f_i%7D%7B%5Cpartial%20c%5E2%7D%20%5C%5C%0A%26%20%5C%20%3D%20%5C%202v_a%20v_b%5Cfrac%7Bz_i%7D%7Bc%7D%20e_i%20%2B%202v_av_c%20%5Cfrac%7Bz_i%5E2%7D%7Bc%7D%20e_i%20-%20v_b%5E2%5Cfrac%7Ba%7D%7Bc%5E2%7D%20%281%20-%20z_i%5E2%29%20e_i%20-%202v_bv_c%20%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%20%282%20-%20z_i%5E2%29%20e_i%20-%20v_c%5E2%5Cfrac%7Ba%7D%7Bc%5E2%7D%20z_i%5E2%20%283%20-%20z_i%5E2%29%20e_i%0A%5Cend%7Baligned%7D "\begin{aligned}
 D_v^2 f_i & \ = \ \sum_{j,k} v_{\theta_j}v_{\theta_k} \frac{\partial^2 f_i}{\partial \theta_j \partial \theta_k} \\
 & \ = \ v_a^2 \frac{\partial^2 f_i}{\partial a^2} + 2 v_av_b\frac{\partial^2 f_i}{\partial a \partial b} + 2v_av_c\frac{\partial^2 f_i}{\partial a \partial c} + v_b^2\frac{\partial^2 f_i}{\partial b^2} + 2v_bv_c\frac{\partial^2 f_i}{\partial b \partial c} + v_c^2\frac{\partial^2 f_i}{\partial c^2} \\
 & \ = \ 2v_a v_b\frac{z_i}{c} e_i + 2v_av_c \frac{z_i^2}{c} e_i - v_b^2\frac{a}{c^2} (1 - z_i^2) e_i - 2v_bv_c \frac{a}{c^2} z_i (2 - z_i^2) e_i - v_c^2\frac{a}{c^2} z_i^2 (3 - z_i^2) e_i
-\end{aligned}
-")
+\end{aligned}")
 
 which can be encoded using `gsl_nls()` as follows:
 
@@ -706,24 +709,24 @@ gsl_nls(
   fvv = fvv,                                ## analytic function
   x = x                                     ## argument passed to fvv
 )
-#> iter   1: ssr = 903.32, par = (1.56127, 0.512413, 0.528849)
-#> iter   2: ssr = 730.345, par = (1.79301, 0.370435, 0.419517)
-#> iter   3: ssr = 450.157, par = (2.40709, 0.392981, 0.279519)
-#> iter   4: ssr = 156.073, par = (3.49577, 0.395584, 0.210606)
-#> iter   5: ssr = 30.9598, par = (4.47348, 0.397533, 0.167701)
-#> iter   6: ssr = 16.6262, par = (4.88604, 0.398381, 0.153392)
-#> iter   7: ssr = 16.3476, par = (4.95283, 0.398254, 0.151621)
-#> iter   8: ssr = 16.3468, par = (4.95648, 0.398227, 0.151534)
-#> iter   9: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
-#> iter  10: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
+#> iter   1: ssr = 308.544, par = (1.57301, 0.517197, 0.526679)
+#> iter   2: ssr = 252.22, par = (1.79127, 0.377729, 0.427685)
+#> iter   3: ssr = 159.307, par = (2.38171, 0.392426, 0.285394)
+#> iter   4: ssr = 57.03, par = (3.46129, 0.397358, 0.213901)
+#> iter   5: ssr = 10.1669, par = (4.4808, 0.39993, 0.169295)
+#> iter   6: ssr = 4.08327, par = (4.93799, 0.401659, 0.153303)
+#> iter   7: ssr = 3.94406, par = (5.01888, 0.401907, 0.151125)
+#> iter   8: ssr = 3.94359, par = (5.02381, 0.401935, 0.151003)
+#> iter   9: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
+#> iter  10: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt+accel'
 #> number of iterations: 10
 #> reason for stopping: output range error
-#> initial ssr = 1192.49
-#> final ssr = 16.3468
-#> ssr/dof = 0.0550398
-#> ssr achieved tolerance = 5.1692e-11
+#> initial ssr = 408.097
+#> final ssr = 3.94359
+#> ssr/dof = 0.0406556
+#> ssr achieved tolerance = 2.92721e-11
 #> function evaluations: 50
 #> jacobian evaluations: 0
 #> fvv evaluations: 16
@@ -733,13 +736,13 @@ gsl_nls(
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
 #>    data: data.frame(x = x, y = y)
 #>      a      b      c 
-#> 4.9565 0.3982 0.1515 
-#>  residual sum-of-squares: 16.35
+#> 5.0239 0.4019 0.1510 
+#>  residual sum-of-squares: 3.944
 #> 
 #> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 10 
-#> Achieved convergence tolerance: 5.169e-11
+#> Achieved convergence tolerance: 2.927e-11
 ```
 
 If the model formula `fn` can be derived with `stats::deriv()`, then the
@@ -758,24 +761,24 @@ gsl_nls(
   trace = TRUE,                             ## verbose output
   fvv = TRUE                                ## automatic derivation
 )
-#> iter   1: ssr = 903.32, par = (1.56127, 0.512413, 0.528849)
-#> iter   2: ssr = 730.345, par = (1.79301, 0.370435, 0.419517)
-#> iter   3: ssr = 450.157, par = (2.40709, 0.392981, 0.279519)
-#> iter   4: ssr = 156.073, par = (3.49577, 0.395584, 0.210606)
-#> iter   5: ssr = 30.9598, par = (4.47348, 0.397533, 0.167701)
-#> iter   6: ssr = 16.6262, par = (4.88604, 0.398381, 0.153392)
-#> iter   7: ssr = 16.3476, par = (4.95283, 0.398254, 0.151621)
-#> iter   8: ssr = 16.3468, par = (4.95648, 0.398227, 0.151534)
-#> iter   9: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
-#> iter  10: ssr = 16.3468, par = (4.95655, 0.398225, 0.151532)
+#> iter   1: ssr = 308.544, par = (1.57301, 0.517197, 0.526679)
+#> iter   2: ssr = 252.22, par = (1.79127, 0.377729, 0.427685)
+#> iter   3: ssr = 159.307, par = (2.38171, 0.392426, 0.285394)
+#> iter   4: ssr = 57.03, par = (3.46129, 0.397358, 0.213901)
+#> iter   5: ssr = 10.1669, par = (4.4808, 0.39993, 0.169295)
+#> iter   6: ssr = 4.08327, par = (4.93799, 0.401659, 0.153303)
+#> iter   7: ssr = 3.94406, par = (5.01888, 0.401907, 0.151125)
+#> iter   8: ssr = 3.94359, par = (5.02381, 0.401935, 0.151003)
+#> iter   9: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
+#> iter  10: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt+accel'
 #> number of iterations: 10
 #> reason for stopping: output range error
-#> initial ssr = 1192.49
-#> final ssr = 16.3468
-#> ssr/dof = 0.0550398
-#> ssr achieved tolerance = 5.1692e-11
+#> initial ssr = 408.097
+#> final ssr = 3.94359
+#> ssr/dof = 0.0406556
+#> ssr achieved tolerance = 2.92797e-11
 #> function evaluations: 50
 #> jacobian evaluations: 0
 #> fvv evaluations: 16
@@ -785,13 +788,13 @@ gsl_nls(
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
 #>    data: data.frame(x = x, y = y)
 #>      a      b      c 
-#> 4.9565 0.3982 0.1515 
-#>  residual sum-of-squares: 16.35
+#> 5.0239 0.4019 0.1510 
+#>  residual sum-of-squares: 3.944
 #> 
 #> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 10 
-#> Achieved convergence tolerance: 5.169e-11
+#> Achieved convergence tolerance: 2.928e-11
 ```
 
 ### Example 3: Branin function
@@ -801,35 +804,31 @@ minimizing the Branin test function, a common optimization test problem.
 For the Branin test function, the following bivariate expression is
 used:
 
-![
-\\left\\{
-\\begin{aligned}
-F(x_1, x_2) & \\ = \\ f_1(x_1, x_2)^2 + f_2(x_1, x_2)^2 \\\\
-f_1(x_1, x_2) & \\ = \\ x_2 + a_1 x_1^2 + a_2 x_1 + a_3 \\\\
-f_2(x_1, x_2) & \\ = \\ \\sqrt{a_4 \\cdot (1 + (1 - a_5) \\cos(x_1))}
-\\end{aligned}
-\\right.
-](https://latex.codecogs.com/png.latex?%0A%5Cleft%5C%7B%0A%5Cbegin%7Baligned%7D%0AF%28x_1%2C%20x_2%29%20%26%20%5C%20%3D%20%5C%20f_1%28x_1%2C%20x_2%29%5E2%20%2B%20f_2%28x_1%2C%20x_2%29%5E2%20%5C%5C%0Af_1%28x_1%2C%20x_2%29%20%26%20%5C%20%3D%20%5C%20x_2%20%2B%20a_1%20x_1%5E2%20%2B%20a_2%20x_1%20%2B%20a_3%20%5C%5C%0Af_2%28x_1%2C%20x_2%29%20%26%20%5C%20%3D%20%5C%20%5Csqrt%7Ba_4%20%5Ccdot%20%281%20%2B%20%281%20-%20a_5%29%20%5Ccos%28x_1%29%29%7D%0A%5Cend%7Baligned%7D%0A%5Cright.%0A "
-\left\{
+![\left\\
+\begin{aligned}
+F(x_1, x_2) & \\= \\f_1(x_1, x_2)^2 + f_2(x_1, x_2)^2 \\
+f_1(x_1, x_2) & \\= \\x_2 + a_1 x_1^2 + a_2 x_1 + a_3 \\
+f_2(x_1, x_2) & \\= \\\sqrt{a_4 \cdot (1 + (1 - a_5) \cos(x_1))}
+\end{aligned}
+\right.](https://latex.codecogs.com/png.latex?%5Cleft%5C%7B%0A%5Cbegin%7Baligned%7D%0AF%28x_1%2C%20x_2%29%20%26%20%5C%20%3D%20%5C%20f_1%28x_1%2C%20x_2%29%5E2%20%2B%20f_2%28x_1%2C%20x_2%29%5E2%20%5C%5C%0Af_1%28x_1%2C%20x_2%29%20%26%20%5C%20%3D%20%5C%20x_2%20%2B%20a_1%20x_1%5E2%20%2B%20a_2%20x_1%20%2B%20a_3%20%5C%5C%0Af_2%28x_1%2C%20x_2%29%20%26%20%5C%20%3D%20%5C%20%5Csqrt%7Ba_4%20%5Ccdot%20%281%20%2B%20%281%20-%20a_5%29%20%5Ccos%28x_1%29%29%7D%0A%5Cend%7Baligned%7D%0A%5Cright. "\left\{
 \begin{aligned}
 F(x_1, x_2) & \ = \ f_1(x_1, x_2)^2 + f_2(x_1, x_2)^2 \\
 f_1(x_1, x_2) & \ = \ x_2 + a_1 x_1^2 + a_2 x_1 + a_3 \\
 f_2(x_1, x_2) & \ = \ \sqrt{a_4 \cdot (1 + (1 - a_5) \cos(x_1))}
 \end{aligned}
-\right.
-")
+\right.")
 
 with known constants
-![a_1 = -5.1/(4 \\pi^2)](https://latex.codecogs.com/png.latex?a_1%20%3D%20-5.1%2F%284%20%5Cpi%5E2%29 "a_1 = -5.1/(4 \pi^2)"),
-![a_2 = 5/\\pi](https://latex.codecogs.com/png.latex?a_2%20%3D%205%2F%5Cpi "a_2 = 5/\pi"),
+![a_1 = -5.1/(4 \pi^2)](https://latex.codecogs.com/png.latex?a_1%20%3D%20-5.1%2F%284%20%5Cpi%5E2%29 "a_1 = -5.1/(4 \pi^2)"),
+![a_2 = 5/\pi](https://latex.codecogs.com/png.latex?a_2%20%3D%205%2F%5Cpi "a_2 = 5/\pi"),
 ![a_3 = -6](https://latex.codecogs.com/png.latex?a_3%20%3D%20-6 "a_3 = -6"),
 ![a_4 = 10](https://latex.codecogs.com/png.latex?a_4%20%3D%2010 "a_4 = 10"),
-![a_5 = 1 / (8\\pi)](https://latex.codecogs.com/png.latex?a_5%20%3D%201%20%2F%20%288%5Cpi%29 "a_5 = 1 / (8\pi)")
+![a_5 = 1 / (8\pi)](https://latex.codecogs.com/png.latex?a_5%20%3D%201%20%2F%20%288%5Cpi%29 "a_5 = 1 / (8\pi)")
 (cf. <https://www.gnu.org/software/gsl/doc/html/nls.html#comparing-trs-methods-example>),
 such that
 ![F(x_1, x_2)](https://latex.codecogs.com/png.latex?F%28x_1%2C%20x_2%29 "F(x_1, x_2)")
 has three local minima in the range
-![(x_1, x_2) \\in \[-5, 15\] \\times \[-5, 15\]](https://latex.codecogs.com/png.latex?%28x_1%2C%20x_2%29%20%5Cin%20%5B-5%2C%2015%5D%20%5Ctimes%20%5B-5%2C%2015%5D "(x_1, x_2) \in [-5, 15] \times [-5, 15]").
+![(x_1, x_2) \in \[-5, 15\] \times \[-5, 15\]](https://latex.codecogs.com/png.latex?%28x_1%2C%20x_2%29%20%5Cin%20%5B-5%2C%2015%5D%20%5Ctimes%20%5B-5%2C%2015%5D "(x_1, x_2) \in [-5, 15] \times [-5, 15]").
 
 The minimization problem can be solved with `gsl_nls()` by considering
 the cost function
@@ -911,9 +910,9 @@ Analogous to the
 [example](https://www.gnu.org/software/gsl/doc/html/nls.html#comparing-trs-methods-example)
 in the GSL reference manual, the standard Levenberg-Marquardt method
 without geodesic acceleration converges to the minimum at
-![(-\\pi, 12.275)](https://latex.codecogs.com/png.latex?%28-%5Cpi%2C%2012.275%29 "(-\pi, 12.275)"),
+![(-\pi, 12.275)](https://latex.codecogs.com/png.latex?%28-%5Cpi%2C%2012.275%29 "(-\pi, 12.275)"),
 all other methods converge to the minimum at
-![(\\pi, 2.275)](https://latex.codecogs.com/png.latex?%28%5Cpi%2C%202.275%29 "(\pi, 2.275)").
+![(\pi, 2.275)](https://latex.codecogs.com/png.latex?%28%5Cpi%2C%202.275%29 "(\pi, 2.275)").
 
 ### Example 4: Large NLS example
 
@@ -923,47 +922,40 @@ nonlinear least-squares example
 from the GSL reference manual. The nonlinear least squares model is
 defined as:
 
-![
-\\left\\{
-\\begin{aligned}
-f_i & \\ = \\sqrt{\\alpha}(\\theta_i + 1), \\quad i = 1,\\ldots,p \\\\
-f\_{p + 1} & \\ = \\Vert \\boldsymbol{\\theta} \\Vert^2  - \\frac{1}{4}
-\\end{aligned}
-\\right.
-](https://latex.codecogs.com/png.latex?%0A%5Cleft%5C%7B%0A%5Cbegin%7Baligned%7D%0Af_i%20%26%20%5C%20%3D%20%5Csqrt%7B%5Calpha%7D%28%5Ctheta_i%20%2B%201%29%2C%20%5Cquad%20i%20%3D%201%2C%5Cldots%2Cp%20%5C%5C%0Af_%7Bp%20%2B%201%7D%20%26%20%5C%20%3D%20%5CVert%20%5Cboldsymbol%7B%5Ctheta%7D%20%5CVert%5E2%20%20-%20%5Cfrac%7B1%7D%7B4%7D%0A%5Cend%7Baligned%7D%0A%5Cright.%0A "
-\left\{
+![\left\\
+\begin{aligned}
+f_i & \\= \sqrt{\alpha}(\theta_i + 1), \quad i = 1,\ldots,p \\
+f\_{p + 1} & \\= \Vert \boldsymbol{\theta} \Vert^2  - \frac{1}{4}
+\end{aligned}
+\right.](https://latex.codecogs.com/png.latex?%5Cleft%5C%7B%0A%5Cbegin%7Baligned%7D%0Af_i%20%26%20%5C%20%3D%20%5Csqrt%7B%5Calpha%7D%28%5Ctheta_i%20%2B%201%29%2C%20%5Cquad%20i%20%3D%201%2C%5Cldots%2Cp%20%5C%5C%0Af_%7Bp%20%2B%201%7D%20%26%20%5C%20%3D%20%5CVert%20%5Cboldsymbol%7B%5Ctheta%7D%20%5CVert%5E2%20%20-%20%5Cfrac%7B1%7D%7B4%7D%0A%5Cend%7Baligned%7D%0A%5Cright. "\left\{
 \begin{aligned}
 f_i & \ = \sqrt{\alpha}(\theta_i + 1), \quad i = 1,\ldots,p \\
 f_{p + 1} & \ = \Vert \boldsymbol{\theta} \Vert^2  - \frac{1}{4}
 \end{aligned}
-\right.
-")
+\right.")
 
 with given constant
-![\\alpha = 10^{-5}](https://latex.codecogs.com/png.latex?%5Calpha%20%3D%2010%5E%7B-5%7D "\alpha = 10^{-5}")
+![\alpha = 10^{-5}](https://latex.codecogs.com/png.latex?%5Calpha%20%3D%2010%5E%7B-5%7D "\alpha = 10^{-5}")
 and unknown parameters
-![\\theta_1,\\ldots, \\theta_p](https://latex.codecogs.com/png.latex?%5Ctheta_1%2C%5Cldots%2C%20%5Ctheta_p "\theta_1,\ldots, \theta_p").
+![\theta_1,\ldots, \theta_p](https://latex.codecogs.com/png.latex?%5Ctheta_1%2C%5Cldots%2C%20%5Ctheta_p "\theta_1,\ldots, \theta_p").
 The residual
 ![f\_{p + 1}](https://latex.codecogs.com/png.latex?f_%7Bp%20%2B%201%7D "f_{p + 1}")
 adds an
 ![L_2](https://latex.codecogs.com/png.latex?L_2 "L_2")-regularization
 constraint on the parameter vector and makes the model nonlinear. The
-![(p + 1) \\times p](https://latex.codecogs.com/png.latex?%28p%20%2B%201%29%20%5Ctimes%20p "(p + 1) \times p")-dimensional
+![(p + 1) \times p](https://latex.codecogs.com/png.latex?%28p%20%2B%201%29%20%5Ctimes%20p "(p + 1) \times p")-dimensional
 Jacobian matrix is given by:
 
-![
-\\boldsymbol{J}(\\boldsymbol{\\theta}) \\ = \\ 
-\\left\[ \\begin{matrix} 
-\\frac{\\partial f_1}{\\partial \\theta_1} & \\ldots & \\frac{\\partial f_1}{\\partial \\theta_p} \\\\
-\\vdots & \\ddots & \\vdots \\\\
-\\frac{\\partial f\_{p+1}}{\\partial \\theta_1} & \\ldots & \\frac{\\partial f\_{p+1}}{\\partial \\theta_p}
-\\end{matrix} \\right\] \\ = 
-\\left\[ \\begin{matrix}
-\\sqrt{\\alpha} \\boldsymbol{I}\_{p \\times p} \\\\
-2 \\boldsymbol{\\theta}'
-\\end{matrix} \\right\]
-](https://latex.codecogs.com/png.latex?%0A%5Cboldsymbol%7BJ%7D%28%5Cboldsymbol%7B%5Ctheta%7D%29%20%5C%20%3D%20%5C%20%0A%5Cleft%5B%20%5Cbegin%7Bmatrix%7D%20%0A%5Cfrac%7B%5Cpartial%20f_1%7D%7B%5Cpartial%20%5Ctheta_1%7D%20%26%20%5Cldots%20%26%20%5Cfrac%7B%5Cpartial%20f_1%7D%7B%5Cpartial%20%5Ctheta_p%7D%20%5C%5C%0A%5Cvdots%20%26%20%5Cddots%20%26%20%5Cvdots%20%5C%5C%0A%5Cfrac%7B%5Cpartial%20f_%7Bp%2B1%7D%7D%7B%5Cpartial%20%5Ctheta_1%7D%20%26%20%5Cldots%20%26%20%5Cfrac%7B%5Cpartial%20f_%7Bp%2B1%7D%7D%7B%5Cpartial%20%5Ctheta_p%7D%0A%5Cend%7Bmatrix%7D%20%5Cright%5D%20%5C%20%3D%20%0A%5Cleft%5B%20%5Cbegin%7Bmatrix%7D%0A%5Csqrt%7B%5Calpha%7D%20%5Cboldsymbol%7BI%7D_%7Bp%20%5Ctimes%20p%7D%20%5C%5C%0A2%20%5Cboldsymbol%7B%5Ctheta%7D%27%0A%5Cend%7Bmatrix%7D%20%5Cright%5D%0A "
-\boldsymbol{J}(\boldsymbol{\theta}) \ = \ 
+![\boldsymbol{J}(\boldsymbol{\theta}) \\= \\
+\left\[ \begin{matrix} 
+\frac{\partial f_1}{\partial \theta_1} & \ldots & \frac{\partial f_1}{\partial \theta_p} \\
+\vdots & \ddots & \vdots \\
+\frac{\partial f\_{p+1}}{\partial \theta_1} & \ldots & \frac{\partial f\_{p+1}}{\partial \theta_p}
+\end{matrix} \right\] \\= 
+\left\[ \begin{matrix}
+\sqrt{\alpha} \boldsymbol{I}\_{p \times p} \\
+2 \boldsymbol{\theta}'
+\end{matrix} \right\]](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BJ%7D%28%5Cboldsymbol%7B%5Ctheta%7D%29%20%5C%20%3D%20%5C%20%0A%5Cleft%5B%20%5Cbegin%7Bmatrix%7D%20%0A%5Cfrac%7B%5Cpartial%20f_1%7D%7B%5Cpartial%20%5Ctheta_1%7D%20%26%20%5Cldots%20%26%20%5Cfrac%7B%5Cpartial%20f_1%7D%7B%5Cpartial%20%5Ctheta_p%7D%20%5C%5C%0A%5Cvdots%20%26%20%5Cddots%20%26%20%5Cvdots%20%5C%5C%0A%5Cfrac%7B%5Cpartial%20f_%7Bp%2B1%7D%7D%7B%5Cpartial%20%5Ctheta_1%7D%20%26%20%5Cldots%20%26%20%5Cfrac%7B%5Cpartial%20f_%7Bp%2B1%7D%7D%7B%5Cpartial%20%5Ctheta_p%7D%0A%5Cend%7Bmatrix%7D%20%5Cright%5D%20%5C%20%3D%20%0A%5Cleft%5B%20%5Cbegin%7Bmatrix%7D%0A%5Csqrt%7B%5Calpha%7D%20%5Cboldsymbol%7BI%7D_%7Bp%20%5Ctimes%20p%7D%20%5C%5C%0A2%20%5Cboldsymbol%7B%5Ctheta%7D%27%0A%5Cend%7Bmatrix%7D%20%5Cright%5D "\boldsymbol{J}(\boldsymbol{\theta}) \ = \ 
 \left[ \begin{matrix} 
 \frac{\partial f_1}{\partial \theta_1} & \ldots & \frac{\partial f_1}{\partial \theta_p} \\
 \vdots & \ddots & \vdots \\
@@ -972,18 +964,17 @@ Jacobian matrix is given by:
 \left[ \begin{matrix}
 \sqrt{\alpha} \boldsymbol{I}_{p \times p} \\
 2 \boldsymbol{\theta}'
-\end{matrix} \right]
-")
+\end{matrix} \right]")
 
 with
-![\\boldsymbol{I}\_{p \\times p}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BI%7D_%7Bp%20%5Ctimes%20p%7D "\boldsymbol{I}_{p \times p}")
+![\boldsymbol{I}\_{p \times p}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BI%7D_%7Bp%20%5Ctimes%20p%7D "\boldsymbol{I}_{p \times p}")
 the
-![(p \\times p)](https://latex.codecogs.com/png.latex?%28p%20%5Ctimes%20p%29 "(p \times p)")-dimensional
+![(p \times p)](https://latex.codecogs.com/png.latex?%28p%20%5Ctimes%20p%29 "(p \times p)")-dimensional
 identity matrix.
 
 The model residuals and Jacobian matrix can be written as a function of
 the parameter vector
-![\\boldsymbol{\\theta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Ctheta%7D "\boldsymbol{\theta}")
+![\boldsymbol{\theta}](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Ctheta%7D "\boldsymbol{\theta}")
 as,
 
 ``` r
@@ -1005,7 +996,7 @@ model as a `function` and setting the response vector `y` to a vector of
 zeros. The number of parameters is set to
 ![p = 500](https://latex.codecogs.com/png.latex?p%20%3D%20500 "p = 500")
 and as starting values we use
-![\\theta_1 = 1, \\ldots, \\theta_p = p](https://latex.codecogs.com/png.latex?%5Ctheta_1%20%3D%201%2C%20%5Cldots%2C%20%5Ctheta_p%20%3D%20p "\theta_1 = 1, \ldots, \theta_p = p")
+![\theta_1 = 1, \ldots, \theta_p = p](https://latex.codecogs.com/png.latex?%5Ctheta_1%20%3D%201%2C%20%5Cldots%2C%20%5Ctheta_p%20%3D%20p "\theta_1 = 1, \ldots, \theta_p = p")
 equivalent to the example in the GSL reference manual.
 
 ``` r
@@ -1021,11 +1012,8 @@ system.time({
     control = list(maxiter = 500)
   )
 })
-#>    user  system elapsed 
-#>  25.333   0.203  25.538
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_lm), "\n")
-#> Residual sum-of-squares: 0.00477904
 ```
 
 Second, the same model is fitted with a call to `gsl_nls_large()` using
@@ -1043,17 +1031,14 @@ system.time({
     control = list(maxiter = 500)
   )
 })
-#>    user  system elapsed 
-#>   1.516   0.088   1.604
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_cgst), "\n")
-#> Residual sum-of-squares: 0.00477885
 ```
 
 #### Sparse Jacobian matrix
 
 The Jacobian matrix
-![\\boldsymbol{J}(\\boldsymbol{\\theta})](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BJ%7D%28%5Cboldsymbol%7B%5Ctheta%7D%29 "\boldsymbol{J}(\boldsymbol{\theta})")
+![\boldsymbol{J}(\boldsymbol{\theta})](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BJ%7D%28%5Cboldsymbol%7B%5Ctheta%7D%29 "\boldsymbol{J}(\boldsymbol{\theta})")
 is very sparse in the sense that it contains only a small number of
 nonzero entries. The `gsl_nls_large()` function also accepts the
 calculated Jacobian as a sparse matrix of class `"dgCMatrix"`,
@@ -1086,13 +1071,6 @@ bench::mark(
   check = FALSE,
   min_iterations = 5
 )
-#> # A tibble: 4 × 6
-#>   expression       min   median `itr/sec` mem_alloc `gc/sec`
-#>   <bch:expr>  <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl>
-#> 1 Dense LM        4.5s    4.56s     0.216    1.32GB    6.71 
-#> 2 Dense CGST     1.42s    1.45s     0.669    1.21GB   16.9  
-#> 3 Sparse LM      3.87s    3.91s     0.256   29.47MB    0.563
-#> 4 Sparse CGST 500.25ms 502.31ms     1.99     27.1MB    3.58
 ```
 
 ## Other R-packages
@@ -1100,12 +1078,12 @@ bench::mark(
 Other CRAN R-packages interfacing with GSL that served as inspiration
 for this package include:
 
--   [RcppGSL](https://cran.r-project.org/web/packages/RcppGSL/index.html)
-    by Dirk Eddelbuettel and Romain Francois
--   [GSL](https://cran.r-project.org/web/packages/gsl/index.html) by
-    Robin Hankin and others
--   [RcppZiggurat](https://cran.r-project.org/web/packages/RcppZiggurat/index.html)
-    by Dirk Eddelbuettel
+- [RcppGSL](https://cran.r-project.org/web/packages/RcppGSL/index.html)
+  by Dirk Eddelbuettel and Romain Francois
+- [GSL](https://cran.r-project.org/web/packages/gsl/index.html) by Robin
+  Hankin and others
+- [RcppZiggurat](https://cran.r-project.org/web/packages/RcppZiggurat/index.html)
+  by Dirk Eddelbuettel
 
 # References
 

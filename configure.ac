@@ -1,5 +1,5 @@
 
-AC_INIT([gslnls],[1.3.0])
+AC_INIT([gslnls],[1.3.0],[https://github.com/JorisChau/gslnls/issues/])
 
 AC_PROG_CC
 
@@ -24,6 +24,8 @@ else
   exit 1;
 fi
 
+
+# check gsl version
 AC_MSG_CHECKING([if GSL version >= 2.2])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <string.h>

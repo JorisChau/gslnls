@@ -1,4 +1,3 @@
-## credits to Dirk Eddelbuettel and rccpziggurat
 PKG_CPPFLAGS= -I../windows/gsl-2.7/include -I../inst/include
 PKG_LIBS= -L../windows/gsl-2.7/lib${R_ARCH}${CRT} -lgsl -lgslcblas
 
