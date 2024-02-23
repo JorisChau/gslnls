@@ -14,4 +14,5 @@ Encoding: UTF-8
 Language: en-US
 License: LGPL-3
 SystemRequirements: GSL (>= 2.2)
+Biarch: true
 RoxygenNote: 7.2.3

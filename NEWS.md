@@ -4,6 +4,8 @@
 * `lower` and `upper` parameter constraints included in `gsl_nls()` 
 * Added 3 regression problems from Bates & Watts (1988)
 * Updated multi-start algorithm in `gsl_nls()`
+* Added configure.win, cleanup.win and Makevars.win.in
+* Removed old Makevars and Makevars.win
 * Several minor changes
 
 # glsnls 1.2.0

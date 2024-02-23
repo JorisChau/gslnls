@@ -1,14 +1,26 @@
 
 AC_INIT([gslnls],[1.3.0],[https://github.com/JorisChau/gslnls/issues/])
 
+: ${R_HOME=`R RHOME`}
+if test -z "${R_HOME}"; then
+  echo "could not determine R_HOME"
+  exit 1
+fi
+CC=`"${R_HOME}/bin/R" CMD config CC`
+CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
+LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
 AC_PROG_CC
+
+FC=`"${R_HOME}/bin/R" CMD config FC`
+FCLAGS=`"${R_HOME}/bin/R" CMD config FFLAGS`
+AC_PROG_FC
 
 AC_PATH_PROG([GSL_CONFIG], [gsl-config])
 
 if test "${GSL_CONFIG}" != ""; then
     # Use gsl-config for header and linker arguments (without BLAS which we get from R)
     GSL_CFLAGS=`${GSL_CONFIG} --cflags`
-    GSL_LIBS=`${GSL_CONFIG} --libs`
+    GSL_LIBS=`${GSL_CONFIG} --libs-without-cblas`
     CFLAGS="$CFLAGS $GSL_CFLAGS"
 else
     echo "------------------------- LIBGSL ERROR ------------------------------"
@@ -56,6 +68,5 @@ fi
 
 AC_SUBST(GSL_CFLAGS)
 AC_SUBST(GSL_LIBS)
-
 AC_CONFIG_FILES([src/Makevars])
 AC_OUTPUT

@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+
+: ${R_HOME=`R RHOME`}
+if test -z "${R_HOME}"; then
+  echo "could not determine R_HOME"
+  exit 1
+fi
+CC=`"${R_HOME}/bin/R" CMD config CC`
+CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
+LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
+
+if test "${LIB_GSL}" != ""; then
+    # Use gsl-config for header and linker arguments (without BLAS which we get from R)
+    GSL_CFLAGS="-I${LIB_GSL}/include"
+    GSL_LIBS=`"-L${LIB_GSL}/lib -lgsl -lgslcblas"
+else
+    echo "------------------------- LIBGSL ERROR ---------------------------------"
+    echo "Configuration failed because LIB_GSL environment variable was not found."
+    echo "Set variable LIB_GSL to the parent of the directory containing libgsl.a,"
+    echo "which is usually '${RTOOLS_HOME}/mingw64'. Note the use of forward and"
+    echo "not backward slashes in the directory path. If GSL (>= 2.2) is not yet"
+    echo "installed, install GSL using the Rtools package manager with e.g.,"
+    echo "pacman -S mingw-w64-{i686,x86_64}-libgsl. (See the Rtools documentation"
+    echo "for additional details)."
+    echo "------------------------------------------------------------------------"
+  exit 1;
+fi
+
+sed \
+  -e "s|@GSL_CFLAGS@|${GSL_CFLAGS}|" \
+  -e "s|@GSL_LIBS@|${GSL_LIBS}|" \
+  src/Makevars.win.in > src/Makevars.win
