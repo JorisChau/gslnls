@@ -44,6 +44,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      LIB_GSL: C:/rtools43/x86_64-w64-mingw32.static.posix
 
     steps:
       - name: Configure git
@@ -59,7 +60,7 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      - name: Install lib-gsl
+      - name: Install lib-gsl (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install gsl
