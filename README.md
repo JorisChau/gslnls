@@ -81,9 +81,16 @@ instructions in the included README and INSTALL files.
 
 ##### Windows
 
-On windows, a binary version of GSL (2.7) is automatically downloaded
-from <https://github.com/rwinlib/gsl> when installing the R-package, no
-additional action is needed.
+A binary version of GSL (2.7) can be installed using the Rtools package
+manager (see
+e.g. <https://github.com/r-windows/docs/blob/master/rtools40.md>):
+
+    pacman -S mingw-w64-{i686,x86_64}-gsl
+
+On windows, the environment variable `LIB_GSL` must be set to the parent
+of the directory containing `libgsl.a`. Note that forward instead of
+backward slashes should be used in the directory path
+(e.g. `C:/rtools43/x86_64-w64-mingw32.static.posix`).
 
 ### R-package installation
 

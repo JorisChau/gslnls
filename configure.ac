@@ -17,7 +17,7 @@ AC_PROG_FC
 
 AC_PATH_PROG([GSL_CONFIG], [gsl-config])
 
-if test "${GSL_CONFIG}" != ""; then
+if test -n "${GSL_CONFIG}"; then
     # Use gsl-config for header and linker arguments (without BLAS which we get from R)
     GSL_CFLAGS=`${GSL_CONFIG} --cflags`
     GSL_LIBS=`${GSL_CONFIG} --libs-without-cblas`

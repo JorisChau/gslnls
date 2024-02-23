@@ -9,7 +9,7 @@ CC=`"${R_HOME}/bin/R" CMD config CC`
 CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
 LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
 
-if test "${LIB_GSL}" != ""; then
+if test -n "${LIB_GSL}"; then
     # Use LIB_GSL for header and linker arguments
     GSL_CFLAGS="-I${LIB_GSL}/include"
     GSL_LIBS=`"-L${LIB_GSL}/lib -lgsl -lgslcblas"
@@ -17,11 +17,11 @@ else
     echo "------------------------- LIBGSL ERROR ---------------------------------"
     echo "Configuration failed because environment variable LIB_GSL was not found."
     echo "Set variable LIB_GSL to the parent of the directory containing libgsl.a,"
-    echo "which is usually '${RTOOLS_HOME_4x}/mingw64'. Note the use of forward"
-    echo "instead of backward slashes in the directory path. If GSL (>= 2.2) is"
-    echo "not yet installed, install GSL using the Rtools package manager, e.g."
-    echo "pacman -S mingw-w64-{i686,x86_64}-libgsl. (See the Rtools documentation"
-    echo "for additional details)."
+    echo "for instance <RTOOLS43_HOME>/x86_64-w64-mingw32.static.posix. Note the"
+    echo "use of forward instead of backward slashes in the directory path. If GSL"
+    echo "(>= 2.2) is not yet installed, preferably install GSL using the Rtools"
+    echo "package manager, e.g. pacman -S mingw-w64-{i686,x86_64}-libgsl. (See the"
+    echo "Rtools documentation for additional details)."
     echo "------------------------------------------------------------------------"
   exit 1;
 fi
