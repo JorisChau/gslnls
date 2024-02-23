@@ -68,8 +68,8 @@ jobs:
       - name: Install gsl (windows)
         if: runner.os == 'windows'
         run: |
-          pacman -Sy
-          pacman -S mingw-w64-{i686,x86_64}-gsl
+          pacman -Sy --noconfirm
+          pacman -S --noconfirm mingw-w64-{i686,x86_64}-gsl
         shell: C:\rtools43\usr\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
 
       - uses: r-lib/actions/setup-r-dependencies@v2
