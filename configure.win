@@ -11,8 +11,8 @@ LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
 
 if test -n "${LIB_GSL}"; then
     # Use LIB_GSL for header and linker arguments
-    GSL_CFLAGS="-I${LIB_GSL}/include"
-    GSL_LIBS=`"-L${LIB_GSL}/lib -lgsl -lgslcblas"
+    GSL_CFLAGS='-I"${LIB_GSL}/include"'
+    GSL_LIBS='-L${LIB_GSL}/lib -lgsl -lgslcblas'
 else
     echo "------------------------- LIBGSL ERROR ---------------------------------"
     echo "Configuration failed because environment variable LIB_GSL was not found."
