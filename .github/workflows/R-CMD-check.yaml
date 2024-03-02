@@ -44,8 +44,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
-      RTOOLS43_HOME: 'C:\rtools43'
-
+      
     steps:
       - name: Configure git
         run: git config --global core.autocrlf false
@@ -71,7 +70,7 @@ jobs:
         run: |
           pacman -Sy --noconfirm
           pacman -S --noconfirm mingw-w64-{i686,x86_64}-gsl
-        shell: ${{ RTOOLS43_HOME }}\usr\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+        shell: C:\rtools43\usr\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
