@@ -11,7 +11,7 @@ LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
 R_VER=`"${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" --vanilla -e "cat(paste0(version[['major']], as.integer(version[['minor']])))"`
 
 # Set LIB_GSL for gh-actions and r-winbuilder
-if [ -z "${LIB_GSL}" ] && [ "${R_VER}" = '43' ] && [ -n "${RTOOLS43_HOME}" ] && [ -f "${RTOOLS43_HOME}/x86_64-w64-mingw32.static.posix/lib/libgsl.a" ]; then
+if [ -z "${LIB_GSL}" ] && ([ "${R_VER}" = '43' || "${R_VER}" = '44' ]) && [ -n "${RTOOLS43_HOME}" ] && [ -f "${RTOOLS43_HOME}/x86_64-w64-mingw32.static.posix/lib/libgsl.a" ]; then
     echo "** LIB_GSL is missing, detected GSL installation in ${RTOOLS43_HOME}"
     LIB_GSL="${RTOOLS43_HOME}/x86_64-w64-mingw32.static.posix'"
 fi
