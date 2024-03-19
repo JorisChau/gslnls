@@ -67,8 +67,10 @@
 #' }
 #' @param control an optional list of control parameters to tune the least squares iterations and multistart algorithm.
 #' See \code{\link{gsl_nls_control}} for the available control parameters and their default values.
-#' @param lower	a named list or named numeric vector of parameter lower bounds. If missing (default), the parameters are unconstrained from below.
-#' @param upper a named list or named numeric vector of parameter upper bounds. If missing (default), the parameters are unconstrained from above.
+#' @param lower	a named list or named numeric vector of parameter lower bounds, or an unnamed numeric
+#' scalar to be replicated for all parameters. If missing (default), the parameters are unconstrained from below.
+#' @param upper a named list or named numeric vector of parameter upper bounds, or an unnamed numeric
+#' scalar to be replicated for all parameters. If missing (default), the parameters are unconstrained from above.
 #' @param jac either \code{NULL} (default) or a \link{function} returning the \code{n} by \code{p} dimensional Jacobian matrix of
 #' the nonlinear model \code{fn}, where \code{n} is the number of observations and \code{p} the
 #' number of parameters. If a function, the first argument must be the vector of parameters of length \code{p}.
@@ -470,8 +472,8 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
 
   ## parameter constraints
   if(!missing(lower) || !missing(upper)) {
-    if(missing(lower)) lower <- structure(rep(-Inf, names = pnames))
-    if(missing(upper)) upper <- structure(rep(Inf, names = pnames))
+    if(missing(lower)) lower <- structure(rep(-Inf, length(pnames)), names = pnames)
+    if(missing(upper)) upper <- structure(rep(Inf, length(pnames)), names = pnames)
     if(is.list(lower)) {
       if(any(lengths(lower) != 1L))
         stop("List elements of 'lower' must have exactly length 1 to specify parameter lower bounds")
@@ -482,10 +484,14 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
         stop("List elements of 'upper' must have exactly length 1 to specify parameter upper bounds")
       upper <- unlist(upper)
     }
-    if(any(is.na(match(names(lower), pnames))))
-      stop("Unrecognized parameter names present in 'lower'")
-    if(any(is.na(match(names(upper), pnames))))
-      stop("Unrecognized parameter names present in 'upper'")
+    if(is.null(names(lower)) && identical(length(lower), 1L) && length(pnames) > 1L)
+      lower <- structure(rep(lower, length(pnames)), names = pnames)
+    if(is.null(names(upper)) && identical(length(upper), 1L) && length(pnames) > 1L)
+      upper <- structure(rep(upper, length(pnames)), names = pnames)
+    if(is.null(names(lower)) || any(is.na(match(names(lower), pnames))))
+      stop("Failed to match parameter names between 'start' and 'lower'")
+    if(is.null(names(upper)) || any(is.na(match(names(upper), pnames))))
+      stop("Failed to match parameter names between 'start' and 'upper'")
     if(is.matrix(start))
       startnames <- colnames(start)
     else
@@ -768,8 +774,8 @@ gsl_nls.function <- function(fn, y, start,
       pnames <- colnames(.start)
     else
       pnames <- names(.start)
-    if(missing(lower)) lower <- structure(rep(-Inf, names = pnames))
-    if(missing(upper)) upper <- structure(rep(Inf, names = pnames))
+    if(missing(lower)) lower <- structure(rep(-Inf, length(pnames)), names = pnames)
+    if(missing(upper)) upper <- structure(rep(Inf, length(pnames)), names = pnames)
     if(is.list(lower)) {
       if(any(lengths(lower) != 1L))
         stop("List elements of 'lower' must have exactly length 1 to specify parameter lower bounds")
@@ -780,10 +786,14 @@ gsl_nls.function <- function(fn, y, start,
         stop("List elements of 'upper' must have exactly length 1 to specify parameter upper bounds")
       upper <- unlist(upper)
     }
-    if(any(is.na(match(names(lower), pnames))))
-      stop("Unrecognized parameter names present in 'lower'")
-    if(any(is.na(match(names(upper), pnames))))
-      stop("Unrecognized parameter names present in 'upper'")
+    if(is.null(names(lower)) && identical(length(lower), 1L) && length(pnames) > 1L)
+      lower <- structure(rep(lower, length(pnames)), names = pnames)
+    if(is.null(names(upper)) && identical(length(upper), 1L) && length(pnames) > 1L)
+      upper <- structure(rep(upper, length(pnames)), names = pnames)
+    if(is.null(names(lower)) || any(is.na(match(names(lower), pnames))))
+      stop("Failed to match parameter names between 'start' and 'lower'")
+    if(is.null(names(upper)) || any(is.na(match(names(upper), pnames))))
+      stop("Failed to match parameter names between 'start' and 'upper'")
     .lupars <- matrix(rep(c(-Inf, Inf), times = length(pnames)), nrow = 2L, ncol = length(pnames), dimnames = list(NULL, pnames))
     .lupars[1, match(names(lower), pnames)] <- unname(lower)
     .lupars[2, match(names(upper), pnames)] <- unname(upper)
