@@ -446,7 +446,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
         as.formula(paste("~", paste(vNms, collapse = "+")),
                    env = environment(formula))
       mf$start <- mf$control <- mf$algorithm <- mf$trace <- mf$model <-
-        mf$fn <- mf$jac <- mf$fvv <-mf$lower <- mf$upper <- NULL
+        mf$fn <- mf$jac <- mf$fvv <- mf$lower <- mf$upper <- NULL
       ## need stats:: for non-standard evaluation
       mf[[1L]] <- quote(stats::model.frame)
       mf <- eval.parent(mf)
