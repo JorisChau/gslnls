@@ -383,15 +383,15 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     ## Handle infinite/missing start values
     if(is.vector(start)) {
       if(any((napars <- sapply(start, Negate(is.finite))))) {
-        start <- vapply(names(start), function(nm) if(napars[[nm]]) c(0, 1) else rep(start[[nm]], 2L), numeric(2))
+        start <- vapply(names(start), function(nm) if(napars[[nm]]) c(-0.1, 0.75) else rep(start[[nm]], 2L), numeric(2))
         .has_start <- sapply(!napars, rep, times = 2L)
       } else {
         .has_start <- !napars  ## not used (single-start)
       }
     } else if(is.matrix(start)) {
       if(any(napars <- apply(start, 2L, Negate(is.finite)))) {
-        start[1L, napars[1L, ]]  <- 0
-        start[2L, napars[2L, ]] <- 1
+        start[1L, napars[1L, ]]  <- -0.1
+        start[2L, napars[2L, ]] <- 0.75
       }
       .has_start <- !napars
     } else {
@@ -501,9 +501,18 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     .lupars[2, match(names(upper), pnames)] <- unname(upper)
     if(any(.lupars[1L, ] > .lupars[2L, ]))
       stop("Parameter lower bounds cannot be larger than upper bounds")
-    if(is.matrix(start) && (any(start[1, ] < .lupars[1, ] | start[2, ] > .lupars[2, ])))
-      stop("Starting parameter ranges must be contained within 'lower' and 'upper' bounds")
-    else if(!is.matrix(start) && any(vapply(startnames, function(nm) start[[nm]] < .lupars[1, nm] || start[[nm]] > .lupars[2, nm], logical(1))))
+    if(is.matrix(start)) {
+      if(any(!.has_start[1, ])) {
+        start1 <- start[1, !.has_start[1, ]]
+        start[1, !.has_start[1, ]] <- pmax(start1, .lupars[1, !.has_start[1, ]])
+        start[2, !.has_start[2, ]] <- start[2, !.has_start[2, ]] + (start[1, !.has_start[1, ]] - start1)
+      }
+      if(any(!.has_start[2, ])) {
+        start[2, !.has_start[2, ]] <- pmin(start[2, !.has_start[2, ]], .lupars[2, !.has_start[2, ]])
+      }
+      if(any(start[1, ] < .lupars[1, ] | start[2, ] > .lupars[2, ]))
+        stop("Starting parameter ranges must be contained within 'lower' and 'upper' bounds")
+    } else if(!is.matrix(start) && any(vapply(startnames, function(nm) start[[nm]] < .lupars[1, nm] || start[[nm]] > .lupars[2, nm], logical(1))))
       stop("Starting parameters must be contained within 'lower' and/or 'upper' bounds")
     if(all(is.infinite(.lupars))) {
       .lupars <- NULL
@@ -616,7 +625,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   .ctrl$solver <- match.arg(.ctrl$solver, c("qr", "cholesky", "svd"))
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
   stopifnot(
-    is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter > 0,
+    is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter >= 1,
     is.numeric(.ctrl$factor_up), length(.ctrl$factor_up) == 1, .ctrl$factor_up > 0,
     is.numeric(.ctrl$factor_down), length(.ctrl$factor_down) == 1, .ctrl$factor_down > 0,
     is.numeric(.ctrl$avmax), length(.ctrl$avmax) == 1, .ctrl$avmax > 0,
@@ -734,15 +743,15 @@ gsl_nls.function <- function(fn, y, start,
   ## Handle infinite/missing start values
   if(is.vector(.start)) {
     if(any((napars <- sapply(.start, Negate(is.finite))))) {
-      .start <- vapply(names(.start), function(nm) if(napars[[nm]]) c(0, 1) else rep(.start[[nm]], 2L), numeric(2))
+      .start <- vapply(names(.start), function(nm) if(napars[[nm]]) c(-0.1, 0.75) else rep(.start[[nm]], 2L), numeric(2))
       .has_start <- sapply(!napars, rep, times = 2L)
     } else {
       .has_start <- !napars  ## not used (single-start)
     }
   } else if(is.matrix(.start)) {
     if(any(napars <- apply(.start, 2L, Negate(is.finite)))) {
-      .start[1L, napars[1L, ]]  <- 0
-      .start[2L, napars[2L, ]] <- 1
+      .start[1L, napars[1L, ]]  <- -0.1
+      .start[2L, napars[2L, ]] <- 0.75
     }
     .has_start <- !napars
   } else {
@@ -799,9 +808,18 @@ gsl_nls.function <- function(fn, y, start,
     .lupars[2, match(names(upper), pnames)] <- unname(upper)
     if(any(.lupars[1L, ] > .lupars[2L, ]))
       stop("Parameter lower bounds cannot be larger than upper bounds")
-    if(is.matrix(.start) && (any(.start[1, ] < .lupars[1, ] | .start[2, ] > .lupars[2, ])))
-      stop("Starting parameter ranges must be contained within 'lower' and 'upper' bounds")
-    else if(!is.matrix(.start) && any(vapply(pnames, function(nm) .start[[nm]] < .lupars[1, nm] || .start[[nm]] > .lupars[2, nm], logical(1))))
+    if(is.matrix(.start)) {
+      if(any(!.has_start[1, ])) {
+        start1 <- .start[1, !.has_start[1, ]]
+        .start[1, !.has_start[1, ]] <- pmax(start1, .lupars[1, !.has_start[1, ]])
+        .start[2, !.has_start[2, ]] <- .start[2, !.has_start[2, ]] + (.start[1, !.has_start[1, ]] - start1)
+      }
+      if(any(!.has_start[2, ])) {
+        .start[2, !.has_start[2, ]] <- pmin(.start[2, !.has_start[2, ]], .lupars[2, !.has_start[2, ]])
+      }
+      if(any(.start[1, ] < .lupars[1, ] | .start[2, ] > .lupars[2, ]))
+        stop("Starting parameter ranges must be contained within 'lower' and 'upper' bounds")
+    } else if(!is.matrix(.start) && any(vapply(pnames, function(nm) .start[[nm]] < .lupars[1, nm] || .start[[nm]] > .lupars[2, nm], logical(1))))
       stop("Starting parameters must be contained within 'lower' and/or 'upper' bounds")
     if(all(is.infinite(.lupars))) {
       .lupars <- NULL
@@ -888,7 +906,7 @@ gsl_nls.function <- function(fn, y, start,
   .ctrl$solver <- match.arg(.ctrl$solver, c("qr", "cholesky", "svd"))
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
   stopifnot(
-    is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter > 0,
+    is.numeric(.ctrl$maxiter), length(.ctrl$maxiter) == 1, .ctrl$maxiter >= 1,
     is.numeric(.ctrl$factor_up), length(.ctrl$factor_up) == 1, .ctrl$factor_up > 0,
     is.numeric(.ctrl$factor_down), length(.ctrl$factor_down) == 1, .ctrl$factor_down > 0,
     is.numeric(.ctrl$avmax), length(.ctrl$avmax) == 1, .ctrl$avmax > 0,
@@ -1025,10 +1043,10 @@ gsl_nls.function <- function(fn, y, start,
 #' defaults to \code{sqrt(.Machine$double.eps)}.
 #' @param gtol numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
 #' indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}
-#' @param mstart_n positive integer, number of quasirandom points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 25.
+#' @param mstart_n positive integer, number of quasirandom points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 30.
 #' @param mstart_p positive integer, number of iterations of inexpensive local search to concentrate the sample, parameter \code{p} in Hickernell and Yuan (1997). Default is 5.
-#' @param mstart_q positive integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is 5.
-#' @param mstart_r positive integer, scaling factor of number of stationary points determining when the multi-start algorithm terminates, parameter \code{r} in Hickernell and Yuan (1997). Default is 3.
+#' @param mstart_q positive integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is \code{mstart_n \%/\% 10}..
+#' @param mstart_r positive integer, scaling factor of number of stationary points determining when the multi-start algorithm terminates, parameter \code{r} in Hickernell and Yuan (1997). Default is 4.
 #' If the starting ranges for one or more parameters are unbounded and updated dynamically, \code{mstart_r} is multiplied by a factor 10 to avoid early termination.
 #' @param mstart_s positive integer, minimum number of iterations a point needs to be retained before starting an efficient local search, parameter \code{s} in Hickernell and Yuan (1997). Default is 2.
 #' @param mstart_tol numeric value, multiplicative tolerance \code{(1 + mstart_tol)} used as criterion to start an efficient local search (epsilon in Algorithm 2.1, Hickernell and Yuan (1997)).
@@ -1073,17 +1091,17 @@ gsl_nls.function <- function(fn, y, start,
 gsl_nls_control <- function(maxiter = 100, scale = "more", solver = "qr",
                             fdtype = "forward", factor_up = 2, factor_down = 3, avmax = 0.75,
                             h_df = sqrt(.Machine$double.eps), h_fvv = 0.02, xtol = sqrt(.Machine$double.eps),
-                            ftol = sqrt(.Machine$double.eps), gtol = .Machine$double.eps^(1/3),
-                            mstart_n = 25, mstart_p = 5, mstart_q = 5, mstart_r = 3, mstart_s = 2,
-                            mstart_tol = 0.5, mstart_maxiter = maxiter %/% 10,
-                            mstart_maxstart = 1000, mstart_minsp = 1) {
+                            ftol = sqrt(.Machine$double.eps), gtol = sqrt(.Machine$double.eps),
+                            mstart_n = 30, mstart_p = 5, mstart_q = mstart_n %/% 10, mstart_r = 4, mstart_s = 2,
+                            mstart_tol = 0.25, mstart_maxiter = maxiter %/% 10,
+                            mstart_maxstart = 250, mstart_minsp = 1) {
 
   scale <- match.arg(scale, c("more", "levenberg", "marquardt"))
   solver <- match.arg(solver, c("qr", "cholesky", "svd"))
   fdtype <- match.arg(fdtype, c("forward", "center"))
 
   stopifnot(
-    is.numeric(maxiter), length(maxiter) == 1, maxiter > 0,
+    is.numeric(maxiter), length(maxiter) == 1, maxiter >= 1,
     is.numeric(factor_up), length(factor_up) == 1, factor_up > 0,
     is.numeric(factor_down), length(factor_down) == 1, factor_down > 0,
     is.numeric(avmax), length(avmax) == 1, avmax > 0,

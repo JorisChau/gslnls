@@ -56,13 +56,20 @@ static void C_nls_cleanup(void *data)
         gsl_vector_free(pars->diag);
     if (pars->lu)
         gsl_matrix_free(pars->lu);
+    if (pars->JTJ)
+        gsl_matrix_free(pars->JTJ);
+    if (pars->workn)
+        gsl_vector_free(pars->workn);
+    if (pars->mpopt1)
+        gsl_vector_free(pars->mpopt1);
 }
 
 /* function call w/ cleanup */
 SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP lupars, SEXP control_int, SEXP control_dbl, SEXP has_start)
 {
     /* function arguments */
-    pdata pars = {fn, y, jac, fvv, env, start, swts, lupars, control_int, control_dbl, has_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    pdata pars = {fn, y, jac, fvv, env, start, swts, lupars, control_int, control_dbl, has_start,
+                  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
     /* safe function call */
     SEXP ans = R_ExecWithCleanup(C_nls_internal, &pars, C_nls_cleanup, &pars);
@@ -263,6 +270,21 @@ SEXP C_nls_internal(void *data)
         else
             pars->q = gsl_qrng_alloc(gsl_qrng_halton, p);
 
+        /* manually initialize workspace */
+        (pars->w)->fdf = &fdf;
+        if (!Rf_isNull(pars->swts))
+        {
+            double wi;
+            (pars->w)->sqrt_wts = (pars->w)->sqrt_wts_work;
+            for (R_len_t i = 0; i < n; i++)
+            {
+                wi = gsl_vector_get(pars->wts, i);
+                gsl_vector_set((pars->w)->sqrt_wts, i, sqrt(wi));
+            }
+        }
+        else
+            (pars->w)->sqrt_wts = NULL;
+
         /* multistart parameters */
         mdata mpars;
         mpars.n = INTEGER_ELT(pars->control_int, 6);
@@ -276,9 +298,9 @@ SEXP C_nls_internal(void *data)
         mpars.has_start = LOGICAL(pars->has_start);
         mpars.r = REAL_ELT(pars->control_dbl, 8);
         mpars.tol = REAL_ELT(pars->control_dbl, 9);
+        mpars.dtol = 1.0e-6;
         mpars.ntix = (int *)S_alloc(mpars.n, sizeof(int));
         mpars.qmp = (double *)S_alloc(p, sizeof(double));
-        mpars.startptr = REAL(pars->start);
         mpars.mssr_order = (int *)R_alloc(mpars.n, sizeof(int));
         mpars.mstop = GSL_CONTINUE;
         mpars.mstarts = 0;
@@ -286,8 +308,19 @@ SEXP C_nls_internal(void *data)
         mpars.nwsp = 0;
         mpars.luchange = (int *)S_alloc(p, sizeof(int));
         mpars.rejectscl = 1.25;
-        mpars.mssropt = (double)GSL_POSINF;
-        mpars.ssrconv = 1.0;
+        mpars.mssropt[0] = (double)GSL_POSINF;
+        mpars.mssropt[1] = (double)GSL_POSINF;
+        mpars.ssrconv[0] = 1.0;
+        mpars.ssrconv[1] = 1.0;
+        mpars.start = (double *)R_alloc(2 * p, sizeof(double));
+        mpars.maxlims = (double *)R_alloc(2 * p, sizeof(double));
+
+        // mpoptinfo mpoptall;
+        // mpoptall.mpcount = 0;
+        // mpoptall.mpmax = 100;
+        // mpoptall.mpall = (double *)S_alloc(mpars.p * mpoptall.mpmax, sizeof(double));
+        // mpoptall.mpradii = (double *)S_alloc(mpars.p * mpoptall.mpmax, sizeof(double));
+        // mpars.mpopt = &mpoptall;
 
         SEXP mssr = PROTECT(Rf_allocVector(REALSXP, mpars.n));
         SEXP mpar = PROTECT(Rf_allocVector(REALSXP, p));
@@ -295,26 +328,36 @@ SEXP C_nls_internal(void *data)
         params.start = mpar;
         nprotect += 2;
 
-        /* placeholder matrices/vectors */
+        /* workspace matrices/vectors */
         pars->mx = gsl_matrix_alloc(mpars.n, p);
         pars->mp = gsl_vector_alloc(p);
         pars->diag = gsl_vector_alloc(p);
+        pars->JTJ = gsl_matrix_alloc(p, p);
+        pars->mpopt1 = gsl_vector_alloc(p);
+
+        double *startptr = REAL(pars->start);
+        for (R_len_t k = 0; k < p; k++)
+        {
+            mpars.start[2 * k] = startptr[2 * k];
+            mpars.start[2 * k + 1] = startptr[2 * k + 1];
+            mpars.maxlims[2 * k] = startptr[2 * k];
+            mpars.maxlims[2 * k + 1] = startptr[2 * k + 1];
+        }
 
         /* initially focus sampling around center points */
         for (R_len_t k = 0; k < p; k++)
         {
             if (!(mpars.has_start)[2 * k] || !(mpars.has_start)[2 * k + 1])
             {
-                gsl_vector_set(pars->diag, k, 0.9);
+                gsl_vector_set(pars->diag, k, 1.0);
                 mpars.all_start = FALSE;
             }
             else
             {
                 gsl_vector_set(pars->diag, k, 0.75);
-                if((mpars.startptr)[2 * k] + xtol > (mpars.startptr)[2 * k + 1])
-                    mpars.rejectscl = -1.0;  // starting range is not an interval
+                if ((mpars.start)[2 * k] + xtol > (mpars.start)[2 * k + 1])
+                    mpars.rejectscl = -1.0; // starting range is not an interval
             }
-            
         }
 
         /* multi-start global iterations */
@@ -324,10 +367,15 @@ SEXP C_nls_internal(void *data)
 
             /* check stopping criterion */
             mpars.mstarts += 1;
+            
             if (mpars.mstarts > mpars.max)
                 mpars.mstop = GSL_EMAXITER;
-            if (mpars.nsp >= mpars.minsp && mpars.nwsp >= mpars.r * mpars.nsp)
+            
+            if (mpars.nsp >= mpars.minsp && mpars.nwsp > (mpars.r + sqrt(mpars.r) * mpars.nsp))
                 mpars.mstop = GSL_SUCCESS;
+            
+            if (!(mpars.mstarts % 10) && !(mpars.mssropt[0] < (double)GSL_POSINF))
+                mpars.dtol = gsl_max(0.5 * mpars.dtol, __DBL_EPSILON__);
 
         } while (mpars.mstop == GSL_CONTINUE);
         if (verbose)
@@ -338,14 +386,19 @@ SEXP C_nls_internal(void *data)
                 Rprintf("multi-start algorithm reached max. number of global iterations (NSP = %d, NWSP = %d, # iterations = %d)\n", mpars.nsp, mpars.nwsp, mpars.mstarts);
             Rprintf("*******************\n");
         }
-
-        /* add small jitter to parameters */
-        if (mpars.mssropt < ftol || mpars.ssrconv < ftol)
+        if (mpars.mssropt[1] < mpars.mssropt[0])
         {
-            if(pars->lu)
-                gsl_vector_set(pars->mpopt, 0, gsl_min(gsl_vector_get(pars->mpopt, 0) + 1e4, gsl_matrix_get(pars->lu, 1, 0)));
-            else 
-                gsl_vector_set(pars->mpopt, 0, gsl_vector_get(pars->mpopt, 0) + 1e-4);
+            mpars.mssropt[0] = mpars.mssropt[1];
+            mpars.ssrconv[0] = mpars.ssrconv[1];
+            gsl_vector_memcpy(pars->mpopt, pars->mpopt1);
+        }
+        /* add small jitter to parameters */
+        if (mpars.mssropt[0] < ftol || mpars.ssrconv[0] < ftol)
+        {
+            if (pars->lu)
+                gsl_vector_set(pars->mpopt, 0, gsl_min(gsl_vector_get(pars->mpopt, 0) + 1.0e-4, gsl_matrix_get(pars->lu, 1, 0)));
+            else
+                gsl_vector_set(pars->mpopt, 0, gsl_vector_get(pars->mpopt, 0) + 1.0e-4);
         }
     }
     else /* single-start */
@@ -587,17 +640,17 @@ GSL_MAXITER if maxiter exceeded without converging
 GSL_ENOPROG if no accepted step found on first iteration
 */
 static int gsl_multifit_nlinear_driver2(const R_len_t maxiter,
-                                 const double xtol,
-                                 const double gtol,
-                                 const double ftol,
-                                 void (*callback)(const R_len_t iter, void *params,
-                                                  const gsl_multifit_nlinear_workspace *w),
-                                 void *callback_params,
-                                 int *info,
-                                 double *chisq0,
-                                 double *chisq1,
-                                 const gsl_matrix *lu,
-                                 gsl_multifit_nlinear_workspace *w)
+                                        const double xtol,
+                                        const double gtol,
+                                        const double ftol,
+                                        void (*callback)(const R_len_t iter, void *params,
+                                                         const gsl_multifit_nlinear_workspace *w),
+                                        void *callback_params,
+                                        int *info,
+                                        double *chisq0,
+                                        double *chisq1,
+                                        const gsl_matrix *lu,
+                                        gsl_multifit_nlinear_workspace *w)
 {
     int status = GSL_CONTINUE;
     R_len_t iter = 0;
@@ -850,31 +903,34 @@ static void callback(const R_len_t iter, void *params, const gsl_multifit_nlinea
 }
 
 static void gsl_multistart_driver(pdata *pars,
-                           mdata *mpars,
-                           gsl_multifit_nlinear_fdf *fdff,
-                           SEXP mssr,
-                           const double xtol,
-                           const double ftol,
-                           const double gtol,
-                           Rboolean verbose)
+                                  mdata *mpars,
+                                  gsl_multifit_nlinear_fdf *fdff,
+                                  SEXP mssr,
+                                  const double xtol,
+                                  const double ftol,
+                                  const double gtol,
+                                  Rboolean verbose)
 {
     // initialize variables
     int minfo;
     R_len_t p = (R_len_t)(pars->mp->size);
     double kd, l0, l1, diagmin;
-    double rcond, mchisq0 = (double)GSL_POSINF, mchisq1 = (double)GSL_POSINF;
+    // double rcond;
+    double det_jtj, mchisq0 = (double)GSL_POSINF, mchisq1 = (double)GSL_POSINF;
     trust_state_t *trust_state = (trust_state_t *)(pars->w->state);
 
     /* sample initial points */
     for (R_len_t nn = 0; nn < mpars->n; nn++)
     {
+        SET_REAL_ELT(mssr, nn, NA_REAL);
+
         if ((mpars->ntix)[nn] == 0)
         {
             gsl_qrng_get(pars->q, mpars->qmp);
             for (R_len_t k = 0; k < p; k++)
             {
-                l0 = (mpars->startptr)[2 * k];
-                l1 = (mpars->startptr)[2 * k + 1];
+                l0 = (mpars->start)[2 * k];
+                l1 = (mpars->start)[2 * k + 1];
                 if (l1 > l0)
                 {
                     kd = gsl_vector_get(pars->diag, k);
@@ -894,28 +950,64 @@ static void gsl_multistart_driver(pdata *pars,
                 }
             }
         }
+        /* calculate det(J^T * J) */
+        gsl_vector_view nnx = gsl_matrix_row(pars->mx, nn);
+        gsl_vector_memcpy((pars->w)->x, &nnx.vector);
+        det_jtj = det_eval_jtj((pars->w)->params, (pars->w)->sqrt_wts, (pars->w)->fdf, (pars->w)->x, (pars->w)->f, (pars->w)->J, pars->JTJ, pars->workn);
 
-        /* concentrate points */
-        gsl_matrix_get_row(pars->mp, pars->mx, nn);
-        if (!Rf_isNull(pars->swts))
-            gsl_multifit_nlinear_winit(pars->mp, pars->wts, fdff, pars->w);
-        else
-            gsl_multifit_nlinear_init(pars->mp, fdff, pars->w);
-        gsl_multifit_nlinear_driver2(mpars->p, xtol, 1e-3, ftol, NULL, NULL, &minfo, &mchisq0, &mchisq1, pars->lu, pars->w);
-        gsl_matrix_set_row(pars->mx, nn, (pars->w)->x);
-        if (mchisq1 < (double)GSL_POSINF)
+        if (det_jtj > mpars->dtol)
         {
-            SET_REAL_ELT(mssr, nn, mchisq1);
-            if (mchisq1 < 0.99 * (mpars->mssropt)) // in case no stationary points found
+            gsl_matrix_get_row(pars->mp, pars->mx, nn);
+
+            /* concentrate point */
+            if (!Rf_isNull(pars->swts))
+                gsl_multifit_nlinear_winit(pars->mp, pars->wts, fdff, pars->w);
+            else
+                gsl_multifit_nlinear_init(pars->mp, fdff, pars->w);
+            gsl_multifit_nlinear_driver2(mpars->p, xtol, 1e-3, ftol, NULL, NULL, &minfo, &mchisq0, &mchisq1, pars->lu, pars->w);
+
+            det_jtj = det_cholesky_jtj((pars->w)->J, pars->JTJ);
+
+            if (mchisq1 < (double)GSL_POSINF)
             {
-                mpars->mssropt = mchisq1;
-                mpars->ssrconv = mchisq0 - mchisq1;
-                gsl_vector_memcpy(pars->mpopt, (pars->w)->x);
+                if (det_jtj > mpars->dtol)
+                {
+                    gsl_matrix_set_row(pars->mx, nn, (pars->w)->x);
+                    SET_REAL_ELT(mssr, nn, mchisq1);
+                    if (mchisq1 < 0.99 * gsl_min((mpars->mssropt)[0], (mpars->mssropt)[1]))
+                    {
+                        (mpars->mssropt)[0] = mchisq1;
+                        (mpars->ssrconv)[0] = mchisq0 - mchisq1;
+                        gsl_vector_memcpy(pars->mpopt, (pars->w)->x);
+                    }
+                }
+                else if (mchisq1 < 0.99 * gsl_min((mpars->mssropt)[0], (mpars->mssropt)[1]))
+                {
+                    (mpars->mssropt)[1] = mchisq1;
+                    (mpars->ssrconv)[1] = mchisq0 - mchisq1;
+                    gsl_vector_memcpy(pars->mpopt1, (pars->w)->x);
+                }
             }
         }
-        else
-            SET_REAL_ELT(mssr, nn, NA_REAL);
+        else if (!((mpars->mssropt)[0] < (double)GSL_POSINF) && det_jtj > __DBL_EPSILON__)
+        {
+            // back-up in case no stationary points found
+            gsl_blas_ddot((pars->w)->f, (pars->w)->f, &mchisq1);
+            if (mchisq1 < 0.99 * (mpars->mssropt)[1])
+            {
+                (mpars->mssropt)[1] = mchisq1;
+                (mpars->ssrconv)[1] = mchisq0 - mchisq1;
+                gsl_vector_memcpy(pars->mpopt1, (pars->w)->x);
+            }
+        }
+
+        if (0 && verbose)
+        {
+            Rprintf("det %d = %g%s", nn, det_jtj, nn < (mpars->n - 1) ? ", " : "\n");
+            Rprintf("ssr %d = %g%s", nn, REAL_ELT(mssr, nn), nn < (mpars->n - 1) ? ", " : "\n");
+        }
     }
+
     /* reduce sample points */
     R_orderVector1(mpars->mssr_order, mpars->n, mssr, TRUE, FALSE);
     for (R_len_t nn = 0; nn < mpars->n; nn++)
@@ -929,8 +1021,9 @@ static void gsl_multistart_driver(pdata *pars,
     /* dynamic lower/upper limits */
     if (!(mpars->all_start))
     {
-        double pk, pmin, pmax, pssr;
+        double pk, pmin = 0.0, pmax = 1.0;
         double mssr_diff = REAL_ELT(mssr, (mpars->mssr_order)[0]);
+
         if (!R_IsNA(mssr_diff))
         {
             for (R_len_t nn = mpars->n - 1; nn > 0; nn--)
@@ -945,88 +1038,94 @@ static void gsl_multistart_driver(pdata *pars,
         if (R_IsNA(mssr_diff) || fabs(mssr_diff) < 1e-5)
         {
             for (R_len_t k = 0; k < p; k++)
-                (mpars->luchange)[k] = gsl_max((mpars->luchange)[k], 5);
+                (mpars->luchange)[k] += 1;
         }
-
-        // Rprintf("ssr diff = %g\n",);
-        // for (R_len_t nn = 0; nn < mpars->n; nn++)
-        //     Rprintf((nn < (mpars->n - 1)) ? "%g, %d;" : "%g, %d)\n", REAL_ELT(mssr, mpars->mssr_order[nn]), (mpars->ntix)[(mpars->mssr_order)[nn]]);
-        // Rprintf("ssr diff = %g\n", mssr_diff);
 
         for (R_len_t k = 0; k < p; k++)
         {
             /* evaluate min/max parameter values for reduced sample */
-            pmin = (mpars->nsp) > 0 ? gsl_vector_get(pars->mpopt, k) : 0;
-            pmax = (mpars->nsp) > 0 ? gsl_vector_get(pars->mpopt, k) : 1;
-            pssr = mpars->mssropt;
-
+            if ((mpars->mssropt)[0] < (double)GSL_POSINF)
+            {
+                pmin = gsl_vector_get(((mpars->mssropt)[1] < (mpars->mssropt)[0]) ? pars->mpopt1 : pars->mpopt, k);
+                pmax = gsl_vector_get(((mpars->mssropt)[1] < (mpars->mssropt)[0]) ? pars->mpopt1 : pars->mpopt, k);
+            }
             for (R_len_t nn = 0; nn < mpars->q; nn++)
             {
-                if ((mpars->ntix)[(mpars->mssr_order)[nn]] > 0 && REAL_ELT(mssr, (mpars->mssr_order)[nn]) < 1.25 * pssr)
+                if ((mpars->ntix)[(mpars->mssr_order)[nn]] > 0 && REAL_ELT(mssr, (mpars->mssr_order)[nn]) < 1.25 * (mpars->mssropt)[0])
                 {
                     pk = gsl_matrix_get(pars->mx, (mpars->mssr_order)[nn], k);
                     pmin = (pk < pmin) ? pk : pmin;
                     pmax = (pk > pmax) ? pk : pmax;
-                    // Rprintf("nn = %d, k = %d, ssr = %g, ntix = %d, coef = %g\n", nn, k, REAL_ELT(mssr, (mpars->mssr_order)[nn]), (mpars->ntix)[(mpars->mssr_order)[nn]], pk);
                 }
             }
 
-            /* no finite ssr's */
-            if (!(pssr < (double)GSL_POSINF))
-                (mpars->luchange)[k] = gsl_max((mpars->luchange)[k], 5);
-
             /* rescale current limits */
-            l0 = (mpars->startptr)[2 * k];
-            l1 = (mpars->startptr)[2 * k + 1];
+            l0 = (mpars->start)[2 * k];
+            l1 = (mpars->start)[2 * k + 1];
+            int luchange_add = 0;
 
             // lower limit
             if (!(mpars->has_start)[2 * k])
             {
-                if (pmin < l0 || (mpars->luchange)[k] > 4) // enlarge
+                if (pmin < 0.9 * l0 || (mpars->luchange)[k] > 4) // enlarge
                 {
-                    (mpars->startptr)[2 * k] = l0 < 0 ? l0 / pow(-1e-5 * l0, 0.1) : -1.0;
+                    (mpars->start)[2 * k] = l0 < 0 ? gsl_max(l0 / pow(-1e-5 * (l0 - 1.0), 0.1) - 1.0, -1.0E5) : -0.1;
                     if (pars->lu)
-                        (mpars->startptr)[2 * k] = gsl_max((mpars->startptr)[2 * k], gsl_matrix_get(pars->lu, 0, k));
-                    (mpars->luchange)[k] = 0;
+                        (mpars->start)[2 * k] = gsl_max((mpars->start)[2 * k], gsl_matrix_get(pars->lu, 0, k));
+                    (mpars->maxlims)[2 * k] = gsl_min((mpars->start)[2 * k], (mpars->maxlims)[2 * k]);
+                    luchange_add = -1;
                 }
-                else if (pmin > l0 / 5.0) // shrink
+                else if (pmin > 0.2 * l0) // shrink
                 {
-                    (mpars->startptr)[2 * k] = l0 < 0 ? l0 / pow(-1.0 * l0, 0.05) : 0.0;
-                    (mpars->luchange)[k] = 0;
+                    (mpars->start)[2 * k] = gsl_min(l0 / pow(-0.05 * (l0 - 1.0), 0.05), -0.1);
+                    luchange_add = ((mpars->mssropt)[0] < (double)GSL_POSINF) ? -1 : 1;
                 }
                 else
-                    (mpars->luchange)[k] += 1;
+                    luchange_add = 1;
             }
             // upper limit
             if (!(mpars->has_start)[2 * k + 1])
             {
-                if (pmax > l1 || (mpars->luchange)[k] > 4) // enlarge
+                if (pmax > 0.9 * l1 || (mpars->luchange)[k] > 4) // enlarge
                 {
-                    (mpars->startptr)[2 * k + 1] = 1.0 + l1 / pow(1e-5 * l1, 0.1);
-                    if (pars->lu)
-                        (mpars->startptr)[2 * k + 1] = gsl_min((mpars->startptr)[2 * k + 1], gsl_matrix_get(pars->lu, 1, k));
-                    (mpars->luchange)[k] = 0;
+                    (mpars->start)[2 * k + 1] = gsl_min(l1 / pow(1e-5 * (l1 + 1.0), 0.1) + 1.0, 1.0E5);
+                    if (pars->lu)   
+                        (mpars->start)[2 * k + 1] = gsl_min((mpars->start)[2 * k + 1], gsl_matrix_get(pars->lu, 1, k));
+                    (mpars->maxlims)[2 * k + 1] = gsl_max((mpars->start)[2 * k + 1], (mpars->maxlims)[2 * k + 1]);
+                    luchange_add = -1;
                 }
-                else if (pmax < l1 / 5.0) // shrink
+                else if (pmax < 0.2 * l1) // shrink
                 {
-                    (mpars->startptr)[2 * k + 1] = l1 > 1 ? l1 / pow(1.0 * l1, 0.05) : 1.0;
-                    (mpars->luchange)[k] = 0;
+                    (mpars->start)[2 * k + 1] = gsl_max(l1 / pow(0.05 * (l1 + 1.0), 0.05), 0.1);
+                    luchange_add = ((mpars->mssropt)[0] < (double)GSL_POSINF) ? -1 : 1;
                 }
                 else
-                    (mpars->luchange)[k] += 1;
+                    luchange_add = 1;
             }
-            // Rprintf("k = %d, opt = %g, pmin = %g, pmax = %g, lower = %g, upper = %g, luchange = %d\n", k, gsl_vector_get(pars->mpopt, k),
-                    // pmin, pmax, (mpars->startptr)[2 * k], (mpars->startptr)[2 * k + 1], mpars->luchange[k]);
+            if (luchange_add)
+            {
+                (mpars->luchange)[k] = (luchange_add > 0) ? (mpars->luchange)[k] + 1 : 0;
+            }
+        }
+
+        if (1 && verbose)
+        {
+            Rprintf("mssr*0:%g, mssr*1: %g, dtol: %g", (mpars->mssropt)[0], (mpars->mssropt)[1], (mpars->dtol));
+            Rprintf("{lwr, upr} = {");
+            for (R_len_t k = 0; k < p; k++)
+                Rprintf("(%g, %g)%s", (mpars->start)[2 * k], (mpars->start)[2 * k + 1], k < (p - 1) ? "" : "}\n");
         }
     }
 
     /* local optimization stage */
     for (R_len_t nn = 0; nn < (mpars->n); nn++)
     {
-        if ((mpars->ntix)[nn] >= (mpars->s) && !R_IsNA(REAL_ELT(mssr, nn)))
+        if ((mpars->ntix)[nn] >= (mpars->s))
         {
             (mpars->ntix)[nn] = 0;
-            if ((mpars->nsp) == 0 || REAL_ELT(mssr, nn) < (1 + (mpars->tol)) * (mpars->mssropt))
+            mpars->nwsp += 1;
+
+            if ((mpars->nsp) == 0 || REAL_ELT(mssr, nn) < (1 + (mpars->tol)) * (mpars->mssropt)[0])
             {
                 gsl_matrix_get_row(pars->mp, pars->mx, nn);
                 if (!Rf_isNull(pars->swts))
@@ -1035,30 +1134,68 @@ static void gsl_multistart_driver(pdata *pars,
                     gsl_multifit_nlinear_init(pars->mp, fdff, pars->w);
                 mchisq1 = REAL_ELT(mssr, nn);
                 gsl_multifit_nlinear_driver2(mpars->niter, xtol, 1e-3, ftol, NULL, NULL, &minfo, &mchisq0, &mchisq1, pars->lu, pars->w);
-                gsl_multifit_nlinear_rcond(&rcond, pars->w);
+                det_jtj = det_cholesky_jtj((pars->w)->J, pars->JTJ);
 
-                // Rprintf("mchisq1: %g, rcond: %g, rejectscale: %g\n", mchisq1, rcond, mpars->rejectscl);
+                // gsl_multifit_nlinear_rcond(&rcond, pars->w);
 
-                if (mchisq1 < (double)GSL_POSINF && ((mpars->nsp) == 0 || mchisq1 < 0.99 * (mpars->mssropt)) && ((!gsl_isnan(rcond) && rcond > 0) || mchisq1 < 2 * ftol))
+                /* save result local optimizer */
+                // if ((mpars->mpopt)->mpcount > (mpars->mpopt)->mpmax)
+                // {
+                //     (mpars->mpopt)->mpall = (double *)S_realloc((char *)(mpars->mpopt)->mpall, 2 * (mpars->mpopt)->mpmax * p, (mpars->mpopt)->mpmax * p, sizeof(double));
+                //     (mpars->mpopt)->mpradii = (double *)S_realloc((char *)(mpars->mpopt)->mpradii, 2 * (mpars->mpopt)->mpmax * p, (mpars->mpopt)->mpmax * p, sizeof(double));
+                //     (mpars->mpopt)->mpmax *= 2;
+                // }
+                // for (R_len_t k = 0; k < p; k++)
+                // {
+                //     ((mpars->mpopt)->mpall)[(mpars->mpopt)->mpcount * p + k] = gsl_vector_get((pars->w)->x, k);
+                //     ((mpars->mpopt)->mpradii)[(mpars->mpopt)->mpcount * p + k] = gsl_vector_get(pars->mp, k);
+                // }
+
+                // if (1 && verbose)
+                // {
+                //     Rprintf("%d opt: (", (mpars->mpopt)->mpcount);
+                //     for (R_len_t k = 0; k < p; k++)
+                //         Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", ((mpars->mpopt)->mpall)[(mpars->mpopt)->mpcount * p + k]);
+
+                //     Rprintf("%d radius: (", (mpars->mpopt)->mpcount);
+                //     for (R_len_t k = 0; k < p; k++)
+                //         Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", ((mpars->mpopt)->mpradii)[(mpars->mpopt)->mpcount * p + k]);
+                // }
+
+                // (mpars->mpopt)->mpcount += 1;
+
+                if (0 && verbose)
                 {
-                    int rejectlims = 0;
+                    Rprintf("mssr*0:%g, mssr*1: %g, mchisq1: %g, det(JTJ): %g, rejectscale: %g\n", (mpars->mssropt)[0], (mpars->mssropt)[1], mchisq1, det_jtj, mpars->rejectscl);
+                    Rprintf("{opt, lwr, upr} = {");
+                    for (R_len_t k = 0; k < p; k++)
+                        Rprintf("(%g, %g, %g)%s", gsl_vector_get((pars->w)->x, k), (mpars->start)[2 * k], (mpars->start)[2 * k + 1], k < (p - 1) ? "" : "}\n");
+                }
+
+                if (mchisq1 < (double)GSL_POSINF && ((mpars->nsp) == 0 || mchisq1 < 0.99 * (mpars->mssropt)[0]) && (det_jtj > (mpars->dtol) || mchisq1 < (2 * ftol)))
+                {
+                    int reject = 0;
                     if (mpars->rejectscl > 0)
                     {
                         for (R_len_t k = 0; k < p; k++)
                         {
                             double xk = gsl_vector_get((pars->w)->x, k);
                             if (mpars->all_start)
-                                rejectlims += (xk > (mpars->startptr)[2 * k + 1] || xk < (mpars->startptr)[2 * k]);
+                                reject += (xk > gsl_max((mpars->maxlims)[2 * k + 1], 1.0) || xk < gsl_min((mpars->maxlims)[2 * k], -1.0));
                             else
-                                rejectlims += (xk > pow((mpars->startptr)[2 * k + 1], mpars->rejectscl) || xk < -pow(-(mpars->startptr)[2 * k], mpars->rejectscl));
-                            if (rejectlims > 0)
+                                // reject += (xk > pow((mpars->start)[2 * k + 1], mpars->rejectscl) || xk < -pow(-(mpars->start)[2 * k], mpars->rejectscl));
+                                reject += (xk > gsl_max(pow((mpars->maxlims)[2 * k + 1], mpars->rejectscl), 1.0) || xk < gsl_min(-pow(-(mpars->maxlims)[2 * k], mpars->rejectscl), -1.0));
+                            if (reject > 0)
                                 break;
                         }
+                        if (!(mpars->all_start))
+                            mpars->rejectscl += 0.05;
                     }
-                    if (!rejectlims)
+
+                    if (!reject)
                     {
-                        mpars->mssropt = mchisq1;
-                        mpars->ssrconv = mchisq0 - mchisq1;
+                        (mpars->mssropt)[0] = mchisq1;
+                        (mpars->ssrconv)[0] = mchisq0 - mchisq1;
                         gsl_vector_memcpy(pars->mpopt, (pars->w)->x);
                         mpars->nsp += 1;
                         mpars->nwsp = 0;
@@ -1075,25 +1212,20 @@ static void gsl_multistart_driver(pdata *pars,
                         }
                         if (verbose)
                         {
-                            Rprintf("mstart ssr* = %g, cond(J) = %g, NSP = %d, NWSP = %d, par = (", mpars->mssropt, 1.0 / rcond, mpars->nsp, mpars->nwsp);
+                            Rprintf("mstart ssr* = %g, det(JTJ) = %g, NSP = %d, NWSP = %d, par = (", (mpars->mssropt)[0], det_jtj, mpars->nsp, mpars->nwsp);
                             for (R_len_t k = 0; k < p; k++)
                                 Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", gsl_vector_get((pars->w)->x, k));
                         }
                     }
-                    else
-                    {
-                        if (!(mpars->all_start) && mpars->rejectscl > 0)
-                            mpars->rejectscl += 0.05;
-                        mpars->nwsp += 1;
-                    }
                 }
-                else
+                else if (mchisq1 < 0.99 * gsl_min((mpars->mssropt)[0], (mpars->mssropt)[1]))
                 {
-                    mpars->nwsp += 1;
+                    // back-up in case no stationary points found
+                    (mpars->mssropt)[1] = mchisq1;
+                    (mpars->ssrconv)[1] = mchisq0 - mchisq1;
+                    gsl_vector_memcpy(pars->mpopt1, (pars->w)->x);
                 }
             }
-            else
-                mpars->nwsp += 1;
         }
     }
 }
