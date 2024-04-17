@@ -16,15 +16,15 @@ gsl_nls_control(
   h_fvv = 0.02,
   xtol = sqrt(.Machine$double.eps),
   ftol = sqrt(.Machine$double.eps),
-  gtol = .Machine$double.eps^(1/3),
-  mstart_n = 25,
+  gtol = sqrt(.Machine$double.eps),
+  mstart_n = 30,
   mstart_p = 5,
-  mstart_q = 5,
-  mstart_r = 3,
+  mstart_q = mstart_n\%/\%10,
+  mstart_r = 4,
   mstart_s = 2,
-  mstart_tol = 0.5,
+  mstart_tol = 0.25,
   mstart_maxiter = maxiter\%/\%10,
-  mstart_maxstart = 1000,
+  mstart_maxstart = 250,
   mstart_minsp = 1
 )
 }
@@ -86,13 +86,13 @@ defaults to \code{sqrt(.Machine$double.eps)}.}
 \item{gtol}{numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
 indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}}
 
-\item{mstart_n}{positive integer, number of quasirandom points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 25.}
+\item{mstart_n}{positive integer, number of quasirandom points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 30.}
 
 \item{mstart_p}{positive integer, number of iterations of inexpensive local search to concentrate the sample, parameter \code{p} in Hickernell and Yuan (1997). Default is 5.}
 
-\item{mstart_q}{positive integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is 5.}
+\item{mstart_q}{positive integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is \code{mstart_n \%/\% 10}..}
 
-\item{mstart_r}{positive integer, scaling factor of number of stationary points determining when the multi-start algorithm terminates, parameter \code{r} in Hickernell and Yuan (1997). Default is 3.
+\item{mstart_r}{positive integer, scaling factor of number of stationary points determining when the multi-start algorithm terminates, parameter \code{r} in Hickernell and Yuan (1997). Default is 4.
 If the starting ranges for one or more parameters are unbounded and updated dynamically, \code{mstart_r} is multiplied by a factor 10 to avoid early termination.}
 
 \item{mstart_s}{positive integer, minimum number of iterations a point needs to be retained before starting an efficient local search, parameter \code{s} in Hickernell and Yuan (1997). Default is 2.}

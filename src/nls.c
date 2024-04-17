@@ -1069,7 +1069,7 @@ static void gsl_multistart_driver(pdata *pars,
             {
                 if (pmin < 0.9 * l0 || (mpars->luchange)[k] > 4) // enlarge
                 {
-                    (mpars->start)[2 * k] = l0 < 0 ? gsl_max(l0 / pow(-1e-5 * (l0 - 1.0), 0.1) - 1.0, -1.0E5) : -0.1;
+                    (mpars->start)[2 * k] = l0 < 0 ? gsl_max(l0 / pow(-1e-5 * (l0 - 1.0), 0.1) - 1.0, -1.0E5) : -0.01;
                     if (pars->lu)
                         (mpars->start)[2 * k] = gsl_max((mpars->start)[2 * k], gsl_matrix_get(pars->lu, 0, k));
                     (mpars->maxlims)[2 * k] = gsl_min((mpars->start)[2 * k], (mpars->maxlims)[2 * k]);
@@ -1077,7 +1077,9 @@ static void gsl_multistart_driver(pdata *pars,
                 }
                 else if (pmin > 0.2 * l0) // shrink
                 {
-                    (mpars->start)[2 * k] = gsl_min(l0 / pow(-0.05 * (l0 - 1.0), 0.05), -0.1);
+                    (mpars->start)[2 * k] = gsl_min(l0 / pow(-0.05 * (l0 - 1.0), 0.05), -0.01);
+                    if (pars->lu)
+                        (mpars->start)[2 * k] = gsl_max((mpars->start)[2 * k], gsl_matrix_get(pars->lu, 0, k));
                     luchange_add = ((mpars->mssropt)[0] < (double)GSL_POSINF) ? -1 : 1;
                 }
                 else
@@ -1097,6 +1099,8 @@ static void gsl_multistart_driver(pdata *pars,
                 else if (pmax < 0.2 * l1) // shrink
                 {
                     (mpars->start)[2 * k + 1] = gsl_max(l1 / pow(0.05 * (l1 + 1.0), 0.05), 0.1);
+                    if (pars->lu)
+                        (mpars->start)[2 * k + 1] = gsl_min((mpars->start)[2 * k + 1], gsl_matrix_get(pars->lu, 1, k));
                     luchange_add = ((mpars->mssropt)[0] < (double)GSL_POSINF) ? -1 : 1;
                 }
                 else
