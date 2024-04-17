@@ -1000,12 +1000,6 @@ static void gsl_multistart_driver(pdata *pars,
                 gsl_vector_memcpy(pars->mpopt1, (pars->w)->x);
             }
         }
-
-        if (0 && verbose)
-        {
-            Rprintf("det %d = %g%s", nn, det_jtj, nn < (mpars->n - 1) ? ", " : "\n");
-            Rprintf("ssr %d = %g%s", nn, REAL_ELT(mssr, nn), nn < (mpars->n - 1) ? ", " : "\n");
-        }
     }
 
     /* reduce sample points */
@@ -1069,7 +1063,7 @@ static void gsl_multistart_driver(pdata *pars,
             {
                 if (pmin < 0.9 * l0 || (mpars->luchange)[k] > 4) // enlarge
                 {
-                    (mpars->start)[2 * k] = l0 < 0 ? gsl_max(l0 / pow(-1e-5 * (l0 - 1.0), 0.1) - 1.0, -1.0E5) : -0.01;
+                    (mpars->start)[2 * k] = l0 < 0 ? gsl_max(l0 / pow(-1e-5 * (l0 - 1.0), 0.1) - 1.0, -1.0E5) : -0.1;
                     if (pars->lu)
                         (mpars->start)[2 * k] = gsl_max((mpars->start)[2 * k], gsl_matrix_get(pars->lu, 0, k));
                     (mpars->maxlims)[2 * k] = gsl_min((mpars->start)[2 * k], (mpars->maxlims)[2 * k]);
@@ -1110,14 +1104,6 @@ static void gsl_multistart_driver(pdata *pars,
             {
                 (mpars->luchange)[k] = (luchange_add > 0) ? (mpars->luchange)[k] + 1 : 0;
             }
-        }
-
-        if (1 && verbose)
-        {
-            Rprintf("mssr*0:%g, mssr*1: %g, dtol: %g", (mpars->mssropt)[0], (mpars->mssropt)[1], (mpars->dtol));
-            Rprintf("{lwr, upr} = {");
-            for (R_len_t k = 0; k < p; k++)
-                Rprintf("(%g, %g)%s", (mpars->start)[2 * k], (mpars->start)[2 * k + 1], k < (p - 1) ? "" : "}\n");
         }
     }
 
@@ -1168,13 +1154,13 @@ static void gsl_multistart_driver(pdata *pars,
 
                 // (mpars->mpopt)->mpcount += 1;
 
-                if (0 && verbose)
-                {
-                    Rprintf("mssr*0:%g, mssr*1: %g, mchisq1: %g, det(JTJ): %g, rejectscale: %g\n", (mpars->mssropt)[0], (mpars->mssropt)[1], mchisq1, det_jtj, mpars->rejectscl);
-                    Rprintf("{opt, lwr, upr} = {");
-                    for (R_len_t k = 0; k < p; k++)
-                        Rprintf("(%g, %g, %g)%s", gsl_vector_get((pars->w)->x, k), (mpars->start)[2 * k], (mpars->start)[2 * k + 1], k < (p - 1) ? "" : "}\n");
-                }
+                // if (0 && verbose)
+                // {
+                //     Rprintf("mssr*0:%g, mssr*1: %g, mchisq1: %g, det(JTJ): %g, rejectscale: %g\n", (mpars->mssropt)[0], (mpars->mssropt)[1], mchisq1, det_jtj, mpars->rejectscl);
+                //     Rprintf("{opt, lwr, upr} = {");
+                //     for (R_len_t k = 0; k < p; k++)
+                //         Rprintf("(%g, %g, %g)%s", gsl_vector_get((pars->w)->x, k), (mpars->start)[2 * k], (mpars->start)[2 * k + 1], k < (p - 1) ? "" : "}\n");
+                // }
 
                 if (mchisq1 < (double)GSL_POSINF && ((mpars->nsp) == 0 || mchisq1 < 0.99 * (mpars->mssropt)[0]) && (det_jtj > (mpars->dtol) || mchisq1 < (2 * ftol)))
                 {
