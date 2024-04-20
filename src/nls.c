@@ -334,6 +334,7 @@ SEXP C_nls_internal(void *data)
         pars->diag = gsl_vector_alloc(p);
         pars->JTJ = gsl_matrix_alloc(p, p);
         pars->mpopt1 = gsl_vector_alloc(p);
+        pars->workn = gsl_vector_alloc(mpars.n);
 
         double *startptr = REAL(pars->start);
         for (R_len_t k = 0; k < p; k++)
@@ -375,7 +376,19 @@ SEXP C_nls_internal(void *data)
                 mpars.mstop = GSL_SUCCESS;
             
             if (!(mpars.mstarts % 10) && !(mpars.mssropt[0] < (double)GSL_POSINF))
+            {
+                /* reduce determinant tolerance */
                 mpars.dtol = gsl_max(0.5 * mpars.dtol, __DBL_EPSILON__);
+
+                if(!(mpars.mstarts % 100)) // reset start ranges 
+                {
+                    for (R_len_t k = 0; k < p; k++)
+                    {
+                        mpars.start[2 * k] = startptr[2 * k];
+                        mpars.start[2 * k + 1] = startptr[2 * k + 1];
+                    }
+                }
+            }
 
         } while (mpars.mstop == GSL_CONTINUE);
         if (verbose)

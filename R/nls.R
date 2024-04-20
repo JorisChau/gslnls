@@ -9,14 +9,14 @@
 #' If \code{start} is a list or matrix of parameter ranges, or contains any missing values, a modified version of the multi-start algorithm described in
 #' Hickernell and Yuan (1997) is applied. Note that the \code{start} parameter ranges are only used to bound the domain for the
 #' starting values, i.e. the resulting parameter estimates are not constrained to lie within these bounds, use \code{lower} and/or \code{upper} for
-#' this purpose instead. Quasi-random starting values are sampled in the unit hypercube from a Sobol sequence if \code{p < 41} and from a Halton sequence (up to \code{p = 1229}) otherwise.
+#' this purpose instead. Quasi-random starting values are sampled in the unit hypercube from a Sobol sequence if \code{p < 41} or from a Halton sequence (up to \code{p = 1229}) otherwise.
 #' The initial starting values are scaled to the specified parameter ranges using an inverse (scaled) logistic function favoring starting values near the center of the
-#' (scaled) domain. The trust region algorithm as specified by \code{algorithm} used for the inexpensive and expensive local search (see Algorithm 2.1 of Hickernell
+#' (scaled) domain. The trust region method as specified by \code{algorithm} used for the inexpensive and expensive local search (see Algorithm 2.1 of Hickernell
 #' and Yuan (1997)) are the same, only differing in the number of search iterations \code{mstart_p} versus \code{mstart_maxiter}, where
 #' \code{mstart_p} is typically much smaller than \code{mstart_maxiter}. When a new stationary point is detected, the scaling step from the unit hypercube to
 #' the starting value domain is updated using the diagonal of the estimated trust method's scaling matrix \code{D}, which improves optimization performance
 #' especially when the parameters live on very different scales. The multi-start algorithm terminates when NSP (number of stationary points)
-#' is larger than or equal to \code{mstart_minsp} and NWSP (number of worse stationary points) is larger than or equal to \code{mstart_r} times NSP,
+#' is larger than or equal to \code{mstart_minsp} and NWSP (number of worse stationary points) is larger than \code{mstart_r + sqrt(mstart_r) * NSP},
 #' or when the maximum number of major iterations \code{mstart_maxstart} is reached. After termination of the multi-start algorithm, a full
 #' single-start optimization is executed starting from the best multi-start solution.
 #'
@@ -24,7 +24,7 @@
 #' If \code{start} contains missing (or infinite) values, the multi-start algorithm is executed without fixed parameter ranges for the missing parameters.
 #' The ranges for the missing parameters are initialized to the unit interval and dynamically increased or decreased in each major iteration
 #' of the multi-start algorithm. The decision to increase or decrease a parameter range is driven by the minimum and maximum parameter values
-#' attained by the first \code{mstart_q} inexpensive local searches ordered by their squared loss, which typically provide a decent indication of the
+#' obtained by the first \code{mstart_q} inexpensive local searches ordered by their squared loss, which typically provide a decent indication of the
 #' order of magnitude of the parameter range in which to search for the optimal solution. Note that this procedure is not expected to always
 #' return a global minimum of the nonlinear least-squares objective. Especially when the objective function contains many local optima,
 #' the algorithm may be unable to select parameter ranges that include the global minimizing solution. In this case, it may help to increase
@@ -137,13 +137,13 @@
 #' gsl_nls(
 #'   fn = y ~ A * exp(-lam * x) + b,                             ## model formula
 #'   data = data.frame(x = x, y = y),                            ## model fit data
-#'   start = list(A = c(0, 100), lam = c(0, 10), b = c(-10, 10)) ## starting ranges
+#'   start = list(A = c(0, 100), lam = c(0, 10), b = c(-10, 10)) ## fixed starting ranges
 #' )
 #' ## missing starting values
 #' gsl_nls(
 #'   fn = y ~ A * exp(-lam * x) + b,                        ## model formula
 #'   data = data.frame(x = x, y = y),                       ## model fit data
-#'   start = c(A = NA, lam = NA, b = NA)                    ## unknown start
+#'   start = c(A = NA, lam = NA, b = NA)                    ## dynamic starting ranges
 #' )
 #'
 #' ## analytic Jacobian 1
@@ -616,11 +616,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
 
   ## control arguments
   trace <- isTRUE(trace)
-  .ctrl <- gsl_nls_control()
-  if(!missing(control)) {
-    control <- as.list(control)
-    .ctrl[names(control)] <- control
-  }
+  .ctrl <- do.call(gsl_nls_control, args = if(!missing(control)) as.list(control) else list())
   .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquardt"))
   .ctrl$solver <- match.arg(.ctrl$solver, c("qr", "cholesky", "svd"))
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
@@ -897,11 +893,7 @@ gsl_nls.function <- function(fn, y, start,
 
   ## control arguments
   trace <- isTRUE(trace)
-  .ctrl <- gsl_nls_control()
-  if(!missing(control)) {
-    control <- as.list(control)
-    .ctrl[names(control)] <- control
-  }
+  .ctrl <- do.call(gsl_nls_control, args = if(!missing(control)) as.list(control) else list())
   .ctrl$scale <- match.arg(.ctrl$scale, c("more", "levenberg", "marquardt"))
   .ctrl$solver <- match.arg(.ctrl$solver, c("qr", "cholesky", "svd"))
   .ctrl$fdtype <- match.arg(.ctrl$fdtype, c("forward", "center"))
@@ -1043,15 +1035,15 @@ gsl_nls.function <- function(fn, y, start,
 #' defaults to \code{sqrt(.Machine$double.eps)}.
 #' @param gtol numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
 #' indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}
-#' @param mstart_n positive integer, number of quasirandom points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 30.
+#' @param mstart_n positive integer, number of quasi-random points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 30.
 #' @param mstart_p positive integer, number of iterations of inexpensive local search to concentrate the sample, parameter \code{p} in Hickernell and Yuan (1997). Default is 5.
 #' @param mstart_q positive integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is \code{mstart_n \%/\% 10}..
 #' @param mstart_r positive integer, scaling factor of number of stationary points determining when the multi-start algorithm terminates, parameter \code{r} in Hickernell and Yuan (1997). Default is 4.
 #' If the starting ranges for one or more parameters are unbounded and updated dynamically, \code{mstart_r} is multiplied by a factor 10 to avoid early termination.
 #' @param mstart_s positive integer, minimum number of iterations a point needs to be retained before starting an efficient local search, parameter \code{s} in Hickernell and Yuan (1997). Default is 2.
 #' @param mstart_tol numeric value, multiplicative tolerance \code{(1 + mstart_tol)} used as criterion to start an efficient local search (epsilon in Algorithm 2.1, Hickernell and Yuan (1997)).
-#' @param mstart_maxiter positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to \code{maxiter \%/\% 10}.
-#' @param mstart_maxstart positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 1000.
+#' @param mstart_maxiter positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to 10.
+#' @param mstart_maxstart positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 250.
 #' @param mstart_minsp positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.
 #' @importFrom stats nls.control
 #' @seealso \code{\link[stats]{nls.control}}
@@ -1093,8 +1085,7 @@ gsl_nls_control <- function(maxiter = 100, scale = "more", solver = "qr",
                             h_df = sqrt(.Machine$double.eps), h_fvv = 0.02, xtol = sqrt(.Machine$double.eps),
                             ftol = sqrt(.Machine$double.eps), gtol = sqrt(.Machine$double.eps),
                             mstart_n = 30, mstart_p = 5, mstart_q = mstart_n %/% 10, mstart_r = 4, mstart_s = 2,
-                            mstart_tol = 0.25, mstart_maxiter = maxiter %/% 10,
-                            mstart_maxstart = 250, mstart_minsp = 1) {
+                            mstart_tol = 0.25, mstart_maxiter = 10, mstart_maxstart = 250, mstart_minsp = 1) {
 
   scale <- match.arg(scale, c("more", "levenberg", "marquardt"))
   solver <- match.arg(solver, c("qr", "cholesky", "svd"))
