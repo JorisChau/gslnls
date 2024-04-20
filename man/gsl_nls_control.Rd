@@ -23,7 +23,7 @@ gsl_nls_control(
   mstart_r = 4,
   mstart_s = 2,
   mstart_tol = 0.25,
-  mstart_maxiter = maxiter\%/\%10,
+  mstart_maxiter = 10,
   mstart_maxstart = 250,
   mstart_minsp = 1
 )
@@ -86,7 +86,7 @@ defaults to \code{sqrt(.Machine$double.eps)}.}
 \item{gtol}{numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
 indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}}
 
-\item{mstart_n}{positive integer, number of quasirandom points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 30.}
+\item{mstart_n}{positive integer, number of quasi-random points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 30.}
 
 \item{mstart_p}{positive integer, number of iterations of inexpensive local search to concentrate the sample, parameter \code{p} in Hickernell and Yuan (1997). Default is 5.}
 
@@ -99,9 +99,9 @@ If the starting ranges for one or more parameters are unbounded and updated dyna
 
 \item{mstart_tol}{numeric value, multiplicative tolerance \code{(1 + mstart_tol)} used as criterion to start an efficient local search (epsilon in Algorithm 2.1, Hickernell and Yuan (1997)).}
 
-\item{mstart_maxiter}{positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to \code{maxiter \%/\% 10}.}
+\item{mstart_maxiter}{positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to 10.}
 
-\item{mstart_maxstart}{positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 1000.}
+\item{mstart_maxstart}{positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 250.}
 
 \item{mstart_minsp}{positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.}
 }
