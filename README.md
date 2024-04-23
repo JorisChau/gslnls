@@ -17,12 +17,12 @@ The {gslnls}-package provides R bindings to nonlinear least-squares
 optimization with the [GNU Scientific Library
 (GSL)](https://www.gnu.org/software/gsl/). The function `gsl_nls()`
 solves small to moderate sized nonlinear least-squares problems with the
-`gsl_multifit_nlinear` interface. For large problems, where factoring
-the full Jacobian matrix becomes prohibitively expensive, the
-`gsl_nls_large()` function can be used to solve the system with the
-`gsl_multilarge_nlinear` interface. The `gsl_nls_large()` function is
-also appropriate for systems with sparse structure in the Jacobian
-matrix.
+`gsl_multifit_nlinear` interface with built-in support for multi-start
+optimization. For large problems, where factoring the full Jacobian
+matrix becomes prohibitively expensive, the `gsl_nls_large()` function
+can be used to solve the system with the `gsl_multilarge_nlinear`
+interface. The `gsl_nls_large()` function is also appropriate for
+systems with sparse structure in the Jacobian matrix.
 
 The following trust region methods to solve nonlinear least-squares
 problems are available in `gsl_nls()` (and `gsl_nls_large()`):
@@ -127,7 +127,7 @@ install.packages("gslnls")
 #### Data
 
 The code below simulates
-![n = 50](https://latex.codecogs.com/png.latex?n%20%3D%2050 "n = 50")
+![n = 25](https://latex.codecogs.com/png.latex?n%20%3D%2025 "n = 25")
 noisy observations
 ![y_1,\ldots,y_n](https://latex.codecogs.com/png.latex?y_1%2C%5Cldots%2Cy_n "y_1,\ldots,y_n")
 from an exponential model with additive (i.i.d.) Gaussian noise
@@ -189,8 +189,8 @@ ex1_fit
 #> 
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 7 
-#> Achieved convergence tolerance: 4.939e-10
+#> Number of iterations to convergence: 9 
+#> Achieved convergence tolerance: 0
 ```
 
 Here, the nonlinear least squares problem has been solved with the
@@ -199,69 +199,29 @@ interface using the following `control` parameters:
 
 ``` r
 ## default control parameters
-gsl_nls_control()
-#> $maxiter
-#> [1] 100
-#> 
-#> $scale
-#> [1] "more"
-#> 
-#> $solver
-#> [1] "qr"
-#> 
-#> $fdtype
-#> [1] "forward"
-#> 
-#> $factor_up
-#> [1] 2
-#> 
-#> $factor_down
-#> [1] 3
-#> 
-#> $avmax
-#> [1] 0.75
-#> 
-#> $h_df
-#> [1] 1.490116e-08
-#> 
-#> $h_fvv
-#> [1] 0.02
-#> 
-#> $xtol
-#> [1] 1.490116e-08
-#> 
-#> $ftol
-#> [1] 1.490116e-08
-#> 
-#> $gtol
-#> [1] 6.055454e-06
-#> 
-#> $mstart_n
-#> [1] 25
-#> 
-#> $mstart_p
-#> [1] 5
-#> 
-#> $mstart_q
-#> [1] 5
-#> 
-#> $mstart_r
-#> [1] 3
-#> 
-#> $mstart_s
-#> [1] 2
-#> 
-#> $mstart_tol
-#> [1] 0.5
-#> 
-#> $mstart_maxiter
-#> [1] 10
-#> 
-#> $mstart_maxstart
-#> [1] 1000
-#> 
-#> $mstart_minsp
-#> [1] 1
+gsl_nls_control() |> str()
+#> List of 21
+#>  $ maxiter        : int 100
+#>  $ scale          : chr "more"
+#>  $ solver         : chr "qr"
+#>  $ fdtype         : chr "forward"
+#>  $ factor_up      : num 2
+#>  $ factor_down    : num 3
+#>  $ avmax          : num 0.75
+#>  $ h_df           : num 1.49e-08
+#>  $ h_fvv          : num 0.02
+#>  $ xtol           : num 1.49e-08
+#>  $ ftol           : num 1.49e-08
+#>  $ gtol           : num 1.49e-08
+#>  $ mstart_n       : int 30
+#>  $ mstart_p       : int 5
+#>  $ mstart_q       : int 3
+#>  $ mstart_r       : num 4
+#>  $ mstart_s       : int 2
+#>  $ mstart_tol     : num 0.25
+#>  $ mstart_maxiter : int 10
+#>  $ mstart_maxstart: int 250
+#>  $ mstart_minsp   : int 1
 ```
 
 Run `?gsl_nls_control` or check the [GSL reference
@@ -294,15 +254,15 @@ summary(ex1_fit)
 #> 
 #> Residual standard error: 0.2446 on 22 degrees of freedom
 #> 
-#> Number of iterations to convergence: 7 
-#> Achieved convergence tolerance: 4.939e-10
+#> Number of iterations to convergence: 9 
+#> Achieved convergence tolerance: 0
 
 ## asymptotic confidence intervals
 confint(ex1_fit)
 #>         2.5 %   97.5 %
 #> A   4.5173851 5.268653
-#> lam 1.1464130 1.687314
-#> b   0.7832685 1.236216
+#> lam 1.1464128 1.687314
+#> b   0.7832683 1.236216
 ```
 
 The `predict` method extends the existing `predict.nls` method by
@@ -314,11 +274,11 @@ response:
 ## asymptotic prediction intervals
 predict(ex1_fit, interval = "prediction", level = 0.95)
 #>            fit       lwr      upr
-#>  [1,] 5.902761 5.2670164 6.538506
-#>  [2,] 5.108572 4.5388042 5.678340
+#>  [1,] 5.902761 5.2670162 6.538506
+#>  [2,] 5.108572 4.5388041 5.678340
 #>  [3,] 4.443289 3.8987833 4.987794
-#>  [4,] 3.885987 3.3479065 4.424069
-#>  [5,] 3.419142 2.8812429 3.957042
+#>  [4,] 3.885988 3.3479065 4.424069
+#>  [5,] 3.419142 2.8812430 3.957042
 ....
 ```
 
@@ -333,9 +293,9 @@ parameters:
 ## delta method confidence intervals
 confintd(ex1_fit, expr = c("b", "A + b", "log(lam)"), level = 0.95)
 #>                fit       lwr       upr
-#> b        1.0097421 0.7832685 1.2362157
-#> A + b    5.9027614 5.5194280 6.2860948
-#> log(lam) 0.3484456 0.1575659 0.5393253
+#> b        1.0097419 0.7832683 1.2362155
+#> A + b    5.9027612 5.5194278 6.2860945
+#> log(lam) 0.3484454 0.1575657 0.5393251
 ```
 
 #### Jacobian calculation
@@ -379,8 +339,8 @@ gsl_nls(
 #> 
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 7 
-#> Achieved convergence tolerance: 4.946e-10
+#> Number of iterations to convergence: 9 
+#> Achieved convergence tolerance: 6.661e-16
 ```
 
 If the model formula `fn` can be derived with `stats::deriv()`, then the
@@ -405,8 +365,8 @@ gsl_nls(
 #> 
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 7 
-#> Achieved convergence tolerance: 4.946e-10
+#> Number of iterations to convergence: 9 
+#> Achieved convergence tolerance: 6.661e-16
 ```
 
 Alternatively, a self-starting nonlinear model (see `?selfStart`) can be
@@ -451,12 +411,72 @@ confintd(ss_fit, expr = c("R0 - Asym", "exp(lrc)", "Asym"), level = 0.95)
 #> Asym      1.009742 0.7832683 1.236216
 ```
 
+#### Multi-start optimization
+
+In addition to single-start NLS optimization, the `gsl_nls()` function
+has built-in support for multi-start optimization. For multi-start
+optimization, instead of a list or vector of fixed start parameters,
+pass a `list` or `matrix` of start parameter ranges to the argument
+`start`:
+
+``` r
+gsl_nls(
+  fn = y ~ A * exp(-lam * x) + b,    ## model formula
+  data = data.frame(x = x, y = y),   ## model fit data
+  start = list(A = c(-100, 100), lam = c(-5, 5), b = c(-10, 10))   ## multi-start
+)
+#> Nonlinear regression model
+#>   model: y ~ A * exp(-lam * x) + b
+#>    data: data.frame(x = x, y = y)
+#>     A   lam     b 
+#> 4.893 1.417 1.010 
+#>  residual sum-of-squares: 1.316
+#> 
+#> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
+#> 
+#> Number of iterations to convergence: 2 
+#> Achieved convergence tolerance: 6.106e-14
+```
+
+The multi-start procedure is a modified version of the algorithm
+described in Hickernell and Yuan (1997), see `?gsl_nls` for additional
+details. If `start` contains missing (or infinite) values, the
+multi-start algorithm is executed without fixed parameter ranges for the
+missing parameters. More precisely, the ranges are initialized to the
+unit interval and dynamically increased or decreased in each major
+iteration of the multi-start algorithm.
+
+``` r
+gsl_nls(
+  fn = y ~ A * exp(-lam * x) + b,    ## model formula
+  data = data.frame(x = x, y = y),   ## model fit data
+  start = list(A = NA, lam = NA, b = NA)   ## dynamic multi-start
+)
+#> Nonlinear regression model
+#>   model: y ~ A * exp(-lam * x) + b
+#>    data: data.frame(x = x, y = y)
+#>     A   lam     b 
+#> 4.893 1.417 1.010 
+#>  residual sum-of-squares: 1.316
+#> 
+#> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
+#> 
+#> Number of iterations to convergence: 3 
+#> Achieved convergence tolerance: 0
+```
+
+**Remark**: the dynamic multi-start procedure is not expected to always
+return a global minimum of the NLS objective. Especially when the
+objective function contains many local optima, the multi-start algorithm
+may be unable to select parameter ranges that include the global
+minimizing solution.
+
 ### Example 2: Gaussian function
 
 #### Data
 
 The following code generates
-![n = 300](https://latex.codecogs.com/png.latex?n%20%3D%20300 "n = 300")
+![n = 50](https://latex.codecogs.com/png.latex?n%20%3D%2050 "n = 50")
 noisy observations
 ![y_1,\ldots,y_n](https://latex.codecogs.com/png.latex?y_1%2C%5Cldots%2Cy_n "y_1,\ldots,y_n")
 from a Gaussian function with multiplicative independent Gaussian noise
@@ -485,7 +505,7 @@ with noise standard deviation
 
 ``` r
 set.seed(1)
-n <- 100
+n <- 50
 x <- seq_len(n) / n
 f <- function(a, b, c, x) a * exp(-(x - b)^2 / (2 * c^2))
 y <- f(a = 5, b = 0.4, c = 0.15, x) * rnorm(n, mean = 1, sd = 0.1)
@@ -511,40 +531,41 @@ ex2a_fit <- gsl_nls(
   start = c(a = 1, b = 0, c = 1),           ## starting values
   trace = TRUE                              ## verbose output
 )
-#> iter   1: ssr = 339.291, par = (2.10471, 3.44068, -4.13922)
-#> iter   2: ssr = 330.119, par = (1.86889, 2.96584, -5.67394)
-#> iter   3: ssr = 325.042, par = (1.9442, 2.48742, -6.34815)
-#> iter   4: ssr = 322.908, par = (1.85083, 1.44909, -7.43335)
-#> iter   5: ssr = 321.567, par = (1.87774, 0.64233, -7.71663)
-#> iter   6: ssr = 319.514, par = (1.88378, -1.55933, -7.58996)
-#> iter   7: ssr = 316.382, par = (2.07121, -2.72618, -6.20417)
-#> iter   8: ssr = 312.761, par = (2.3348, -3.12549, -5.08135)
-#> iter   9: ssr = 309.995, par = (2.53367, -3.1161, -4.57662)
-#> iter  10: ssr = 306.424, par = (2.82487, -3.02358, -3.70877)
-#> iter  11: ssr = 303.663, par = (3.43302, -2.42306, -2.38995)
-#> iter  12: ssr = 291.482, par = (3.81318, -1.95412, -2.10297)
-#> iter  13: ssr = 288.792, par = (4.29134, -1.3864, -1.40092)
-#> iter  14: ssr = 283.978, par = (3.8767, -1.11145, -1.35879)
-#> iter  15: ssr = 266.364, par = (2.32619, 0.00863008, -0.817272)
-#> iter  16: ssr = 188.845, par = (2.47857, 0.30237, -0.383137)
-#> iter  17: ssr = 160.525, par = (2.58287, 0.344461, -0.330347)
-#> iter  18: ssr = 96.2152, par = (2.92015, 0.4045, -0.225393)
-#> iter  19: ssr = 36.2279, par = (3.75813, 0.399011, -0.170978)
-#> iter  20: ssr = 7.2443, par = (4.60596, 0.402466, -0.15752)
-#> iter  21: ssr = 4.01617, par = (4.96151, 0.401811, -0.151909)
-#> iter  22: ssr = 3.9438, par = (5.02047, 0.401927, -0.151065)
-#> iter  23: ssr = 3.94359, par = (5.02385, 0.401936, -0.151002)
-#> iter  24: ssr = 3.94359, par = (5.02391, 0.401937, -0.151)
-#> iter  25: ssr = 3.94359, par = (5.02391, 0.401937, -0.151)
+#> iter   1: ssr = 174.476, par = (2.1711, 3.31169, -4.12254)
+#> iter   2: ssr = 171.29, par = (1.85555, 2.84851, -5.66642)
+#> iter   3: ssr = 168.703, par = (1.93316, 2.34745, -6.33662)
+#> iter   4: ssr = 167.546, par = (1.84665, 1.24131, -7.399)
+#> iter   5: ssr = 166.799, par = (1.87948, 0.380488, -7.61723)
+#> iter   6: ssr = 165.623, par = (1.90658, -2.00515, -7.19306)
+#> iter   7: ssr = 163.944, par = (2.18675, -3.19622, -5.38804)
+#> iter   8: ssr = 161.679, par = (2.41824, -3.1487, -5.03149)
+#> iter   9: ssr = 159.955, par = (2.67372, -3.18703, -4.20169)
+#> iter  10: ssr = 157.391, par = (3.1083, -2.84066, -3.10574)
+#> iter  11: ssr = 153.131, par = (3.54614, -2.38071, -2.53824)
+#> iter  12: ssr = 150.129, par = (4.02799, -1.97822, -1.96376)
+#> iter  13: ssr = 146.735, par = (4.49887, -1.35879, -1.39554)
+#> iter  14: ssr = 142.928, par = (3.14455, -0.573017, -1.08117)
+#> iter  15: ssr = 124.562, par = (2.14743, 0.465351, -0.443335)
+#> iter  16: ssr = 102.183, par = (3.74451, 0.263346, 0.353849)
+#> iter  17: ssr = 35.4869, par = (3.49962, 0.437339, 0.18613)
+#> iter  18: ssr = 9.24985, par = (4.41273, 0.381446, 0.16023)
+#> iter  19: ssr = 3.13669, par = (4.94382, 0.40041, 0.150317)
+#> iter  20: ssr = 2.7623, par = (5.11741, 0.397815, 0.14729)
+#> iter  21: ssr = 2.75831, par = (5.13786, 0.397886, 0.146865)
+#> iter  22: ssr = 2.7583, par = (5.1389, 0.397884, 0.146831)
+#> iter  23: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
+#> iter  24: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
+#> iter  25: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
+#> iter  26: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt'
-#> number of iterations: 25
-#> reason for stopping: output range error
-#> initial ssr = 408.097
-#> final ssr = 3.94359
-#> ssr/dof = 0.0406556
-#> ssr achieved tolerance = 8.87068e-12
-#> function evaluations: 120
+#> number of iterations: 26
+#> reason for stopping: input domain error
+#> initial ssr = 210.146
+#> final ssr = 2.7583
+#> ssr/dof = 0.0586872
+#> ssr achieved tolerance = 8.88178e-16
+#> function evaluations: 125
 #> jacobian evaluations: 0
 #> fvv evaluations: 0
 #> status = success
@@ -554,14 +575,14 @@ ex2a_fit
 #> Nonlinear regression model
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
 #>    data: data.frame(x = x, y = y)
-#>       a       b       c 
-#>  5.0239  0.4019 -0.1510 
-#>  residual sum-of-squares: 3.944
+#>      a      b      c 
+#> 5.1389 0.3979 0.1468 
+#>  residual sum-of-squares: 2.758
 #> 
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 25 
-#> Achieved convergence tolerance: 8.871e-12
+#> Number of iterations to convergence: 26 
+#> Achieved convergence tolerance: 8.882e-16
 ```
 
 #### Geodesic acceleration
@@ -580,25 +601,27 @@ ex2b_fit <- gsl_nls(
   algorithm = "lmaccel",                    ## algorithm
   trace = TRUE                              ## verbose output
 )
-#> iter   1: ssr = 308.361, par = (1.57385, 0.517022, 0.525652)
-#> iter   2: ssr = 251.21, par = (1.79669, 0.376601, 0.42549)
-#> iter   3: ssr = 157.541, par = (2.3964, 0.393096, 0.284184)
-#> iter   4: ssr = 55.7059, par = (3.48328, 0.397307, 0.213232)
-#> iter   5: ssr = 9.84516, par = (4.49527, 0.399941, 0.168801)
-#> iter   6: ssr = 4.07138, par = (4.94171, 0.401667, 0.153199)
-#> iter   7: ssr = 3.94401, par = (5.01919, 0.401909, 0.151117)
-#> iter   8: ssr = 3.94359, par = (5.02382, 0.401936, 0.151003)
-#> iter   9: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
-#> iter  10: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
+#> iter   1: ssr = 158.039, par = (1.58476, 0.502555, 0.511498)
+#> iter   2: ssr = 126.469, par = (1.8444, 0.366374, 0.403898)
+#> iter   3: ssr = 77.0115, par = (2.5025, 0.392374, 0.272717)
+#> iter   4: ssr = 26.4036, par = (3.64063, 0.394564, 0.205619)
+#> iter   5: ssr = 5.35492, par = (4.63506, 0.396865, 0.16366)
+#> iter   6: ssr = 2.82529, par = (5.05578, 0.397909, 0.149333)
+#> iter   7: ssr = 2.75877, par = (5.13246, 0.397896, 0.147057)
+#> iter   8: ssr = 2.7583, par = (5.13862, 0.397885, 0.146843)
+#> iter   9: ssr = 2.7583, par = (5.13893, 0.397884, 0.14683)
+#> iter  10: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
+#> iter  11: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
+#> iter  12: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt+accel'
-#> number of iterations: 10
-#> reason for stopping: output range error
-#> initial ssr = 408.097
-#> final ssr = 3.94359
-#> ssr/dof = 0.0406556
-#> ssr achieved tolerance = 2.4666e-11
-#> function evaluations: 66
+#> number of iterations: 12
+#> reason for stopping: input domain error
+#> initial ssr = 210.146
+#> final ssr = 2.7583
+#> ssr/dof = 0.0586872
+#> ssr achieved tolerance = 3.24185e-14
+#> function evaluations: 76
 #> jacobian evaluations: 0
 #> fvv evaluations: 0
 #> status = success
@@ -609,16 +632,16 @@ ex2b_fit
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
 #>    data: data.frame(x = x, y = y)
 #>      a      b      c 
-#> 5.0239 0.4019 0.1510 
-#>  residual sum-of-squares: 3.944
+#> 5.1389 0.3979 0.1468 
+#>  residual sum-of-squares: 2.758
 #> 
 #> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 10 
-#> Achieved convergence tolerance: 2.467e-11
+#> Number of iterations to convergence: 12 
+#> Achieved convergence tolerance: 3.242e-14
 ```
 
-With geodesic acceleration enabled the method converges after 10
+With geodesic acceleration enabled the method converges after 12
 iterations, whereas the method without geodesic acceleration required 26
 iterations. This indicates that the nonlinear least-squares solver
 benefits (substantially) from the geodesic acceleration correction.
@@ -716,40 +739,42 @@ gsl_nls(
   fvv = fvv,                                ## analytic function
   x = x                                     ## argument passed to fvv
 )
-#> iter   1: ssr = 308.544, par = (1.57301, 0.517197, 0.526679)
-#> iter   2: ssr = 252.22, par = (1.79127, 0.377729, 0.427685)
-#> iter   3: ssr = 159.307, par = (2.38171, 0.392426, 0.285394)
-#> iter   4: ssr = 57.03, par = (3.46129, 0.397358, 0.213901)
-#> iter   5: ssr = 10.1669, par = (4.4808, 0.39993, 0.169295)
-#> iter   6: ssr = 4.08327, par = (4.93799, 0.401659, 0.153303)
-#> iter   7: ssr = 3.94406, par = (5.01888, 0.401907, 0.151125)
-#> iter   8: ssr = 3.94359, par = (5.02381, 0.401935, 0.151003)
-#> iter   9: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
-#> iter  10: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
+#> iter   1: ssr = 158.14, par = (1.584, 0.502802, 0.512515)
+#> iter   2: ssr = 126.579, par = (1.84317, 0.365984, 0.404378)
+#> iter   3: ssr = 77.1032, par = (2.50015, 0.392468, 0.272532)
+#> iter   4: ssr = 26.4382, par = (3.63788, 0.394722, 0.205505)
+#> iter   5: ssr = 5.36705, par = (4.63344, 0.396903, 0.16368)
+#> iter   6: ssr = 2.82578, par = (5.05546, 0.39791, 0.149341)
+#> iter   7: ssr = 2.75877, par = (5.13243, 0.397896, 0.147057)
+#> iter   8: ssr = 2.7583, par = (5.13862, 0.397885, 0.146843)
+#> iter   9: ssr = 2.7583, par = (5.13893, 0.397884, 0.14683)
+#> iter  10: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
+#> iter  11: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
+#> iter  12: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt+accel'
-#> number of iterations: 10
-#> reason for stopping: output range error
-#> initial ssr = 408.097
-#> final ssr = 3.94359
-#> ssr/dof = 0.0406556
-#> ssr achieved tolerance = 2.92721e-11
-#> function evaluations: 50
+#> number of iterations: 12
+#> reason for stopping: input domain error
+#> initial ssr = 210.146
+#> final ssr = 2.7583
+#> ssr/dof = 0.0586872
+#> ssr achieved tolerance = 3.28626e-14
+#> function evaluations: 58
 #> jacobian evaluations: 0
-#> fvv evaluations: 16
+#> fvv evaluations: 18
 #> status = success
 #> *******************
 #> Nonlinear regression model
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
 #>    data: data.frame(x = x, y = y)
 #>      a      b      c 
-#> 5.0239 0.4019 0.1510 
-#>  residual sum-of-squares: 3.944
+#> 5.1389 0.3979 0.1468 
+#>  residual sum-of-squares: 2.758
 #> 
 #> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 10 
-#> Achieved convergence tolerance: 2.927e-11
+#> Number of iterations to convergence: 12 
+#> Achieved convergence tolerance: 3.286e-14
 ```
 
 If the model formula `fn` can be derived with `stats::deriv()`, then the
@@ -768,40 +793,42 @@ gsl_nls(
   trace = TRUE,                             ## verbose output
   fvv = TRUE                                ## automatic derivation
 )
-#> iter   1: ssr = 308.544, par = (1.57301, 0.517197, 0.526679)
-#> iter   2: ssr = 252.22, par = (1.79127, 0.377729, 0.427685)
-#> iter   3: ssr = 159.307, par = (2.38171, 0.392426, 0.285394)
-#> iter   4: ssr = 57.03, par = (3.46129, 0.397358, 0.213901)
-#> iter   5: ssr = 10.1669, par = (4.4808, 0.39993, 0.169295)
-#> iter   6: ssr = 4.08327, par = (4.93799, 0.401659, 0.153303)
-#> iter   7: ssr = 3.94406, par = (5.01888, 0.401907, 0.151125)
-#> iter   8: ssr = 3.94359, par = (5.02381, 0.401935, 0.151003)
-#> iter   9: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
-#> iter  10: ssr = 3.94359, par = (5.02391, 0.401937, 0.151)
+#> iter   1: ssr = 158.14, par = (1.584, 0.502802, 0.512515)
+#> iter   2: ssr = 126.579, par = (1.84317, 0.365984, 0.404378)
+#> iter   3: ssr = 77.1032, par = (2.50015, 0.392468, 0.272532)
+#> iter   4: ssr = 26.4382, par = (3.63788, 0.394722, 0.205505)
+#> iter   5: ssr = 5.36705, par = (4.63344, 0.396903, 0.16368)
+#> iter   6: ssr = 2.82578, par = (5.05546, 0.39791, 0.149341)
+#> iter   7: ssr = 2.75877, par = (5.13243, 0.397896, 0.147057)
+#> iter   8: ssr = 2.7583, par = (5.13862, 0.397885, 0.146843)
+#> iter   9: ssr = 2.7583, par = (5.13893, 0.397884, 0.14683)
+#> iter  10: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
+#> iter  11: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
+#> iter  12: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt+accel'
-#> number of iterations: 10
-#> reason for stopping: output range error
-#> initial ssr = 408.097
-#> final ssr = 3.94359
-#> ssr/dof = 0.0406556
-#> ssr achieved tolerance = 2.92797e-11
-#> function evaluations: 50
+#> number of iterations: 12
+#> reason for stopping: input domain error
+#> initial ssr = 210.146
+#> final ssr = 2.7583
+#> ssr/dof = 0.0586872
+#> ssr achieved tolerance = 2.93099e-14
+#> function evaluations: 58
 #> jacobian evaluations: 0
-#> fvv evaluations: 16
+#> fvv evaluations: 18
 #> status = success
 #> *******************
 #> Nonlinear regression model
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
 #>    data: data.frame(x = x, y = y)
 #>      a      b      c 
-#> 5.0239 0.4019 0.1510 
-#>  residual sum-of-squares: 3.944
+#> 5.1389 0.3979 0.1468 
+#>  residual sum-of-squares: 2.758
 #> 
 #> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 10 
-#> Achieved convergence tolerance: 2.928e-11
+#> Number of iterations to convergence: 12 
+#> Achieved convergence tolerance: 2.931e-14
 ```
 
 ### Example 3: Branin function
@@ -886,8 +913,8 @@ ex3_fit
 #> 
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 17 
-#> Achieved convergence tolerance: 1.989e-12
+#> Number of iterations to convergence: 20 
+#> Achieved convergence tolerance: 0
 ```
 
 **Note**: When using the `function` method of `gsl_nls()`, the returned
@@ -985,7 +1012,7 @@ the parameter vector
 as,
 
 ``` r
-## model and jacobiant
+## model and jacobian
 f <- function(theta) {
   val <- c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25)
   attr(val, "gradient") <- rbind(diag(sqrt(1e-5), nrow = length(theta)), 2 * t(theta))
@@ -1019,8 +1046,11 @@ system.time({
     control = list(maxiter = 500)
   )
 })
+#>    user  system elapsed 
+#>  34.454   0.108  34.564
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_lm), "\n")
+#> Residual sum-of-squares: 0.004778845
 ```
 
 Second, the same model is fitted with a call to `gsl_nls_large()` using
@@ -1038,8 +1068,11 @@ system.time({
     control = list(maxiter = 500)
   )
 })
+#>    user  system elapsed 
+#>   1.362   0.384   1.747
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_cgst), "\n")
+#> Residual sum-of-squares: 0.004778845
 ```
 
 #### Sparse Jacobian matrix
@@ -1078,6 +1111,162 @@ bench::mark(
   check = FALSE,
   min_iterations = 5
 )
+#> # A tibble: 4 × 6
+#>   expression       min   median `itr/sec` mem_alloc `gc/sec`
+#>   <bch:expr>  <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl>
+#> 1 Dense LM       6.33s    6.39s     0.157     1.8GB    6.61 
+#> 2 Dense CGST     1.29s    1.36s     0.726    1.02GB   16.4  
+#> 3 Sparse LM      4.87s    4.91s     0.203   33.19MB    0.122
+#> 4 Sparse CGST 166.09ms 176.09ms     4.66    23.04MB    3.73
+```
+
+## NLS test problems
+
+The R-package currently contains a collection of 59 NLS test problems
+originating primarily from the [NIST Statistical Reference Datasets
+(StRD)](https://www.itl.nist.gov/div898/strd/nls/nls_main.shtml)
+archive; Bates and Watts (1988); and Moré, Garbow, and Hillstrom (1981).
+
+``` r
+## avalable test problems
+nls_test_list()
+#>                                     name    class  p   n       check
+#> 1                                Misra1a  formula  2  14  p, n fixed
+#> 2                               Chwirut2  formula  3  54  p, n fixed
+#> 3                               Chwirut1  formula  3 214  p, n fixed
+#> 4                               Lanczos3  formula  6  24  p, n fixed
+#> 5                                 Gauss1  formula  8 250  p, n fixed
+#> 6                                 Gauss2  formula  8 250  p, n fixed
+#> 7                                DanWood  formula  2   6  p, n fixed
+#> 8                                Misra1b  formula  2  14  p, n fixed
+#> 9                                 Kirby2  formula  5 151  p, n fixed
+#> 10                                 Hahn1  formula  7 236  p, n fixed
+#> 11                                Nelson  formula  3 128  p, n fixed
+#> 12                                 MGH17  formula  5  33  p, n fixed
+#> 13                              Lanczos1  formula  6  24  p, n fixed
+#> 14                              Lanczos2  formula  6  24  p, n fixed
+#> 15                                Gauss3  formula  8 250  p, n fixed
+#> 16                               Misra1c  formula  2  14  p, n fixed
+#> 17                               Misra1d  formula  2  14  p, n fixed
+#> 18                              Roszman1  formula  4  25  p, n fixed
+#> 19                                  ENSO  formula  9 168  p, n fixed
+#> 20                                 MGH09  formula  4  11  p, n fixed
+#> 21                               Thurber  formula  7  37  p, n fixed
+#> 22                                BoxBOD  formula  2   6  p, n fixed
+#> 23                            Ratkowsky2  formula  3   9  p, n fixed
+#> 24                                 MGH10  formula  3  16  p, n fixed
+#> 25                              Eckerle4  formula  3  35  p, n fixed
+#> 26                            Ratkowsky3  formula  4  15  p, n fixed
+#> 27                              Bennett5  formula  3 154  p, n fixed
+#> 28                         Isomerization  formula  4  24  p, n fixed
+#> 29                             Lubricant  formula  9  53  p, n fixed
+#> 30                         Sulfisoxazole  formula  4  12  p, n fixed
+#> 31                                Leaves  formula  4  15  p, n fixed
+#> 32                              Chloride  formula  3  54  p, n fixed
+#> 33                          Tetracycline  formula  4   9  p, n fixed
+#> 34                     Linear, full rank function  5  10 p <= n free
+#> 35                        Linear, rank 1 function  5  10 p <= n free
+#> 36 Linear, rank 1, zero columns and rows function  5  10 p <= n free
+#> 37                            Rosenbrock function  2   2  p, n fixed
+#> 38                        Helical valley function  3   3  p, n fixed
+#> 39                       Powell singular function  4   4  p, n fixed
+#> 40                     Freudenstein/Roth function  2   2  p, n fixed
+#> 41                                  Bard function  3  15  p, n fixed
+#> 42                   Kowalik and Osborne function  4  11  p, n fixed
+#> 43                                 Meyer function  3  16  p, n fixed
+#> 44                                Watson function  6  31  p, n fixed
+#> 45                     Box 3-dimensional function  3  10 p <= n free
+#> 46                  Jennrich and Sampson function  2  10 p <= n free
+#> 47                      Brown and Dennis function  4  20 p <= n free
+#> 48                             Chebyquad function  9   9 p <= n free
+#> 49                   Brown almost-linear function 10  10 p == n free
+#> 50                             Osborne 1 function  5  33  p, n fixed
+#> 51                             Osborne 2 function 11  65  p, n fixed
+#> 52                              Hanson 1 function  2  16  p, n fixed
+#> 53                              Hanson 2 function  3  16  p, n fixed
+#> 54                             McKeown 1 function  2   3  p, n fixed
+#> 55                             McKeown 2 function  3   4  p, n fixed
+#> 56                             McKeown 3 function  5  10  p, n fixed
+#> 57              Devilliers and Glasser 1 function  4  24  p, n fixed
+#> 58              Devilliers and Glasser 2 function  5  16  p, n fixed
+#> 59                        Madsen example function  2   3  p, n fixed
+```
+
+The function `nls_test_problem()` fetches the model definition and model
+data required to solve a specific NLS test problem with `gsl_nls()` (or
+`nls()` if the model is defined as a `formula`). This also returns the
+vector of certified target values corresponding to the *best-available*
+solutions and a vector of suggested starting values for the parameters:
+
+``` r
+## example regression problem
+(ratkowsky2 <- nls_test_problem(name = "Ratkowsky2"))
+#> $data
+#>       y  x
+#> 1  8.93  9
+#> 2 10.80 14
+#> 3 18.59 21
+#> 4 22.33 28
+#> 5 39.35 42
+#> 6 56.11 57
+#> 7 61.73 63
+#> 8 64.62 70
+#> 9 67.08 79
+#> 
+#> $fn
+#> y ~ b1/(1 + exp(b2 - b3 * x))
+#> <environment: 0x559c59502090>
+#> 
+#> $start
+#>    b1    b2    b3 
+#> 100.0   1.0   0.1 
+#> 
+#> $target
+#>         b1         b2         b3 
+#> 72.4622376  2.6180768  0.0673592 
+#> 
+#> attr(,"class")
+#> [1] "nls_test_formula"
+
+with(ratkowsky2,
+     gsl_nls(
+       fn = fn,
+       data = data,
+       start = start
+     )
+)
+#> Nonlinear regression model
+#>   model: y ~ b1/(1 + exp(b2 - b3 * x))
+#>    data: data
+#>       b1       b2       b3 
+#> 72.46224  2.61808  0.06736 
+#>  residual sum-of-squares: 8.057
+#> 
+#> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
+#> 
+#> Number of iterations to convergence: 10 
+#> Achieved convergence tolerance: 4.619e-14
+
+## example optimization problem
+madsen <- nls_test_problem(name = "Madsen")
+with(madsen,
+     gsl_nls(
+       fn = fn,
+       y = y,
+       start = start,
+       jac = jac
+     )
+)
+#> Nonlinear regression model
+#>   model: y ~ fn(x)
+#>      x1      x2 
+#> -0.1554  0.6946 
+#>  residual sum-of-squares: 0.7732
+#> 
+#> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
+#> 
+#> Number of iterations to convergence: 42 
+#> Achieved convergence tolerance: 1.11e-16
 ```
 
 ## Other R-packages
@@ -1096,11 +1285,33 @@ for this package include:
 
 <div id="refs" class="references csl-bib-body hanging-indent">
 
+<div id="ref-BW88" class="csl-entry">
+
+Bates, D.M., and D.G. Watts. 1988. *Nonlinear Regression Analysis and
+Its Applications ISBN 0471816434*.
+
+</div>
+
 <div id="ref-gsl_manual" class="csl-entry">
 
 Galassi, M., J. Davies, J. Theiler, B. Gough, G. Jungman, M. Booth, and
 F. Rossi. 2009. *GNU Scientific Library Reference Manual (3rd Ed.), ISBN
 0954612078*. <https://www.gnu.org/software/gsl/>.
+
+</div>
+
+<div id="ref-HY97" class="csl-entry">
+
+Hickernell, F.J., and Y. Yuan. 1997. “A Simple Multistart Algorithm for
+Global Optimization.” *OR Transactions* 1(2).
+
+</div>
+
+<div id="ref-MGH81" class="csl-entry">
+
+Moré, J.J., B.S. Garbow, and K.E. Hillstrom. 1981. “Testing
+Unconstrained Optimization Software.” *ACM Transactions on Mathematical
+Software (TOMS)* 7(1).
 
 </div>
 
