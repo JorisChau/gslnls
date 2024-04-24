@@ -25,7 +25,8 @@ gsl_nls_control(
   mstart_tol = 0.25,
   mstart_maxiter = 10,
   mstart_maxstart = 250,
-  mstart_minsp = 1
+  mstart_minsp = 1,
+  ...
 )
 }
 \arguments{
@@ -104,6 +105,8 @@ If the starting ranges for one or more parameters are unbounded and updated dyna
 \item{mstart_maxstart}{positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 250.}
 
 \item{mstart_minsp}{positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.}
+
+\item{...}{any additional arguments (currently not used).}
 }
 \value{
 A \code{list} with exactly twenty-one components:
