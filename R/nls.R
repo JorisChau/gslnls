@@ -1045,6 +1045,7 @@ gsl_nls.function <- function(fn, y, start,
 #' @param mstart_maxiter positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to 10.
 #' @param mstart_maxstart positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 250.
 #' @param mstart_minsp positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.
+#' @param ... any additional arguments (currently not used).
 #' @importFrom stats nls.control
 #' @seealso \code{\link[stats]{nls.control}}
 #' @seealso \url{https://www.gnu.org/software/gsl/doc/html/nls.html#tunable-parameters}
@@ -1085,7 +1086,7 @@ gsl_nls_control <- function(maxiter = 100, scale = "more", solver = "qr",
                             h_df = sqrt(.Machine$double.eps), h_fvv = 0.02, xtol = sqrt(.Machine$double.eps),
                             ftol = sqrt(.Machine$double.eps), gtol = sqrt(.Machine$double.eps),
                             mstart_n = 30, mstart_p = 5, mstart_q = mstart_n %/% 10, mstart_r = 4, mstart_s = 2,
-                            mstart_tol = 0.25, mstart_maxiter = 10, mstart_maxstart = 250, mstart_minsp = 1) {
+                            mstart_tol = 0.25, mstart_maxiter = 10, mstart_maxstart = 250, mstart_minsp = 1, ...) {
 
   scale <- match.arg(scale, c("more", "levenberg", "marquardt"))
   solver <- match.arg(solver, c("qr", "cholesky", "svd"))
