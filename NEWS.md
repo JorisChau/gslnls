@@ -8,7 +8,7 @@
 * Removed old Makevars and Makevars.win
 * Several minor changes
 
-# glsnls 1.2.0
+# gslnls 1.2.0
 
 * Added multi-start algorithm to `gsl_nls()`
 * Added 56 NLS regression and optimization test problems
