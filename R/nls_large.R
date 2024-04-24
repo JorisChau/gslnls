@@ -72,6 +72,7 @@
 #' }
 #'
 #' ## dense Levenberg-Marquardt
+#' \donttest{
 #' gsl_nls_large(
 #'   fn = f,                       ## model
 #'   y = rep(0, p + 1),            ## (dummy) responses
@@ -80,8 +81,10 @@
 #'   jac = jac,                    ## jacobian
 #'   control = list(maxiter = 250)
 #' )
+#' }
 #'
 #' ## dense Steihaug-Toint conjugate gradient
+#' \donttest{
 #' gsl_nls_large(
 #'   fn = f,                       ## model
 #'   y = rep(0, p + 1),            ## (dummy) responses
@@ -89,6 +92,7 @@
 #'   jac = jac,                    ## jacobian
 #'   algorithm = "cgst"            ## algorithm
 #' )
+#' }
 #'
 #' ## sparse Jacobian function
 #' jacsp <- function(theta) {

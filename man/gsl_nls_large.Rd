@@ -110,6 +110,7 @@ This argument is only used if \code{fn} is defined as a \link{formula}.}
 
 \item{...}{additional arguments passed to the calls of \code{fn}, \code{jac} and \code{fvv} if
 defined as functions.}
+
 }
 \value{
 If \code{fn} is a \code{formula} returns a list object of class \code{nls}.
@@ -160,6 +161,7 @@ jac <- function(theta) {
 }
 
 ## dense Levenberg-Marquardt
+\donttest{
 gsl_nls_large(
   fn = f,                       ## model
   y = rep(0, p + 1),            ## (dummy) responses
@@ -168,8 +170,10 @@ gsl_nls_large(
   jac = jac,                    ## jacobian
   control = list(maxiter = 250)
 )
+}
 
 ## dense Steihaug-Toint conjugate gradient
+\donttest{
 gsl_nls_large(
   fn = f,                       ## model
   y = rep(0, p + 1),            ## (dummy) responses
@@ -177,6 +181,7 @@ gsl_nls_large(
   jac = jac,                    ## jacobian
   algorithm = "cgst"            ## algorithm
 )
+}
 
 ## sparse Jacobian function
 jacsp <- function(theta) {

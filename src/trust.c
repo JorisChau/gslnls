@@ -351,7 +351,7 @@ double det_cholesky_jtj(gsl_matrix *J, gsl_matrix *JTJ)
         return det;
 
     det = 1.0;
-    for (int i = 0; i < (JTJ->size1); ++i)
+    for (size_t i = 0; i < (JTJ->size1); ++i)
         det *= gsl_matrix_get(JTJ, i, i); // product of diagonal elements
 
     return det * det;

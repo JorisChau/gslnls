@@ -29,7 +29,6 @@ static void gsl_multistart_driver(pdata *pars,
                                   SEXP mssr,
                                   const double xtol,
                                   const double ftol,
-                                  const double gtol,
                                   Rboolean verbose);
 
 static void callback(const R_len_t iter, void *params, const gsl_multifit_nlinear_workspace *w);
@@ -364,7 +363,7 @@ SEXP C_nls_internal(void *data)
         /* multi-start global iterations */
         do
         {
-            gsl_multistart_driver(pars, &mpars, &fdf, mssr, xtol, ftol, gtol, verbose);
+            gsl_multistart_driver(pars, &mpars, &fdf, mssr, xtol, ftol, verbose);
 
             /* check stopping criterion */
             mpars.mstarts += 1;
@@ -921,7 +920,6 @@ static void gsl_multistart_driver(pdata *pars,
                                   SEXP mssr,
                                   const double xtol,
                                   const double ftol,
-                                  const double gtol,
                                   Rboolean verbose)
 {
     // initialize variables
