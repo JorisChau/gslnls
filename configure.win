@@ -18,7 +18,7 @@ if [ -z "${LIB_GSL}" ]; then
   elif [ "${R_VER}" = '43' ] && [ -n "${RTOOLS43_HOME}" ] && [ -f "${RTOOLS43_HOME}/x86_64-w64-mingw32.static.posix/lib/libgsl.a" ]; then
     echo "** LIB_GSL is missing, detected GSL installation in ${RTOOLS43_HOME}"
     LIB_GSL="${RTOOLS43_HOME}/x86_64-w64-mingw32.static.posix"
-  elif [ "${R_VER}" = '44' || "${R_VER}" = '45' ] && [ -n "${RTOOLS44_HOME}" ] && [ -f "${RTOOLS44_HOME}/x86_64-w64-mingw32.static.posix/lib/libgsl.a" ]; then
+  elif [ "${R_VER}" = '44' -o "${R_VER}" = '45' ] && [ -n "${RTOOLS44_HOME}" ] && [ -f "${RTOOLS44_HOME}/x86_64-w64-mingw32.static.posix/lib/libgsl.a" ]; then
     echo "** LIB_GSL is missing, detected GSL installation in ${RTOOLS44_HOME}"
     LIB_GSL="${RTOOLS44_HOME}/x86_64-w64-mingw32.static.posix"
   else
@@ -43,4 +43,5 @@ sed \
   -e "s|@GSL_CFLAGS@|${GSL_CFLAGS}|" \
   -e "s|@GSL_LIBS@|${GSL_LIBS}|" \
   src/Makevars.win.in > src/Makevars.win
+
 exit 0
