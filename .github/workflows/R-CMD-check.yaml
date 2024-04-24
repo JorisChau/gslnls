@@ -36,10 +36,12 @@ jobs:
         config:
           - {os: macOS-latest, r: 'next'}
           - {os: macOS-latest, r: 'release'}
-          - {os: windows-latest, r: 'next', rtools: '44', http-user-agent: 'release'}
+          - {os: windows-latest, r: 'devel', rtools: '44'}
+          - {os: windows-latest, r: 'next', rtools: '44'}
           - {os: windows-latest, r: 'release', rtools: '43'}
-          - {os: windows-latest, r: 'oldrel', rtools: '42'}
-          - {os: ubuntu-latest, r: 'next', http-user-agent: 'release'}
+          #- {os: windows-latest, r: 'oldrel', rtools: '42'}
+          - {os: ubuntu-latest, r: 'devel'}
+          - {os: ubuntu-latest, r: 'next'}
           - {os: ubuntu-latest, r: 'release'}
           - {os: ubuntu-latest, r: 'oldrel'}
 
