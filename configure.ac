@@ -1,5 +1,5 @@
 
-AC_INIT([gslnls],[1.3.0],[https://github.com/JorisChau/gslnls/issues/])
+AC_INIT([gslnls],[1.3.1],[https://github.com/JorisChau/gslnls/issues/])
 
 : ${R_HOME=`R RHOME`}
 if test -z "${R_HOME}"; then
@@ -18,9 +18,9 @@ AC_PROG_FC
 AC_PATH_PROG([GSL_CONFIG], [gsl-config])
 
 if test -n "${GSL_CONFIG}"; then
-    # Use gsl-config for header and linker arguments (without BLAS which we get from R)
+    # Use gsl-config for header and linker arguments
     GSL_CFLAGS=`${GSL_CONFIG} --cflags`
-    GSL_LIBS=`${GSL_CONFIG} --libs-without-cblas`
+    GSL_LIBS=`${GSL_CONFIG} --libs`
     CFLAGS="$CFLAGS $GSL_CFLAGS"
 else
     echo "------------------------- LIBGSL ERROR ------------------------------"
@@ -28,9 +28,8 @@ else
     echo " * deb: libgsl-dev (Debian, Ubuntu, etc)"
     echo " * rpm: gsl-devel (Fedora, CentOS, RHEL)"
     echo " * csw: gsl_dev (Solaris)"
-    echo "If libgsl is already installed, check that 'pkg-config' is in your"
-    echo "PATH and PKG_CONFIG_PATH contains a libgsl .pc file. If pkg-config"
-    echo "is unavailable you can set INCLUDE_DIR and LIB_DIR manually via:"
+    echo "If libgsl is installed, check that 'gsl-config' is in your PATH. If"
+    echo "gsl-config is unavailable, set INCLUDE_DIR and LIB_DIR manually via:"
     echo "R CMD INSTALL --configure-vars='INCLUDE_DIR=... LIB_DIR=...'"
     echo "--------------------------------------------------------------------"
   exit 1;

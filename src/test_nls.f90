@@ -147,11 +147,11 @@ subroutine p00_j ( nprob, m, n, x, fjac )
   double precision x(n)
 
   if ( nprob == 1 ) then
-    call p01_j ( m, n, x, fjac )
+    call p01_j ( m, n, fjac )
   else if ( nprob == 2 ) then
-    call p02_j ( m, n, x, fjac )
+    call p02_j ( m, n, fjac )
   else if ( nprob == 3 ) then
-    call p03_j ( m, n, x, fjac )
+    call p03_j ( m, n, fjac )
   else if ( nprob == 4 ) then
     call p04_j ( m, n, x, fjac )
   else if ( nprob == 5 ) then
@@ -243,57 +243,57 @@ subroutine p00_sol ( nprob, m, n, known, x )
   double precision x(n)
 
   if ( nprob == 1 ) then
-    call p01_sol ( m, n, known, x )
+    call p01_sol ( n, known, x )
   else if ( nprob == 2 ) then
     call p02_sol ( m, n, known, x )
   else if ( nprob == 3 ) then
     call p03_sol ( m, n, known, x )
   else if ( nprob == 4 ) then
-    call p04_sol ( m, n, known, x )
+    call p04_sol ( n, known, x )
   else if ( nprob == 5 ) then
-    call p05_sol ( m, n, known, x )
+    call p05_sol ( n, known, x )
   else if ( nprob == 6 ) then
-    call p06_sol ( m, n, known, x )
+    call p06_sol ( n, known, x )
   else if ( nprob == 7 ) then
-    call p07_sol ( m, n, known, x )
+    call p07_sol ( n, known, x )
   else if ( nprob == 8 ) then
-    call p08_sol ( m, n, known, x )
+    call p08_sol ( n, known, x )
   else if ( nprob == 9 ) then
-    call p09_sol ( m, n, known, x )
+    call p09_sol ( n, known, x )
   else if ( nprob == 10 ) then
-    call p10_sol ( m, n, known, x )
+    call p10_sol ( n, known, x )
   else if ( nprob == 11 ) then
-    call p11_sol ( m, n, known, x )
+    call p11_sol ( n, known, x )
   else if ( nprob == 12 ) then
-    call p12_sol ( m, n, known, x )
+    call p12_sol ( n, known, x )
   else if ( nprob == 13 ) then
     call p13_sol ( m, n, known, x )
   else if ( nprob == 14 ) then
-    call p14_sol ( m, n, known, x )
+    call p14_sol ( n, known, x )
   else if ( nprob == 15 ) then
-    call p15_sol ( m, n, known, x )
+    call p15_sol ( n, known, x )
   else if ( nprob == 16 ) then
-    call p16_sol ( m, n, known, x )
+    call p16_sol ( n, known, x )
   else if ( nprob == 17 ) then
-    call p17_sol ( m, n, known, x )
+    call p17_sol ( n, known, x )
   else if ( nprob == 18 ) then
-    call p18_sol ( m, n, known, x )
+    call p18_sol ( n, known, x )
   else if ( nprob == 19 ) then
-    call p19_sol ( m, n, known, x )
+    call p19_sol ( n, known, x )
   else if ( nprob == 20 ) then
-    call p20_sol ( m, n, known, x )
+    call p20_sol ( n, known, x )
   else if ( nprob == 21 ) then
-    call p21_sol ( m, n, known, x )
+    call p21_sol ( n, known, x )
   else if ( nprob == 22 ) then
-    call p22_sol ( m, n, known, x )
+    call p22_sol ( n, known, x )
   else if ( nprob == 23 ) then
-    call p23_sol ( m, n, known, x )
+    call p23_sol ( n, known, x )
   else if ( nprob == 24 ) then
-    call p24_sol ( m, n, known, x )
+    call p24_sol ( n, known, x )
   else if ( nprob == 25 ) then
-    call p25_sol ( m, n, known, x )
+    call p25_sol ( n, known, x )
   else if ( nprob == 26 ) then
-    call p26_sol ( m, n, known, x )
+    call p26_sol ( n, known, x )
   end if
 
   return
@@ -439,7 +439,7 @@ subroutine p01_f ( m, n, x, f )
 
   return
 end
-subroutine p01_j ( m, n, x, fjac )
+subroutine p01_j ( m, n, fjac )
 
 !*****************************************************************************80
 !
@@ -463,8 +463,6 @@ subroutine p01_j ( m, n, x, fjac )
 !
 !    Input, integer N, the number of variables.
 !
-!    Input, double precision X(N), the evaluation point.
-!
 !    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
@@ -474,7 +472,6 @@ subroutine p01_j ( m, n, x, fjac )
 
   double precision fjac(m,n)
   integer j
-  double precision x(n)
 
   fjac(1:m,1:n) = - 2.0D+00 / real( m )
   do j = 1, n
@@ -483,7 +480,7 @@ subroutine p01_j ( m, n, x, fjac )
 
   return
 end
-subroutine p01_sol ( m, n, known, x )
+subroutine p01_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -503,8 +500,6 @@ subroutine p01_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution
@@ -517,7 +512,6 @@ subroutine p01_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 1
@@ -616,7 +610,7 @@ subroutine p02_f ( m, n, x, f )
 
   return
 end
-subroutine p02_j ( m, n, x, fjac )
+subroutine p02_j ( m, n, fjac )
 
 !*****************************************************************************80
 !
@@ -640,8 +634,6 @@ subroutine p02_j ( m, n, x, fjac )
 !
 !    Input, integer N, the number of variables.
 !
-!    Input, double precision X(N), the evaluation point.
-!
 !    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
@@ -652,7 +644,6 @@ subroutine p02_j ( m, n, x, fjac )
   double precision fjac(m,n)
   integer i
   integer j
-  double precision x(n)
 
   do j = 1, n
     do i = 1, m
@@ -797,7 +788,7 @@ subroutine p03_f ( m, n, x, f )
 
   return
 end
-subroutine p03_j ( m, n, x, fjac )
+subroutine p03_j ( m, n, fjac )
 
 !*****************************************************************************80
 !
@@ -821,8 +812,6 @@ subroutine p03_j ( m, n, x, fjac )
 !
 !    Input, integer N, the number of variables.
 !
-!    Input, double precision X(N), the evaluation point.
-!
 !    Output, double precision FJAC(M,N), the jacobian matrix.
 !
   implicit none
@@ -833,7 +822,6 @@ subroutine p03_j ( m, n, x, fjac )
   double precision fjac(m,n)
   integer i
   integer j
-  double precision x(n)
 
   fjac(1:m,1:n) = 0.0D+00
   do j = 2, n-1
@@ -1012,7 +1000,7 @@ subroutine p04_j ( m, n, x, fjac )
 
   return
 end
-subroutine p04_sol ( m, n, known, x )
+subroutine p04_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -1032,8 +1020,6 @@ subroutine p04_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is
@@ -1046,7 +1032,6 @@ subroutine p04_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 1
@@ -1198,7 +1183,7 @@ subroutine p05_j ( m, n, x, fjac )
 
   return
 end
-subroutine p05_sol ( m, n, known, x )
+subroutine p05_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -1218,8 +1203,6 @@ subroutine p05_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is
@@ -1232,7 +1215,6 @@ subroutine p05_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 1
@@ -1376,7 +1358,7 @@ subroutine p06_j ( m, n, x, fjac )
 
   return
 end
-subroutine p06_sol ( m, n, known, x )
+subroutine p06_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -1396,8 +1378,6 @@ subroutine p06_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -1410,7 +1390,6 @@ subroutine p06_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 1
@@ -1543,7 +1522,7 @@ subroutine p07_j ( m, n, x, fjac )
 
   return
 end
-subroutine p07_sol ( m, n, known, x )
+subroutine p07_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -1563,8 +1542,6 @@ subroutine p07_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -1577,7 +1554,6 @@ subroutine p07_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 1
@@ -1741,7 +1717,7 @@ subroutine p08_j ( m, n, x, fjac )
 
   return
 end
-subroutine p08_sol ( m, n, known, x )
+subroutine p08_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -1761,8 +1737,6 @@ subroutine p08_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -1775,7 +1749,6 @@ subroutine p08_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -1932,7 +1905,7 @@ subroutine p09_j ( m, n, x, fjac )
 
   return
 end
-subroutine p09_sol ( m, n, known, x )
+subroutine p09_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -1952,8 +1925,6 @@ subroutine p09_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -1966,7 +1937,6 @@ subroutine p09_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -2119,7 +2089,7 @@ subroutine p10_j ( m, n, x, fjac )
 
   return
 end
-subroutine p10_sol ( m, n, known, x )
+subroutine p10_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -2139,8 +2109,6 @@ subroutine p10_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -2153,7 +2121,6 @@ subroutine p10_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -2333,7 +2300,7 @@ subroutine p11_j ( m, n, x, fjac )
 
   return
 end
-subroutine p11_sol ( m, n, known, x )
+subroutine p11_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -2353,8 +2320,6 @@ subroutine p11_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -2367,7 +2332,6 @@ subroutine p11_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -2511,7 +2475,7 @@ subroutine p12_j ( m, n, x, fjac )
 
   return
 end
-subroutine p12_sol ( m, n, known, x )
+subroutine p12_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -2531,8 +2495,6 @@ subroutine p12_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -2545,7 +2507,6 @@ subroutine p12_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 1
@@ -2873,7 +2834,7 @@ subroutine p14_j ( m, n, x, fjac )
 
   return
 end
-subroutine p14_sol ( m, n, known, x )
+subroutine p14_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -2893,8 +2854,6 @@ subroutine p14_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -2907,7 +2866,6 @@ subroutine p14_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -3093,7 +3051,7 @@ subroutine p15_j ( m, n, x, fjac )
 
   return
 end
-subroutine p15_sol ( m, n, known, x )
+subroutine p15_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -3113,8 +3071,6 @@ subroutine p15_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -3127,7 +3083,6 @@ subroutine p15_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -3273,7 +3228,7 @@ subroutine p16_j ( m, n, x, fjac )
 
   return
 end
-subroutine p16_sol ( m, n, known, x )
+subroutine p16_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -3293,8 +3248,6 @@ subroutine p16_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -3307,7 +3260,6 @@ subroutine p16_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 1
@@ -3466,7 +3418,7 @@ subroutine p17_j ( m, n, x, fjac )
 
   return
 end
-subroutine p17_sol ( m, n, known, x )
+subroutine p17_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -3486,8 +3438,6 @@ subroutine p17_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -3500,7 +3450,6 @@ subroutine p17_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -3681,7 +3630,7 @@ subroutine p18_j ( m, n, x, fjac )
 
   return
 end
-subroutine p18_sol ( m, n, known, x )
+subroutine p18_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -3701,8 +3650,6 @@ subroutine p18_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution
@@ -3715,7 +3662,6 @@ subroutine p18_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -3858,7 +3804,7 @@ subroutine p19_j ( m, n, x, fjac )
 
   return
 end
-subroutine p19_sol ( m, n, known, x )
+subroutine p19_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -3878,8 +3824,6 @@ subroutine p19_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution
@@ -3892,7 +3836,6 @@ subroutine p19_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -4038,7 +3981,7 @@ subroutine p20_j ( m, n, x, fjac )
 
   return
 end
-subroutine p20_sol ( m, n, known, x )
+subroutine p20_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -4058,8 +4001,6 @@ subroutine p20_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -4072,7 +4013,6 @@ subroutine p20_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -4233,7 +4173,7 @@ subroutine p21_j ( m, n, x, fjac )
 
   return
 end
-subroutine p21_sol ( m, n, known, x )
+subroutine p21_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -4253,8 +4193,6 @@ subroutine p21_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -4267,7 +4205,6 @@ subroutine p21_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 1
@@ -4433,7 +4370,7 @@ subroutine p22_j ( m, n, x, fjac )
 
   return
 end
-subroutine p22_sol ( m, n, known, x )
+subroutine p22_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -4453,8 +4390,6 @@ subroutine p22_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -4467,7 +4402,6 @@ subroutine p22_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 1
@@ -4657,7 +4591,7 @@ subroutine p23_j ( m, n, x, fjac )
 
   return
 end
-subroutine p23_sol ( m, n, known, x )
+subroutine p23_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -4677,8 +4611,6 @@ subroutine p23_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -4691,7 +4623,6 @@ subroutine p23_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 1
@@ -4838,7 +4769,7 @@ subroutine p24_j ( m, n, x, fjac )
 
   return
 end
-subroutine p24_sol ( m, n, known, x )
+subroutine p24_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -4858,8 +4789,6 @@ subroutine p24_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -4872,7 +4801,6 @@ subroutine p24_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -5034,7 +4962,7 @@ subroutine p25_j ( m, n, x, fjac )
 
   return
 end
-subroutine p25_sol ( m, n, known, x )
+subroutine p25_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -5054,8 +4982,6 @@ subroutine p25_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -5068,7 +4994,6 @@ subroutine p25_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 0
@@ -5205,7 +5130,7 @@ subroutine p26_j ( m, n, x, fjac )
 
   return
 end
-subroutine p26_sol ( m, n, known, x )
+subroutine p26_sol ( n, known, x )
 
 !*****************************************************************************80
 !
@@ -5225,8 +5150,6 @@ subroutine p26_sol ( m, n, known, x )
 !
 !  Parameters:
 !
-!    Input, integer M, the number of equations.
-!
 !    Input, integer N, the number of variables.
 !
 !    Output, integer KNOWN, 1 or 0, if the solution is known
@@ -5239,7 +5162,6 @@ subroutine p26_sol ( m, n, known, x )
   integer n
 
   integer known
-  integer m
   double precision x(n)
 
   known = 1

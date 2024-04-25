@@ -1,3 +1,7 @@
+# gslnls 1.3.1
+
+* Minor edits configure.ac to fix cran check results
+
 # gslnls 1.3.0
 
 * Missing starting values/ranges allowed in `gsl_nls()`

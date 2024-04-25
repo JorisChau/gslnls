@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# {gslnls}: GSL Nonlinear Least-Squares Fitting in R
+# {gslnls}: GSL Multi-Start Nonlinear Least-Squares Fitting in R
 
 <!-- badges: start -->
 
@@ -1047,7 +1047,7 @@ system.time({
   )
 })
 #>    user  system elapsed 
-#>  34.454   0.108  34.564
+#>  33.720   0.084  33.812
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_lm), "\n")
 #> Residual sum-of-squares: 0.004778845
@@ -1069,7 +1069,7 @@ system.time({
   )
 })
 #>    user  system elapsed 
-#>   1.362   0.384   1.747
+#>   1.214   0.312   1.527
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_cgst), "\n")
 #> Residual sum-of-squares: 0.004778845
@@ -1114,8 +1114,8 @@ bench::mark(
 #> # A tibble: 4 × 6
 #>   expression       min   median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>  <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl>
-#> 1 Dense LM       6.33s    6.39s     0.157     1.8GB    6.61 
-#> 2 Dense CGST     1.29s    1.36s     0.726    1.02GB   16.4  
+#> 1 Dense LM       6.33s    6.39s     0.157     1.8GB    6.61  
+#> 2 Dense CGST     1.29s    1.36s     0.726    1.02GB    16.4  
 #> 3 Sparse LM      4.87s    4.91s     0.203   33.19MB    0.122
 #> 4 Sparse CGST 166.09ms 176.09ms     4.66    23.04MB    3.73
 ```
@@ -1215,7 +1215,7 @@ solutions and a vector of suggested starting values for the parameters:
 #> 
 #> $fn
 #> y ~ b1/(1 + exp(b2 - b3 * x))
-#> <environment: 0x559c59502090>
+#> <environment: 0x55b96bf04da0>
 #> 
 #> $start
 #>    b1    b2    b3 

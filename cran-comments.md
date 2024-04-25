@@ -1,6 +1,10 @@
-## CRAN package version 1.3.0
+## CRAN package version 1.3.1
 
 * System requirements: GSL (>= 2.2)
+
+## Comments
+
+* Edited configure.ac + configure to fix cran check errors (fedora builds)
 
 ## Test environments
 
