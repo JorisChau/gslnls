@@ -3480,7 +3480,6 @@ else
   exit 1;
 fi
 
-
 # check gsl version
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if GSL version >= 2.2" >&5
 printf %s "checking if GSL version >= 2.2... " >&6; }
@@ -3496,7 +3495,7 @@ else $as_nop
 #include <gsl/gsl_version.h>
 #include <stdio.h>
 #include <stdlib.h>
-int main() {
+int main(void) {
 #ifdef GSL_VERSION
    int major, minor;
    char *gslv = GSL_VERSION;

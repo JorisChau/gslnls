@@ -35,7 +35,6 @@ else
   exit 1;
 fi
 
-
 # check gsl version
 AC_MSG_CHECKING([if GSL version >= 2.2])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -43,7 +42,7 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <gsl/gsl_version.h>
 #include <stdio.h>
 #include <stdlib.h>
-int main() {
+int main(void) {
 #ifdef GSL_VERSION
    int major, minor;
    char *gslv = GSL_VERSION;
