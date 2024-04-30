@@ -4,8 +4,10 @@
 
 ## Comments
 
+* Fix errors cran check results (fedora builds)
 * Removed configure.win + Makevars.win.in 
 * Added static Makevars.win as recommended by T. Kalibera
+* Fix prototype warning in config.log
 
 ## Test environments
 
