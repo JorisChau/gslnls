@@ -108,7 +108,8 @@
 #' See the individual method descriptions for the structures of the returned lists and the generic functions
 #' applicable to objects of both classes.
 #' @useDynLib gslnls, .registration = TRUE
-#' @importFrom stats nls numericDeriv deriv as.formula coef deviance df.residual fitted vcov formula getInitial model.weights pf pt qt setNames sigma nobs
+#' @importFrom stats nls numericDeriv deriv as.formula coef deviance df.residual fitted vcov formula getInitial model.weights
+#' @importFrom stats pf pt qt setNames sigma nobs hatvalues
 #' @seealso \code{\link[stats]{nls}}
 #' @seealso \url{https://www.gnu.org/software/gsl/doc/html/nls.html}
 #' @references M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.

@@ -1,0 +1,6 @@
+# use pkg-config conditionally to support older versions of Rtools
+ifeq (,$(shell pkg-config --version 2>/dev/null))
+   PKG_LIBS = -lgsl -lgslcblas -lm
+else
+   PKG_LIBS = $(shell pkg-config --libs gsl)
+endif

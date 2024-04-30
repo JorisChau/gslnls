@@ -237,13 +237,13 @@ penalty_fit_dgT <- gsl_nls_large(
   fn = function(theta) c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25),
   y = rep(0, 11L),
   start = rep(0.15, 10L),
-  jac = function(theta) as(rbind(diag(rep(sqrt(1e-5), length(theta))), 2 * t(theta)), Class = "dgTMatrix")
+  jac = function(theta) as(rbind(diag(rep(sqrt(1e-5), length(theta))), 2 * t(theta)), Class = "TsparseMatrix")
 )
 penalty_fit_dge <- gsl_nls_large(
   fn = function(theta) c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25),
   y = rep(0, 11L),
   start = rep(0.15, 10L),
-  jac = function(theta) as(rbind(diag(rep(sqrt(1e-5), length(theta))), 2 * t(theta)), Class = "dgeMatrix")
+  jac = function(theta) as(rbind(diag(rep(sqrt(1e-5), length(theta))), 2 * t(theta)), Class = "unpackedMatrix")
 )
 
 dotest_tol("1.8.6", inherits(penalty_fit_dgC, "gsl_nls"), TRUE)
@@ -272,6 +272,7 @@ if(requireNamespace("MASS")) {
 }
 dotest("1.9.14", dim(confintd(misra1a_fit1, expr = "b1 + b2")), c(1L, 3L))
 dotest("1.9.15", capture.output(misra1a_fit1)[c(1, 2)], c("Nonlinear regression model", "  model: y ~ b1 * (1 - exp(-b2 * x))"))
+dotest("1.9.16", length(hatvalues(misra1a_fit1)), 14L)
 
 dotest("1.10.1", length(fitted(madsen_fit1)), 3L)
 dotest("1.10.2", nobs(madsen_fit1), 3L)
@@ -290,5 +291,6 @@ dotest("1.10.12", names(anova(madsen_fit1, madsen_fit2)), c("Res.Df", "Res.Sum S
 dotest("1.10.13", dim(confint(madsen_fit1, parm = c(1L, 2L))), c(2L, 2L))
 dotest("1.10.14", dim(confintd(madsen_fit1, expr = quote(x1 - x2), dtype = "numeric")), c(1L, 3L))
 dotest("1.10.15", capture.output(madsen_fit1)[c(1, 2)], c("Nonlinear regression model", "  model: y ~ fn(x)"))
+dotest("1.10.16", length(hatvalues(madsen_fit1)), 3L)
 
 cat("Completed gslnls unit tests\n")

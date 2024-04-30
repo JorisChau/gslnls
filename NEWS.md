@@ -1,3 +1,8 @@
+# gslnls 1.3.2
+
+* Reverted to static Makevars.win (supplied by T. Kalibera)
+* Added new method `hatvalues()`
+
 # gslnls 1.3.1
 
 * Minor edits configure.ac to fix cran check results

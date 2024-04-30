@@ -1,4 +1,0 @@
-#! /bin/sh
-rm -f src/*.o src/*.so src/Makevars.win src/symbols.rds \
-       *~ */*~
-exit 0

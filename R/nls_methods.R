@@ -425,6 +425,32 @@ vcov.gsl_nls <- function(object, ...) {
   sm$cov.unscaled * sm$sigma^2
 }
 
+#' Calculate leverage values
+#' @description Returns leverage values (hat values) from a fitted \code{"gsl_nls"} object based on the estimated
+#' variance-covariance matrix of the model parameters.
+#' @inheritParams coef.gsl_nls
+#' @param model An object inheriting from class \code{"gsl_nls"}.
+#' @return Numeric vector of leverage values similar to \code{\link[stats]{hatvalues}}.
+#' @seealso \code{\link[stats]{hatvalues}}
+#' @examples
+#' ## data
+#' set.seed(1)
+#' n <- 25
+#' xy <- data.frame(
+#'  x = (1:n) / n,
+#'  y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
+#' )
+#' ## model
+#' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
+#'
+#' hatvalues(obj)
+#' @export
+hatvalues.gsl_nls <- function(model, ...) {
+  J <- model$m$gradient()
+  JtJinv <- chol2inv(model$m$Rmat())
+  diag((J %*% JtJinv) %*% t(J))
+}
+
 #' Anova tables
 #' @description Returns the analysis of variance (or deviance) tables for two or
 #' more fitted \code{"gsl_nls"} objects.

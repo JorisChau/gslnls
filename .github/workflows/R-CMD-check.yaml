@@ -39,7 +39,6 @@ jobs:
           - {os: windows-latest, r: 'devel', rtools: '44'}
           - {os: windows-latest, r: 'next', rtools: '44'}
           - {os: windows-latest, r: 'release', rtools: '43'}
-          #- {os: windows-latest, r: 'oldrel', rtools: '42'}
           - {os: ubuntu-latest, r: 'devel'}
           - {os: ubuntu-latest, r: 'next'}
           - {os: ubuntu-latest, r: 'release'}
@@ -48,9 +47,6 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
-      RTOOLS42_HOME: C:\rtools42
-      RTOOLS43_HOME: C:\rtools43
-      RTOOLS44_HOME: C:\rtools44
 
     steps:
       - name: Configure git
@@ -71,13 +67,6 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install gsl
-
-      - name: Install gsl (windows)
-        if: runner.os == 'windows'
-        run: |
-          pacman -Sy --noconfirm
-          pacman -S --noconfirm mingw-w64-{i686,x86_64}-gsl
-        shell: bash
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:

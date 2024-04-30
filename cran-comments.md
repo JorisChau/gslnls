@@ -1,10 +1,11 @@
-## CRAN package version 1.3.1
+## CRAN package version 1.3.2
 
 * System requirements: GSL (>= 2.2)
 
 ## Comments
 
-* Edited configure.ac + configure to fix cran check errors (fedora builds)
+* Removed configure.win + Makevars.win.in 
+* Added static Makevars.win as recommended by T. Kalibera
 
 ## Test environments
 
