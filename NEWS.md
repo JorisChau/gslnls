@@ -1,3 +1,7 @@
+# gslnls 1.3.3
+
+* Fix standard errors `predict()` when using `newdata`
+
 # gslnls 1.3.2
 
 * Reverted to static Makevars.win (supplied by T. Kalibera)

@@ -272,17 +272,16 @@ print.gsl_nls <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
 #' @export
 predict.gsl_nls <- function(object, newdata, scale = NULL, interval = c("none", "confidence", "prediction"), level = 0.95, ...) {
   interval <- match.arg(interval, c("none", "confidence", "prediction"))
+
   if (missing(newdata)) {
     fit <- as.vector(fitted(object))
     if(interval != "none") {
       Fdot <- object$m$gradient()
-      Rmat <- object$m$Rmat()
     }
   } else {
     fit <- object$m$predict(newdata)
     if(interval != "none") {
       Fdot <- object$m$gradient1(newdata)
-      Rmat <- qr.R(qr(Fdot))
       if(!is.null(object$weights))
         warning("unweighted Jacobian matrix used to calculate standard errors, evaluate predictions without 'newdata' argument to use weighted Jacobian.")
     }
@@ -291,7 +290,7 @@ predict.gsl_nls <- function(object, newdata, scale = NULL, interval = c("none", 
     if(is.null(scale))
       scale <- sigma(object)
     a <- c((1 - level) / 2, (1 + level) / 2)
-    ses <- scale * sqrt(1 * (interval == "prediction") + rowSums(Fdot %*% chol2inv(Rmat) * Fdot))
+    ses <- scale * sqrt(1 * (interval == "prediction") + rowSums(Fdot %*% chol2inv(object$m$Rmat()) * Fdot))
     ci <- fit + ses %o% qt(a, df.residual(object))
     cimat <- cbind(fit = fit, lwr = ci[, 1], upr = ci[, 2])
     return(cimat)
