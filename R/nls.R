@@ -31,6 +31,9 @@
 #' the values of \code{mstart_n}, \code{mstart_r} or \code{mstart_minsp} to avoid early termination of the algorithm at the cost of
 #' increased computational effort.
 #'
+#' @section Robust loss functions:
+#' If \code{loss}
+#'
 #' @param fn a nonlinear model defined either as a two-sided \link{formula} including variables and parameters,
 #' or as a \link{function} returning a numeric vector, with first argument the vector of parameters to be estimated.
 #' See the individual method descriptions below.
@@ -65,6 +68,20 @@
 #' searches a larger subspace for a solution, it can converge more quickly than \code{"dogleg"}
 #' on some problems.
 #' }
+#' @param loss character string specifying the loss function to optimize. The following choices are supported:
+#' \itemize{
+#' \item \code{"default"} default squared loss function.
+#' \item \code{"huber"} Huber loss function.
+#' \item \code{"barron"} Smooth family of robust loss functions from (Barron (2019)).
+#' \item \code{"biweight"} Tukey's bisquare loss function.
+#' \item \code{"welsh"} Welsh loss function.
+#' \item \code{"optimal"} Optimal loss function as given by (Maronna et al. (2006)).
+#' \item \code{"hampel"} Hampel loss function (Hampel et al. (1986)).
+#' \item \code{"ggw"} Generalized Gauss-Weight loss function (Koller and Stahel (2011)).
+#' \item \code{"lqq"} Linear Quadratic Quadratic loss function (Koller and Stahel (2011)).
+#' }.
+#' If a character string, the default tuning parameters as specified by \code{\link{gsl_nls_loss}} are used.
+#' Instead, a list as returned by \code{\link{gsl_nls_loss}} with non-default tuning parmaeters is also accepted.
 #' @param control an optional list of control parameters to tune the least squares iterations and multistart algorithm.
 #' See \code{\link{gsl_nls_control}} for the available control parameters and their default values.
 #' @param lower	a named list or named numeric vector of parameter lower bounds, or an unnamed numeric
@@ -109,9 +126,10 @@
 #' applicable to objects of both classes.
 #' @useDynLib gslnls, .registration = TRUE
 #' @importFrom stats nls numericDeriv deriv as.formula coef deviance df.residual fitted vcov formula getInitial model.weights
-#' @importFrom stats pf pt qt setNames sigma nobs hatvalues
+#' @importFrom stats pf pt qt setNames sigma nobs hatvalues printCoefmat symnum
 #' @seealso \code{\link[stats]{nls}}
 #' @seealso \url{https://www.gnu.org/software/gsl/doc/html/nls.html}
+#' @seealso \url{https://CRAN.R-project.org/package=robustbase/vignettes/psi_functions.pdf}
 #' @references M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
 #' @references Hickernell, F.J. and Yuan, Y. (1997) \emph{“A simple multistart algorithm for global optimization”}, OR Transactions, Vol. 1 (2).
 #' @examples
@@ -290,6 +308,7 @@ gsl_nls <- function (fn, ...) {
 #' @export
 gsl_nls.formula <- function(fn, data = parent.frame(), start,
                             algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
+                            loss = c("default", "huber", "barron", "bisquare", "welsh", "optimal", "hampel", "ggw", "lqq"),
                             control = gsl_nls_control(), lower, upper, jac = NULL, fvv = NULL,
                             trace = FALSE, subset, weights, na.action, model = FALSE, ...) {
 
@@ -447,7 +466,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
         as.formula(paste("~", paste(vNms, collapse = "+")),
                    env = environment(formula))
       mf$start <- mf$control <- mf$algorithm <- mf$trace <- mf$model <-
-        mf$fn <- mf$jac <- mf$fvv <- mf$lower <- mf$upper <- NULL
+        mf$fn <- mf$jac <- mf$fvv <- mf$lower <- mf$upper <- mf$loss <- NULL
       ## need stats:: for non-standard evaluation
       mf[[1L]] <- quote(stats::model.frame)
       mf <- eval.parent(mf)
@@ -455,8 +474,8 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
       mf <- as.list(mf)
       wts <- if (!mWeights) model.weights(mf) else NULL
     }
-    if (!is.null(wts) && any(wts < 0 | is.na(wts)))
-      stop("missing or negative weights not allowed")
+    if (!is.null(wts) && any(wts <= 0 | is.na(wts)))
+      stop("missing or non-positive weights not allowed")
   }
   else {
     stop("no data variables present")
@@ -615,6 +634,14 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     }
   }
 
+  ## loss function
+  if(is.character(loss)) {
+    .loss_config <- gsl_nls_loss(rho = loss)
+  } else {
+    .loss_config <- do.call(gsl_nls_loss, args = as.list(loss))
+  }
+  .loss_config$rho <- match(.loss_config$rho, c("default", "huber", "barron", "bisquare", "welsh", "optimal", "hampel", "ggw", "lqq"), nomatch = 1L) - 1L
+
   ## control arguments
   trace <- isTRUE(trace)
   .ctrl <- do.call(gsl_nls_control, args = if(!missing(control)) as.list(control) else list())
@@ -639,7 +666,9 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     is.numeric(.ctrl$mstart_tol), length(.ctrl$mstart_tol) == 1, .ctrl$mstart_tol > 0,
     is.numeric(.ctrl$mstart_maxiter), length(.ctrl$mstart_maxiter) == 1, .ctrl$mstart_maxiter >= 1,
     is.numeric(.ctrl$mstart_maxstart), length(.ctrl$mstart_maxstart) == 1, .ctrl$mstart_maxstart >= 1,
-    is.numeric(.ctrl$mstart_minsp), length(.ctrl$mstart_minsp) == 1, .ctrl$mstart_minsp >= 1
+    is.numeric(.ctrl$mstart_minsp), length(.ctrl$mstart_minsp) == 1, .ctrl$mstart_minsp >= 1,
+    is.numeric(.ctrl$irls_maxiter), length(.ctrl$irls_maxiter) == 1, .ctrl$irls_maxiter >= 1,
+    is.numeric(.ctrl$irls_xtol), length(.ctrl$irls_xtol) == 1, .ctrl$irls_xtol > 0
   )
   .ctrl_int <- c(
     as.integer(.ctrl$maxiter),
@@ -655,18 +684,19 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     as.integer(.ctrl$mstart_maxiter),
     as.integer(.ctrl$mstart_maxstart),
     as.integer(.ctrl$mstart_minsp),
-    as.integer(!is.list(start))
+    as.integer(!is.list(start)),
+    as.integer(.ctrl$irls_maxiter)
   )
-  .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol", "mstart_r", "mstart_tol")])
+  .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol", "mstart_r", "mstart_tol", "irls_xtol")])
   if(!all(.has_start)) {
     .ctrl_dbl[["mstart_r"]] <- 10 * .ctrl_dbl[["mstart_r"]]
   }
 
   ## optimize
-  cFit <- .Call(C_nls, .fn, .lhs, .jac, .fvv, environment(), start, wts, .lupars, .ctrl_int, .ctrl_dbl, .has_start, PACKAGE = "gslnls")
+  cFit <- .Call(C_nls, .fn, .lhs, .jac, .fvv, environment(), start, wts, .lupars, .ctrl_int, .ctrl_dbl, .has_start, .loss_config, PACKAGE = "gslnls")
 
   ## convert to nls object
-  m <- nlsModel(formula, mf, cFit$par, wts, jac)
+  m <- nlsModel(formula, mf, cFit$par, wts, jac, upper = NULL, irls = cFit$irls)
 
   convInfo <- list(
     isConv = as.logical(!cFit$conv),
@@ -698,6 +728,11 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
     nls.out$lower <- .lupars[1L, ]
     nls.out$upper <- .lupars[2L, ]
   }
+  if(!is.null(cFit$irls)) {
+    nls.out$irls <- cFit$irls
+    nls.out$irls$irls_conv <- as.logical(!cFit$irls$irls_conv)
+  }
+
   class(nls.out) <- c("gsl_nls", "nls")
 
   return(nls.out)
@@ -943,8 +978,8 @@ gsl_nls.function <- function(fn, y, start,
   if(!missing(weights)) {
     if(!is.numeric(weights) || !identical(length(weights), length(y)))
       stop("'weights' should be numeric equal in length to 'y'")
-    if (any(weights < 0 | is.na(weights)))
-      stop("missing or negative weights not allowed")
+    if (any(weights <= 0 | is.na(weights)))
+      stop("missing or non-positive weights not allowed")
   } else {
     weights <- NULL
   }
@@ -952,7 +987,7 @@ gsl_nls.function <- function(fn, y, start,
   ## optimize
   cFit <- .Call(C_nls, .fn, y, .jac, .fvv, environment(), .start, weights, .lupars, .ctrl_int, .ctrl_dbl, .has_start, PACKAGE = "gslnls")
 
-  m <- gslModel(fn, y, cFit, if(!all(.has_start) && is.list(start)) as.list(.start[1L, ]) else if(!all(.has_start) || is.matrix(start)) .start[1L, ] else .start, weights, jac, ...)
+  m <- gslModel(fn, y, cFit, if(!all(.has_start) && is.list(start)) as.list(.start[1L, ]) else if(!all(.has_start) || is.matrix(start)) .start[1L, ] else .start, weights, jac, cFit$irls, ...)
 
   ## mimick nls object
   convInfo <- list(
@@ -979,6 +1014,9 @@ gsl_nls.function <- function(fn, y, start,
   if(!is.null(.lupars)) {
     nls.out$lower <- .lupars[1L, ]
     nls.out$upper <- .lupars[2L, ]
+  }
+  if(!is.null(cFit$irls)) {
+    nls.out$irls <- cFit$irls[c("irls_weights", "irls_niter", "irls_tol")]
   }
   class(nls.out) <- "gsl_nls"
 
@@ -1046,6 +1084,9 @@ gsl_nls.function <- function(fn, y, start,
 #' @param mstart_maxiter positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to 10.
 #' @param mstart_maxstart positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 250.
 #' @param mstart_minsp positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.
+#' @param irls_maxiter postivive integer, maximum number of IRLS iterations. Only used in case of a non-default loss function optimized through IRLS.
+#' @param irls_xtol numeric value, termination of the IRLS procedure occurs when the relative change in parameters between IRLS iterations is \code{<= irls_xtol}. Only used
+#' in case of a non-default loss function optimized through IRLS.
 #' @param ... any additional arguments (currently not used).
 #' @importFrom stats nls.control
 #' @seealso \code{\link[stats]{nls.control}}
@@ -1054,7 +1095,7 @@ gsl_nls.function <- function(fn, y, start,
 #' @examples
 #' ## default tuning parameters
 #' gsl_nls_control()
-#' @return A \code{list} with exactly twenty-one components:
+#' @return A \code{list} with exactly twenty-three components:
 #' \itemize{
 #' \item maxiter
 #' \item scale
@@ -1077,6 +1118,8 @@ gsl_nls.function <- function(fn, y, start,
 #' \item mstart_maxiter
 #' \item mstart_maxstart
 #' \item mstart_minsp
+#' \item irls_maxiter
+#' \item irls_xtol
 #' }
 #' with meanings as explained under 'Arguments'.
 #' @references M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
@@ -1087,7 +1130,8 @@ gsl_nls_control <- function(maxiter = 100, scale = "more", solver = "qr",
                             h_df = sqrt(.Machine$double.eps), h_fvv = 0.02, xtol = sqrt(.Machine$double.eps),
                             ftol = sqrt(.Machine$double.eps), gtol = sqrt(.Machine$double.eps),
                             mstart_n = 30, mstart_p = 5, mstart_q = mstart_n %/% 10, mstart_r = 4, mstart_s = 2,
-                            mstart_tol = 0.25, mstart_maxiter = 10, mstart_maxstart = 250, mstart_minsp = 1, ...) {
+                            mstart_tol = 0.25, mstart_maxiter = 10, mstart_maxstart = 250, mstart_minsp = 1,
+                            irls_maxiter = 25, irls_xtol = 1e-4, ...) {
 
   scale <- match.arg(scale, c("more", "levenberg", "marquardt"))
   solver <- match.arg(solver, c("qr", "cholesky", "svd"))
@@ -1111,7 +1155,9 @@ gsl_nls_control <- function(maxiter = 100, scale = "more", solver = "qr",
     is.numeric(mstart_tol), length(mstart_tol) == 1, mstart_tol > 0,
     is.numeric(mstart_maxiter), length(mstart_maxiter) == 1, mstart_maxiter >= 1,
     is.numeric(mstart_maxstart), length(mstart_maxstart) == 1, mstart_maxstart >= 1,
-    is.numeric(mstart_minsp), length(mstart_minsp) == 1, mstart_minsp >= 1
+    is.numeric(mstart_minsp), length(mstart_minsp) == 1, mstart_minsp >= 1,
+    is.numeric(irls_maxiter), length(irls_maxiter) == 1, irls_maxiter >= 1,
+    is.numeric(irls_xtol), length(irls_xtol) == 1, irls_xtol > 0
   )
 
   list(maxiter = as.integer(maxiter), scale = scale, solver = solver, fdtype = fdtype,
@@ -1120,11 +1166,11 @@ gsl_nls_control <- function(maxiter = 100, scale = "more", solver = "qr",
        mstart_n = as.integer(mstart_n), mstart_p = as.integer(mstart_p), mstart_q = as.integer(mstart_q),
        mstart_r = mstart_r, mstart_s = as.integer(mstart_s), mstart_tol = mstart_tol,
        mstart_maxiter = as.integer(mstart_maxiter), mstart_maxstart = as.integer(mstart_maxstart),
-       mstart_minsp = as.integer(mstart_minsp))
+       mstart_minsp = as.integer(mstart_minsp), irls_maxiter = as.integer(irls_maxiter), irls_xtol = irls_xtol)
 
 }
 
-nlsModel <- function(form, data, start, wts, jac, upper=NULL) {
+nlsModel <- function(form, data, start, wts, jac, upper=NULL, irls=NULL) {
   ## thisEnv <- environment() # shared by all functions in the 'm' list; variable no longer needed
   env <- new.env(hash = TRUE, parent = environment(form))
   for(i in names(data)) env[[i]] <- data[[i]]
@@ -1191,6 +1237,10 @@ nlsModel <- function(form, data, start, wts, jac, upper=NULL) {
     qrDim <- min(dim(QR$qr))
     if(QR$rank < qrDim)
       warning("singular gradient matrix at parameter estimates")
+    if(!is.null(irls)) {
+      tau <- mean(irls$irls_psi^2) / mean(irls$irls_dpsi)^2
+      QR$qr <- QR$qr / sqrt(tau)
+    }
   } else {
     qrDim <- 0L
     stop("NA/NaN/Inf in gradient matrix at parameter estimates")
@@ -1293,7 +1343,7 @@ nlsModel <- function(form, data, start, wts, jac, upper=NULL) {
   m
 }
 
-gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
+gslModel <- function(fn, lhs, cFit, start, wts, jac, irls, ...) {
   env <- new.env(hash = TRUE, parent = environment(fn))
   env$fn <- fn
   data <- list(...)
@@ -1318,6 +1368,10 @@ gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
     qrDim <- min(dim(QR$qr))
     if(QR$rank < qrDim)
       warning("singular gradient matrix at parameter estimates")
+    if(!is.null(irls)) {
+      tau <- mean(irls$irls_psi^2) / mean(irls$irls_dpsi)^2
+      QR$qr <- QR$qr / sqrt(tau)
+    }
   } else {
     QR <- structure(list(qr = cFit$grad), class = "qr")
     QR$qr[] <- NA_real_

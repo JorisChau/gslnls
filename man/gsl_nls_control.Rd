@@ -26,6 +26,8 @@ gsl_nls_control(
   mstart_maxiter = 10,
   mstart_maxstart = 250,
   mstart_minsp = 1,
+  irls_maxiter = 25,
+  irls_xtol = 1e-04,
   ...
 )
 }
@@ -106,10 +108,15 @@ If the starting ranges for one or more parameters are unbounded and updated dyna
 
 \item{mstart_minsp}{positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.}
 
+\item{irls_maxiter}{postivive integer, maximum number of IRLS iterations. Only used in case of a non-default loss function optimized through IRLS.}
+
+\item{irls_xtol}{numeric value, termination of the IRLS procedure occurs when the relative change in parameters between IRLS iterations is \code{<= irls_xtol}. Only used
+in case of a non-default loss function optimized through IRLS.}
+
 \item{...}{any additional arguments (currently not used).}
 }
 \value{
-A \code{list} with exactly twenty-one components:
+A \code{list} with exactly twenty-three components:
 \itemize{
 \item maxiter
 \item scale
@@ -132,6 +139,8 @@ A \code{list} with exactly twenty-one components:
 \item mstart_maxiter
 \item mstart_maxstart
 \item mstart_minsp
+\item irls_maxiter
+\item irls_xtol
 }
 with meanings as explained under 'Arguments'.
 }

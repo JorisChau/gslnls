@@ -4,32 +4,11 @@
 #include "gsl_nls.h"
 
 /* static function declarations */
-static int gsl_multifit_nlinear_driver2(const R_len_t maxiter,
-                                        const double xtol,
-                                        const double gtol,
-                                        const double ftol,
-                                        void (*callback)(const R_len_t iter, void *params,
-                                                         const gsl_multifit_nlinear_workspace *w),
-                                        void *callback_params,
-                                        int *info,
-                                        double *chisq0,
-                                        double *chisq1,
-                                        const gsl_matrix *lu,
-                                        gsl_multifit_nlinear_workspace *w);
-
 static int gsl_f(const gsl_vector *x, void *params, gsl_vector *f);
 
 static int gsl_df(const gsl_vector *x, void *params, gsl_matrix *J);
 
 static int gsl_fvv(const gsl_vector *x, const gsl_vector *v, void *params, gsl_vector *fvv);
-
-static void gsl_multistart_driver(pdata *pars,
-                                  mdata *mpars,
-                                  gsl_multifit_nlinear_fdf *fdff,
-                                  SEXP mssr,
-                                  const double xtol,
-                                  const double ftol,
-                                  Rboolean verbose);
 
 static void callback(const R_len_t iter, void *params, const gsl_multifit_nlinear_workspace *w);
 
@@ -47,8 +26,6 @@ static void C_nls_cleanup(void *data)
         gsl_vector_free(pars->wts);
     if (pars->mx)
         gsl_matrix_free(pars->mx);
-    if (pars->mp)
-        gsl_vector_free(pars->mp);
     if (pars->mpopt)
         gsl_vector_free(pars->mpopt);
     if (pars->diag)
@@ -59,16 +36,22 @@ static void C_nls_cleanup(void *data)
         gsl_matrix_free(pars->JTJ);
     if (pars->workn)
         gsl_vector_free(pars->workn);
+    if (pars->workp)
+        gsl_vector_free(pars->workp);
     if (pars->mpopt1)
         gsl_vector_free(pars->mpopt1);
+    if (pars->psi)
+        gsl_vector_free(pars->psi);
+    if (pars->psip)
+        gsl_vector_free(pars->psip);
 }
 
 /* function call w/ cleanup */
-SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP lupars, SEXP control_int, SEXP control_dbl, SEXP has_start)
+SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP weights, SEXP lupars, SEXP control_int, SEXP control_dbl, SEXP has_start, SEXP loss_config)
 {
     /* function arguments */
-    pdata pars = {fn, y, jac, fvv, env, start, swts, lupars, control_int, control_dbl, has_start,
-                  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    pdata pars = {fn, y, jac, fvv, env, start, weights, lupars, control_int, control_dbl, has_start, loss_config,
+                  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
     /* safe function call */
     SEXP ans = R_ExecWithCleanup(C_nls_internal, &pars, C_nls_cleanup, &pars);
@@ -229,10 +212,13 @@ SEXP C_nls_internal(void *data)
     }
 
     /* use weights */
+    int wgt_i = INTEGER_ELT(VECTOR_ELT(pars->loss_config, 0), 0);
     pars->wts = gsl_vector_alloc(n);
-    if (!Rf_isNull(pars->swts))
+    if (!Rf_isNull(pars->weights))
         for (R_len_t i = 0; i < n; i++)
-            gsl_vector_set(pars->wts, i, REAL_ELT(pars->swts, i));
+            gsl_vector_set(pars->wts, i, REAL_ELT(pars->weights, i));
+    if (wgt_i)
+        gsl_vector_set_all(pars->wts, 1.0);
 
     /* initialize solver */
     const gsl_multifit_nlinear_type *T = gsl_multifit_nlinear_trust;
@@ -258,6 +244,7 @@ SEXP C_nls_internal(void *data)
     /* allocate workspace with default parameters */
     pars->w = gsl_multifit_nlinear_alloc(T, &fdf_params, n, p);
     pars->mpopt = gsl_vector_alloc(p);
+    pars->workp = gsl_vector_alloc(p);
     gsl_vector_set_zero(pars->mpopt);
 
     /* multistart algorithm */
@@ -271,7 +258,7 @@ SEXP C_nls_internal(void *data)
 
         /* manually initialize workspace */
         (pars->w)->fdf = &fdf;
-        if (!Rf_isNull(pars->swts))
+        if (!Rf_isNull(pars->weights))
         {
             double wi;
             (pars->w)->sqrt_wts = (pars->w)->sqrt_wts_work;
@@ -329,7 +316,6 @@ SEXP C_nls_internal(void *data)
 
         /* workspace matrices/vectors */
         pars->mx = gsl_matrix_alloc(mpars.n, p);
-        pars->mp = gsl_vector_alloc(p);
         pars->diag = gsl_vector_alloc(p);
         pars->JTJ = gsl_matrix_alloc(p, p);
         pars->mpopt1 = gsl_vector_alloc(p);
@@ -367,19 +353,19 @@ SEXP C_nls_internal(void *data)
 
             /* check stopping criterion */
             mpars.mstarts += 1;
-            
+
             if (mpars.mstarts > mpars.max)
                 mpars.mstop = GSL_EMAXITER;
-            
+
             if (mpars.nsp >= mpars.minsp && mpars.nwsp > (mpars.r + sqrt(mpars.r) * mpars.nsp))
                 mpars.mstop = GSL_SUCCESS;
-            
+
             if (!(mpars.mstarts % 10) && !(mpars.mssropt[0] < (double)GSL_POSINF))
             {
                 /* reduce determinant tolerance */
-                mpars.dtol = gsl_max(0.5 * mpars.dtol, __DBL_EPSILON__);
+                mpars.dtol = gsl_max(0.5 * mpars.dtol, GSL_DBL_EPSILON);
 
-                if(!(mpars.mstarts % 100)) // reset start ranges 
+                if (!(mpars.mstarts % 100)) // reset start ranges
                 {
                     for (R_len_t k = 0; k < p; k++)
                     {
@@ -420,7 +406,7 @@ SEXP C_nls_internal(void *data)
     }
 
     /* (re-)initialize solver w/ optimal start parameters */
-    if (!Rf_isNull(pars->swts))
+    if (!Rf_isNull(pars->weights) || wgt_i)
         gsl_multifit_nlinear_winit(pars->mpopt, pars->wts, &fdf, pars->w);
     else
         gsl_multifit_nlinear_init(pars->mpopt, &fdf, pars->w);
@@ -443,8 +429,34 @@ SEXP C_nls_internal(void *data)
 
     /* solve the system  */
     int info = GSL_CONTINUE;
-    int status = gsl_multifit_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback : NULL,
+    int status;
+    int irls_status;
+    R_len_t irls_iter = 0;
+    double irls_delta = 0.0;
+    double irls_sigma = 1.0;
+
+    if (!wgt_i) /* default loss function */
+    {
+        status = gsl_multifit_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback : NULL,
                                               verbose ? &params : NULL, &info, &chisq0, &chisq1, pars->lu, pars->w);
+    }
+    else /* non-default loss function */
+    {
+        /* irls psi and psi' */
+        pars->psi = gsl_vector_alloc(n);
+        pars->psip = gsl_vector_alloc(n);
+
+        status = gsl_multifit_nlinear_rho_driver(pars, &fdf, wgt_i, niter, xtol, gtol, ftol, &params,
+                                                 &info, &chisq0, &chisq1, &irls_sigma, &irls_iter, &irls_status, verbose);
+        /* irls x tolerance */
+        for (R_len_t k = 0; k < p; k++)
+        {
+            double x0 = gsl_vector_get(pars->workp, k);
+            double x1 = gsl_vector_get((pars->w)->x, k);
+            irls_delta = gsl_max(irls_delta, fabs(x0 - x1));
+        }
+    }
+
     R_len_t iter = (R_len_t)gsl_multifit_nlinear_niter(pars->w);
 
     /* compute covariance and cost at best fit parameters */
@@ -461,16 +473,22 @@ SEXP C_nls_internal(void *data)
     {
         /* print summary statistics*/
         Rprintf("*******************\nsummary from method 'multifit/%s'\n", gsl_multifit_nlinear_trs_name(pars->w));
+        if(wgt_i)
+        {
+            Rprintf("IRLS number of iterations: %d\n", irls_iter);
+            Rprintf("IRLS achieved tolerance: %g\n", irls_delta);
+            Rprintf("IRLS convergence status: %s\n", gsl_strerror(irls_status));
+        }
         Rprintf("number of iterations: %d\n", iter);
-        Rprintf("reason for stopping: %s\n", gsl_strerror(info));
-        Rprintf("initial ssr = %g\n", chisq_init);
-        Rprintf("final ssr = %g\n", chisq1);
-        Rprintf("ssr/dof = %g\n", chisq1 / (n - p));
-        Rprintf("ssr achieved tolerance = %g\n", chisq0 - chisq1);
+        // Rprintf("reason for stopping: %s\n", gsl_strerror(info));
+        Rprintf("initial ssr: %g\n", chisq_init);
+        Rprintf("final ssr: %g\n", chisq1);
+        Rprintf("ssr/dof: %g\n", chisq1 / (n - p));
+        Rprintf("ssr achieved tolerance: %g\n", chisq0 - chisq1);
         Rprintf("function evaluations: %d\n", (int)fdf.nevalf);
         Rprintf("jacobian evaluations: %d\n", (int)fdf.nevaldf);
         Rprintf("fvv evaluations: %d\n", (int)fdf.nevalfvv);
-        Rprintf("status = %s\n*******************\n", gsl_strerror(status));
+        Rprintf("status: %s\n*******************\n", gsl_strerror(status));
     }
 
     /* initialize result */
@@ -478,13 +496,13 @@ SEXP C_nls_internal(void *data)
     if (verbose)
     {
         const char *ansnms[] = {"par", "covar", "resid", "grad", "niter", "status", "conv", "ssr", "ssrtol",
-                                "algorithm", "neval", "partrace", "ssrtrace", ""};
+                                "algorithm", "neval", "irls", "partrace", "ssrtrace", ""};
         ans = PROTECT(Rf_mkNamed(VECSXP, ansnms));
     }
     else
     {
         const char *ansnms[] = {"par", "covar", "resid", "grad", "niter", "status", "conv", "ssr", "ssrtol",
-                                "algorithm", "neval", ""};
+                                "algorithm", "neval", "irls", ""};
         ans = PROTECT(Rf_mkNamed(VECSXP, ansnms));
     }
     nprotect++;
@@ -596,6 +614,44 @@ SEXP C_nls_internal(void *data)
     SET_VECTOR_ELT(ans, 10, ansneval);
     UNPROTECT(1);
 
+    /* irls weights */
+    if (wgt_i)
+    {
+        const char *nms[] = {"irls_weights", "irls_psi", "irls_dpsi", "irls_sigma", "irls_status", "irls_niter", "irls_tol", "irls_conv", ""};
+        SEXP ansirls = PROTECT(Rf_mkNamed(VECSXP, nms));
+        SEXP irlswts = PROTECT(Rf_allocVector(REALSXP, n));
+        SEXP irlspsi = PROTECT(Rf_allocVector(REALSXP, n));
+        SEXP irlspsip = PROTECT(Rf_allocVector(REALSXP, n));
+        if(status == GSL_SUCCESS || status == GSL_EMAXITER)
+        {
+            for (R_len_t i = 0; i < n; i++)
+            {
+                SET_REAL_ELT(irlswts, i, gsl_vector_get(pars->wts, i));
+                SET_REAL_ELT(irlspsi, i, gsl_vector_get(pars->psi, i));
+                SET_REAL_ELT(irlspsip, i, gsl_vector_get(pars->psip, i));
+            }
+        }
+        else
+        {
+            for (R_len_t i = 0; i < n; i++)
+            {
+                SET_REAL_ELT(irlswts, i, NA_REAL);
+                SET_REAL_ELT(irlspsi, i, NA_REAL);
+                SET_REAL_ELT(irlspsip, i, NA_REAL);
+            }
+        }
+        SET_VECTOR_ELT(ansirls, 0, irlswts);
+        SET_VECTOR_ELT(ansirls, 1, irlspsi);
+        SET_VECTOR_ELT(ansirls, 2, irlspsip);
+        SET_VECTOR_ELT(ansirls, 3, Rf_ScalarReal(irls_sigma));
+        SET_VECTOR_ELT(ansirls, 4, Rf_ScalarString(Rf_mkChar(gsl_strerror(irls_status))));
+        SET_VECTOR_ELT(ansirls, 5, Rf_ScalarInteger(irls_iter));
+        SET_VECTOR_ELT(ansirls, 6, Rf_ScalarReal(irls_delta));
+        SET_VECTOR_ELT(ansirls, 7, Rf_ScalarInteger(irls_status));
+        SET_VECTOR_ELT(ans, 11, ansirls);
+        UNPROTECT(4);
+    }
+
     if (verbose)
     {
         if (!Rf_isNull(parnames))
@@ -606,8 +662,8 @@ SEXP C_nls_internal(void *data)
             Rf_setAttrib(params.partrace, R_DimNamesSymbol, dimnames);
             UNPROTECT(1);
         }
-        SET_VECTOR_ELT(ans, 11, params.partrace);
-        SET_VECTOR_ELT(ans, 12, params.ssrtrace);
+        SET_VECTOR_ELT(ans, 12, params.partrace);
+        SET_VECTOR_ELT(ans, 13, params.ssrtrace);
     }
 
     /* free memory */
@@ -617,120 +673,6 @@ SEXP C_nls_internal(void *data)
     UNPROTECT(nprotect);
     return ans;
 }
-
-/*
-gsl_multifit_nlinear_driver2()
-  Iterate the nonlinear least squares solver until completion
-
-Inputs: maxiter  - maximum iterations to allow
-        xtol     - tolerance in step x
-        gtol     - tolerance in gradient
-        ftol     - tolerance in ||f||
-        callback - callback function to call each iteration
-        callback_params - parameters to pass to callback function
-        chisq0   - ssr previous iteration
-        chisq1   - ssr current iteration
-        info     - (output) info flag on why iteration terminated
-                   1 = stopped due to small step size ||dx|
-                   2 = stopped due to small gradient
-                   3 = stopped due to small change in f
-                   GSL_ETOLX = ||dx|| has converged to within machine
-                               precision (and xtol is too small)
-                   GSL_ETOLG = ||g||_inf is smaller than machine
-                               precision (gtol is too small)
-                   GSL_ETOLF = change in ||f|| is smaller than machine
-                               precision (ftol is too small)
-        lu       - (2 x p)-matrix with top row the lower
-                    parameter bounds and bottom row the
-                    upper parameter bounds
-        w        - workspace
-
-Return:
-GSL_SUCCESS if converged
-GSL_EBADFUNC if function evaluation failed
-GSL_MAXITER if maxiter exceeded without converging
-GSL_ENOPROG if no accepted step found on first iteration
-*/
-static int gsl_multifit_nlinear_driver2(const R_len_t maxiter,
-                                        const double xtol,
-                                        const double gtol,
-                                        const double ftol,
-                                        void (*callback)(const R_len_t iter, void *params,
-                                                         const gsl_multifit_nlinear_workspace *w),
-                                        void *callback_params,
-                                        int *info,
-                                        double *chisq0,
-                                        double *chisq1,
-                                        const gsl_matrix *lu,
-                                        gsl_multifit_nlinear_workspace *w)
-{
-    int status = GSL_CONTINUE;
-    R_len_t iter = 0;
-    gsl_vector *f = NULL;
-
-    do
-    {
-        /* current ssr */
-        chisq0[0] = chisq1[0];
-
-        /* iterator */
-        if (!lu)
-            status = gsl_multifit_nlinear_iterate(w);
-        else // with parameter constraints
-        {
-            status = trust_iterate_lu(w->state, w->sqrt_wts, w->fdf, w->x, w->f, w->J, w->g, w->dx, lu);
-            w->niter++;
-        }
-
-        /* new ssr */
-        f = gsl_multifit_nlinear_residual(w);
-        gsl_blas_ddot(f, f, chisq1);
-
-        if (callback)
-            ((fdata *)callback_params)->chisq = chisq1[0];
-
-        /*
-         * If the solver reports no progress on the first iteration,
-         * then it didn't find a single step to reduce the
-         * cost function and more iterations won't help so return.
-         *
-         * If we get a no progress flag on subsequent iterations,
-         * it means we did find a good step in a previous iteration,
-         * so continue iterating since the solver has now reset
-         * mu to its initial value.
-         */
-        if (status == GSL_EBADFUNC || (status == GSL_ENOPROG && iter == 0))
-        {
-            *info = status;
-            return status;
-        }
-
-        ++iter;
-
-        if (callback)
-            callback(iter, callback_params, w);
-
-        /* test for convergence */
-        status = gsl_multifit_nlinear_test(xtol, gtol, ftol, info, w);
-    } while (status == GSL_CONTINUE && iter < maxiter);
-
-    /*
-     * the following error codes mean that the solution has converged
-     * to within machine precision, so record the error code in info
-     * and return success
-     */
-    if (status == GSL_ETOLF || status == GSL_ETOLX || status == GSL_ETOLG)
-    {
-        *info = status;
-        status = GSL_SUCCESS;
-    }
-
-    /* check if max iterations reached */
-    if (iter >= maxiter && status != GSL_SUCCESS)
-        status = GSL_EMAXITER;
-
-    return status;
-} /* gsl_multifit_nlinear_driver() */
 
 static int gsl_f(const gsl_vector *x, void *params, gsl_vector *f)
 {
@@ -774,7 +716,7 @@ static int gsl_f(const gsl_vector *x, void *params, gsl_vector *f)
         if (R_IsNaN(fvalptr[i]) || !R_finite(fvalptr[i]))
             gsl_vector_set(f, i, (double)GSL_POSINF);
         else
-            gsl_vector_set(f, i, fvalptr[i] - yptr[i]);
+            gsl_vector_set(f, i, yptr[i] - fvalptr[i]);
     }
 
     UNPROTECT(2);
@@ -912,323 +854,6 @@ static void callback(const R_len_t iter, void *params, const gsl_multifit_nlinea
     Rprintf("iter %3d: ssr = %g, par = (", iter, chisq);
     for (R_len_t k = 0; k < p; k++)
         Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", parptr[iter + n * k]);
-}
-
-static void gsl_multistart_driver(pdata *pars,
-                                  mdata *mpars,
-                                  gsl_multifit_nlinear_fdf *fdff,
-                                  SEXP mssr,
-                                  const double xtol,
-                                  const double ftol,
-                                  Rboolean verbose)
-{
-    // initialize variables
-    int minfo;
-    R_len_t p = (R_len_t)(pars->mp->size);
-    double kd, l0, l1, diagmin;
-    // double rcond;
-    double det_jtj, mchisq0 = (double)GSL_POSINF, mchisq1 = (double)GSL_POSINF;
-    trust_state_t *trust_state = (trust_state_t *)(pars->w->state);
-
-    /* sample initial points */
-    for (R_len_t nn = 0; nn < mpars->n; nn++)
-    {
-        SET_REAL_ELT(mssr, nn, NA_REAL);
-
-        if ((mpars->ntix)[nn] == 0)
-        {
-            gsl_qrng_get(pars->q, mpars->qmp);
-            for (R_len_t k = 0; k < p; k++)
-            {
-                l0 = (mpars->start)[2 * k];
-                l1 = (mpars->start)[2 * k + 1];
-                if (l1 > l0)
-                {
-                    kd = gsl_vector_get(pars->diag, k);
-                    (mpars->qmp)[k] = l0 + (l1 - l0) * (mpars->qmp)[k];
-                    if (l0 > 0.0)
-                        gsl_matrix_set(pars->mx, nn, k, (pow((mpars->qmp)[k] - l0 + 1.0, kd) - 1.0) / kd + l0);
-                    else if (l1 < 0.0)
-                        gsl_matrix_set(pars->mx, nn, k, -(pow(-(mpars->qmp)[k] + l1 + 1.0, kd) - 1.0) / kd + l1);
-                    else if ((mpars->qmp)[k] > 0.0)
-                        gsl_matrix_set(pars->mx, nn, k, (pow((mpars->qmp)[k] + 1.0, kd) - 1.0) / kd);
-                    else
-                        gsl_matrix_set(pars->mx, nn, k, -(pow(-(mpars->qmp)[k] + 1.0, kd) - 1.0) / kd);
-                }
-                else
-                {
-                    gsl_matrix_set(pars->mx, nn, k, l0);
-                }
-            }
-        }
-        /* calculate det(J^T * J) */
-        gsl_vector_view nnx = gsl_matrix_row(pars->mx, nn);
-        gsl_vector_memcpy((pars->w)->x, &nnx.vector);
-        det_jtj = det_eval_jtj((pars->w)->params, (pars->w)->sqrt_wts, (pars->w)->fdf, (pars->w)->x, (pars->w)->f, (pars->w)->J, pars->JTJ, pars->workn);
-
-        if (det_jtj > mpars->dtol)
-        {
-            gsl_matrix_get_row(pars->mp, pars->mx, nn);
-
-            /* concentrate point */
-            if (!Rf_isNull(pars->swts))
-                gsl_multifit_nlinear_winit(pars->mp, pars->wts, fdff, pars->w);
-            else
-                gsl_multifit_nlinear_init(pars->mp, fdff, pars->w);
-            gsl_multifit_nlinear_driver2(mpars->p, xtol, 1e-3, ftol, NULL, NULL, &minfo, &mchisq0, &mchisq1, pars->lu, pars->w);
-
-            det_jtj = det_cholesky_jtj((pars->w)->J, pars->JTJ);
-
-            if (mchisq1 < (double)GSL_POSINF)
-            {
-                if (det_jtj > mpars->dtol)
-                {
-                    gsl_matrix_set_row(pars->mx, nn, (pars->w)->x);
-                    SET_REAL_ELT(mssr, nn, mchisq1);
-                    if (mchisq1 < 0.99 * gsl_min((mpars->mssropt)[0], (mpars->mssropt)[1]))
-                    {
-                        (mpars->mssropt)[0] = mchisq1;
-                        (mpars->ssrconv)[0] = mchisq0 - mchisq1;
-                        gsl_vector_memcpy(pars->mpopt, (pars->w)->x);
-                    }
-                }
-                else if (mchisq1 < 0.99 * gsl_min((mpars->mssropt)[0], (mpars->mssropt)[1]))
-                {
-                    (mpars->mssropt)[1] = mchisq1;
-                    (mpars->ssrconv)[1] = mchisq0 - mchisq1;
-                    gsl_vector_memcpy(pars->mpopt1, (pars->w)->x);
-                }
-            }
-        }
-        else if (!((mpars->mssropt)[0] < (double)GSL_POSINF) && det_jtj > __DBL_EPSILON__)
-        {
-            // back-up in case no stationary points found
-            gsl_blas_ddot((pars->w)->f, (pars->w)->f, &mchisq1);
-            if (mchisq1 < 0.99 * (mpars->mssropt)[1])
-            {
-                (mpars->mssropt)[1] = mchisq1;
-                (mpars->ssrconv)[1] = mchisq0 - mchisq1;
-                gsl_vector_memcpy(pars->mpopt1, (pars->w)->x);
-            }
-        }
-    }
-
-    /* reduce sample points */
-    R_orderVector1(mpars->mssr_order, mpars->n, mssr, TRUE, FALSE);
-    for (R_len_t nn = 0; nn < mpars->n; nn++)
-    {
-        if (nn < (mpars->q) && !R_IsNA(REAL_ELT(mssr, (mpars->mssr_order)[nn])))
-            (mpars->ntix)[(mpars->mssr_order)[nn]] += 1;
-        else
-            (mpars->ntix)[(mpars->mssr_order)[nn]] = 0;
-    }
-
-    /* dynamic lower/upper limits */
-    if (!(mpars->all_start))
-    {
-        double pk, pmin = 0.0, pmax = 1.0;
-        double mssr_diff = REAL_ELT(mssr, (mpars->mssr_order)[0]);
-
-        if (!R_IsNA(mssr_diff))
-        {
-            for (R_len_t nn = mpars->n - 1; nn > 0; nn--)
-            {
-                if (!R_IsNA(REAL_ELT(mssr, (mpars->mssr_order)[nn])))
-                {
-                    mssr_diff -= REAL_ELT(mssr, (mpars->mssr_order)[nn]);
-                    break;
-                }
-            }
-        }
-        if (R_IsNA(mssr_diff) || fabs(mssr_diff) < 1e-5)
-        {
-            for (R_len_t k = 0; k < p; k++)
-                (mpars->luchange)[k] += 1;
-        }
-
-        for (R_len_t k = 0; k < p; k++)
-        {
-            /* evaluate min/max parameter values for reduced sample */
-            if ((mpars->mssropt)[0] < (double)GSL_POSINF)
-            {
-                pmin = gsl_vector_get(((mpars->mssropt)[1] < (mpars->mssropt)[0]) ? pars->mpopt1 : pars->mpopt, k);
-                pmax = gsl_vector_get(((mpars->mssropt)[1] < (mpars->mssropt)[0]) ? pars->mpopt1 : pars->mpopt, k);
-            }
-            for (R_len_t nn = 0; nn < mpars->q; nn++)
-            {
-                if ((mpars->ntix)[(mpars->mssr_order)[nn]] > 0 && REAL_ELT(mssr, (mpars->mssr_order)[nn]) < 1.25 * (mpars->mssropt)[0])
-                {
-                    pk = gsl_matrix_get(pars->mx, (mpars->mssr_order)[nn], k);
-                    pmin = (pk < pmin) ? pk : pmin;
-                    pmax = (pk > pmax) ? pk : pmax;
-                }
-            }
-
-            /* rescale current limits */
-            l0 = (mpars->start)[2 * k];
-            l1 = (mpars->start)[2 * k + 1];
-            int luchange_add = 0;
-
-            // lower limit
-            if (!(mpars->has_start)[2 * k])
-            {
-                if (pmin < 0.9 * l0 || (mpars->luchange)[k] > 4) // enlarge
-                {
-                    (mpars->start)[2 * k] = l0 < 0 ? gsl_max(l0 / pow(-1e-5 * (l0 - 1.0), 0.1) - 1.0, -1.0E5) : -0.1;
-                    if (pars->lu)
-                        (mpars->start)[2 * k] = gsl_max((mpars->start)[2 * k], gsl_matrix_get(pars->lu, 0, k));
-                    (mpars->maxlims)[2 * k] = gsl_min((mpars->start)[2 * k], (mpars->maxlims)[2 * k]);
-                    luchange_add = -1;
-                }
-                else if (pmin > 0.2 * l0) // shrink
-                {
-                    (mpars->start)[2 * k] = gsl_min(l0 / pow(-0.05 * (l0 - 1.0), 0.05), -0.01);
-                    if (pars->lu)
-                        (mpars->start)[2 * k] = gsl_max((mpars->start)[2 * k], gsl_matrix_get(pars->lu, 0, k));
-                    luchange_add = ((mpars->mssropt)[0] < (double)GSL_POSINF) ? -1 : 1;
-                }
-                else
-                    luchange_add = 1;
-            }
-            // upper limit
-            if (!(mpars->has_start)[2 * k + 1])
-            {
-                if (pmax > 0.9 * l1 || (mpars->luchange)[k] > 4) // enlarge
-                {
-                    (mpars->start)[2 * k + 1] = gsl_min(l1 / pow(1e-5 * (l1 + 1.0), 0.1) + 1.0, 1.0E5);
-                    if (pars->lu)   
-                        (mpars->start)[2 * k + 1] = gsl_min((mpars->start)[2 * k + 1], gsl_matrix_get(pars->lu, 1, k));
-                    (mpars->maxlims)[2 * k + 1] = gsl_max((mpars->start)[2 * k + 1], (mpars->maxlims)[2 * k + 1]);
-                    luchange_add = -1;
-                }
-                else if (pmax < 0.2 * l1) // shrink
-                {
-                    (mpars->start)[2 * k + 1] = gsl_max(l1 / pow(0.05 * (l1 + 1.0), 0.05), 0.1);
-                    if (pars->lu)
-                        (mpars->start)[2 * k + 1] = gsl_min((mpars->start)[2 * k + 1], gsl_matrix_get(pars->lu, 1, k));
-                    luchange_add = ((mpars->mssropt)[0] < (double)GSL_POSINF) ? -1 : 1;
-                }
-                else
-                    luchange_add = 1;
-            }
-            if (luchange_add)
-            {
-                (mpars->luchange)[k] = (luchange_add > 0) ? (mpars->luchange)[k] + 1 : 0;
-            }
-        }
-    }
-
-    /* local optimization stage */
-    for (R_len_t nn = 0; nn < (mpars->n); nn++)
-    {
-        if ((mpars->ntix)[nn] >= (mpars->s))
-        {
-            (mpars->ntix)[nn] = 0;
-            mpars->nwsp += 1;
-
-            if ((mpars->nsp) == 0 || REAL_ELT(mssr, nn) < (1 + (mpars->tol)) * (mpars->mssropt)[0])
-            {
-                gsl_matrix_get_row(pars->mp, pars->mx, nn);
-                if (!Rf_isNull(pars->swts))
-                    gsl_multifit_nlinear_winit(pars->mp, pars->wts, fdff, pars->w);
-                else
-                    gsl_multifit_nlinear_init(pars->mp, fdff, pars->w);
-                mchisq1 = REAL_ELT(mssr, nn);
-                gsl_multifit_nlinear_driver2(mpars->niter, xtol, 1e-3, ftol, NULL, NULL, &minfo, &mchisq0, &mchisq1, pars->lu, pars->w);
-                det_jtj = det_cholesky_jtj((pars->w)->J, pars->JTJ);
-
-                // gsl_multifit_nlinear_rcond(&rcond, pars->w);
-
-                /* save result local optimizer */
-                // if ((mpars->mpopt)->mpcount > (mpars->mpopt)->mpmax)
-                // {
-                //     (mpars->mpopt)->mpall = (double *)S_realloc((char *)(mpars->mpopt)->mpall, 2 * (mpars->mpopt)->mpmax * p, (mpars->mpopt)->mpmax * p, sizeof(double));
-                //     (mpars->mpopt)->mpradii = (double *)S_realloc((char *)(mpars->mpopt)->mpradii, 2 * (mpars->mpopt)->mpmax * p, (mpars->mpopt)->mpmax * p, sizeof(double));
-                //     (mpars->mpopt)->mpmax *= 2;
-                // }
-                // for (R_len_t k = 0; k < p; k++)
-                // {
-                //     ((mpars->mpopt)->mpall)[(mpars->mpopt)->mpcount * p + k] = gsl_vector_get((pars->w)->x, k);
-                //     ((mpars->mpopt)->mpradii)[(mpars->mpopt)->mpcount * p + k] = gsl_vector_get(pars->mp, k);
-                // }
-
-                // if (1 && verbose)
-                // {
-                //     Rprintf("%d opt: (", (mpars->mpopt)->mpcount);
-                //     for (R_len_t k = 0; k < p; k++)
-                //         Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", ((mpars->mpopt)->mpall)[(mpars->mpopt)->mpcount * p + k]);
-
-                //     Rprintf("%d radius: (", (mpars->mpopt)->mpcount);
-                //     for (R_len_t k = 0; k < p; k++)
-                //         Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", ((mpars->mpopt)->mpradii)[(mpars->mpopt)->mpcount * p + k]);
-                // }
-
-                // (mpars->mpopt)->mpcount += 1;
-
-                // if (0 && verbose)
-                // {
-                //     Rprintf("mssr*0:%g, mssr*1: %g, mchisq1: %g, det(JTJ): %g, rejectscale: %g\n", (mpars->mssropt)[0], (mpars->mssropt)[1], mchisq1, det_jtj, mpars->rejectscl);
-                //     Rprintf("{opt, lwr, upr} = {");
-                //     for (R_len_t k = 0; k < p; k++)
-                //         Rprintf("(%g, %g, %g)%s", gsl_vector_get((pars->w)->x, k), (mpars->start)[2 * k], (mpars->start)[2 * k + 1], k < (p - 1) ? "" : "}\n");
-                // }
-
-                if (mchisq1 < (double)GSL_POSINF && ((mpars->nsp) == 0 || mchisq1 < 0.99 * (mpars->mssropt)[0]) && (det_jtj > (mpars->dtol) || mchisq1 < (2 * ftol)))
-                {
-                    int reject = 0;
-                    if (mpars->rejectscl > 0)
-                    {
-                        for (R_len_t k = 0; k < p; k++)
-                        {
-                            double xk = gsl_vector_get((pars->w)->x, k);
-                            if (mpars->all_start)
-                                reject += (xk > gsl_max((mpars->maxlims)[2 * k + 1], 1.0) || xk < gsl_min((mpars->maxlims)[2 * k], -1.0));
-                            else
-                                // reject += (xk > pow((mpars->start)[2 * k + 1], mpars->rejectscl) || xk < -pow(-(mpars->start)[2 * k], mpars->rejectscl));
-                                reject += (xk > gsl_max(pow((mpars->maxlims)[2 * k + 1], mpars->rejectscl), 1.0) || xk < gsl_min(-pow(-(mpars->maxlims)[2 * k], mpars->rejectscl), -1.0));
-                            if (reject > 0)
-                                break;
-                        }
-                        if (!(mpars->all_start))
-                            mpars->rejectscl += 0.05;
-                    }
-
-                    if (!reject)
-                    {
-                        (mpars->mssropt)[0] = mchisq1;
-                        (mpars->ssrconv)[0] = mchisq0 - mchisq1;
-                        gsl_vector_memcpy(pars->mpopt, (pars->w)->x);
-                        mpars->nsp += 1;
-                        mpars->nwsp = 0;
-                        if (mpars->rejectscl > 0)
-                            mpars->rejectscl = 1.25;
-                        if (mpars->all_start)
-                        {
-                            diagmin = gsl_vector_min(trust_state->diag);
-                            for (R_len_t k = 0; k < p; k++)
-                                gsl_vector_set(pars->diag, k, pow(diagmin / gsl_vector_get(trust_state->diag, k), 0.25));
-                            // Rprintf("diag = (");
-                            // for (R_len_t k = 0; k < p; k++)
-                            //     Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", gsl_vector_get(pars->diag, k));
-                        }
-                        if (verbose)
-                        {
-                            Rprintf("mstart ssr* = %g, det(JTJ) = %g, NSP = %d, NWSP = %d, par = (", (mpars->mssropt)[0], det_jtj, mpars->nsp, mpars->nwsp);
-                            for (R_len_t k = 0; k < p; k++)
-                                Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", gsl_vector_get((pars->w)->x, k));
-                        }
-                    }
-                }
-                else if (mchisq1 < 0.99 * gsl_min((mpars->mssropt)[0], (mpars->mssropt)[1]))
-                {
-                    // back-up in case no stationary points found
-                    (mpars->mssropt)[1] = mchisq1;
-                    (mpars->ssrconv)[1] = mchisq0 - mchisq1;
-                    gsl_vector_memcpy(pars->mpopt1, (pars->w)->x);
-                }
-            }
-        }
-    }
 }
 
 /* deprecated function */

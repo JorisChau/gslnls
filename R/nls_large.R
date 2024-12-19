@@ -253,8 +253,8 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
       mf <- as.list(mf)
       wts <- if (!mWeights) model.weights(mf) else NULL
     }
-    if (!is.null(wts) && any(wts < 0 | is.na(wts)))
-      stop("missing or negative weights not allowed")
+    if (!is.null(wts) && any(wts <= 0 | is.na(wts)))
+      stop("missing or non-positive weights not allowed")
   }
   else {
     stop("no data variables present")
@@ -586,8 +586,8 @@ gsl_nls_large.function <- function(fn, y, start,
   if(!missing(weights)) {
     if(!is.numeric(weights) || !identical(length(weights), length(y)))
       stop("'weights' should be numeric equal in length to 'y'")
-    if (any(weights < 0 | is.na(weights)))
-      stop("missing or negative weights not allowed")
+    if (any(weights <= 0 | is.na(weights)))
+      stop("missing or non-positive weights not allowed")
   } else {
     weights <- NULL
   }

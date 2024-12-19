@@ -148,7 +148,7 @@ trust_iterate_lu()
   (LM or dogleg), then tests if the computed step is acceptable.
 
 Args: vstate - trust workspace
-      swts   - data weights (NULL if unweighted)
+      swts   - sqrt(W) data weights (NULL if unweighted)
       fdf    - function and Jacobian pointers
       x      - on input, current parameter vector
                on output, new parameter vector x + dx

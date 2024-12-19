@@ -4,18 +4,6 @@
 #include "gsl_nls.h"
 
 /* static function declarations */
-static int gsl_multilarge_nlinear_driver2(const R_len_t maxiter,
-                                          const double xtol,
-                                          const double gtol,
-                                          const double ftol,
-                                          void (*callback)(const R_len_t iter, void *params,
-                                                           const gsl_multilarge_nlinear_workspace *w),
-                                          void *callback_params,
-                                          int *info,
-                                          double *chisq0,
-                                          double *chisq1,
-                                          gsl_multilarge_nlinear_workspace *w);
-
 static int gsl_f_large(const gsl_vector *x, void *params, gsl_vector *f);
 
 static int gsl_df_large(CBLAS_TRANSPOSE_t TransJ, const gsl_vector *x, const gsl_vector *u, void *params, gsl_vector *v, gsl_matrix *JTJ);
@@ -75,10 +63,10 @@ static void C_nls_large_cleanup(void *data)
 }
 
 /* function call w/ cleanup */
-SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP control_int, SEXP control_dbl)
+SEXP C_nls_large(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP weights, SEXP control_int, SEXP control_dbl)
 {
     /* function arguments */
-    pdata_large pars = {fn, y, jac, fvv, env, start, swts, control_int, control_dbl, NULL, NULL, NULL};
+    pdata_large pars = {fn, y, jac, fvv, env, start, weights, control_int, control_dbl, NULL, NULL, NULL};
 
     /* safe function call */
     SEXP ans = R_ExecWithCleanup(C_nls_large_internal, &pars, C_nls_large_cleanup, &pars);
@@ -225,12 +213,12 @@ SEXP C_nls_large_internal(void *data)
     pars->w = gsl_multilarge_nlinear_alloc(T, &fdf_params, n, p);
 
     /* initialize solver with starting point and weights */
-    if (!Rf_isNull(pars->swts))
+    if (!Rf_isNull(pars->weights))
     {
-        double *swts1 = (double *)S_alloc(n, sizeof(double));
+        double *weights1 = (double *)S_alloc(n, sizeof(double));
         for (R_len_t i = 0; i < n; i++)
-            swts1[i] = REAL_ELT(pars->swts, i);
-        gsl_vector_view wts = gsl_vector_view_array(swts1, n);
+            weights1[i] = REAL_ELT(pars->weights, i);
+        gsl_vector_view wts = gsl_vector_view_array(weights1, n);
         gsl_multilarge_nlinear_winit(&par.vector, &wts.vector, &fdf, pars->w);
     }
     else
@@ -434,109 +422,6 @@ SEXP C_nls_large_internal(void *data)
     UNPROTECT(nprotect);
     return ans;
 }
-
-/*
-gsl_multilarge_nlinear_driver2()
-  Iterate the large-scale nonlinear least squares solver until completion
-
-Inputs: maxiter  - maximum iterations to allow
-        xtol     - tolerance in step x
-        gtol     - tolerance in gradient
-        ftol     - tolerance in ||f||
-        callback - callback function to call each iteration
-        callback_params - parameters to pass to callback function
-        chisq0   - ssr previous iteration
-        chisq1   - ssr current iteration
-        info     - (output) info flag on why iteration terminated
-                   1 = stopped due to small step size ||dx|
-                   2 = stopped due to small gradient
-                   3 = stopped due to small change in f
-                   GSL_ETOLX = ||dx|| has converged to within machine
-                               precision (and xtol is too small)
-                   GSL_ETOLG = ||g||_inf is smaller than machine
-                               precision (gtol is too small)
-                   GSL_ETOLF = change in ||f|| is smaller than machine
-                               precision (ftol is too small)
-        w        - workspace
-
-Return:
-GSL_SUCCESS if converged
-GSL_EBADFUNC if function evaluation failed 
-GSL_MAXITER if maxiter exceeded without converging
-GSL_ENOPROG if no accepted step found on first iteration
-*/
-static int gsl_multilarge_nlinear_driver2(const R_len_t maxiter,
-                                   const double xtol,
-                                   const double gtol,
-                                   const double ftol,
-                                   void (*callback)(const R_len_t iter, void *params,
-                                                    const gsl_multilarge_nlinear_workspace *w),
-                                   void *callback_params,
-                                   int *info,
-                                   double *chisq0,
-                                   double *chisq1,
-                                   gsl_multilarge_nlinear_workspace *w)
-{
-    int status = GSL_CONTINUE;
-    R_len_t iter = 0;
-    gsl_vector *f = NULL;
-
-    do
-    {
-        /* current ssr */
-        chisq0[0] = chisq1[0];
-
-        status = gsl_multilarge_nlinear_iterate(w);
-
-        /* new ssr */
-        f = gsl_multilarge_nlinear_residual(w);
-        gsl_blas_ddot(f, f, chisq1);
-
-        if (callback)
-            ((fdata_large *)callback_params)->chisq = chisq1[0];
-
-        /*
-       * If the solver reports no progress on the first iteration,
-       * then it didn't find a single step to reduce the
-       * cost function and more iterations won't help so return.
-       *
-       * If we get a no progress flag on subsequent iterations,
-       * it means we did find a good step in a previous iteration,
-       * so continue iterating since the solver has now reset
-       * mu to its initial value.
-       */
-        if (status == GSL_EBADFUNC || (status == GSL_ENOPROG && iter == 0))
-        {
-            *info = status;
-            return status;
-        }
-
-        ++iter;
-
-        if (callback)
-            callback(iter, callback_params, w);
-
-        /* test for convergence */
-        status = gsl_multilarge_nlinear_test(xtol, gtol, ftol, info, w);
-    } while (status == GSL_CONTINUE && iter < maxiter);
-
-    /*
-   * the following error codes mean that the solution has converged
-   * to within machine precision, so record the error code in info
-   * and return success
-   */
-    if (status == GSL_ETOLF || status == GSL_ETOLX || status == GSL_ETOLG)
-    {
-        *info = status;
-        status = GSL_SUCCESS;
-    }
-
-    /* check if max iterations reached */
-    if (iter >= maxiter && status != GSL_SUCCESS)
-        status = GSL_EMAXITER;
-
-    return status;
-} /* gsl_multilarge_nlinear_driver() */
 
 static int gsl_f_large(const gsl_vector *x, void *params, gsl_vector *f)
 {

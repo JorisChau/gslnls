@@ -118,8 +118,10 @@ deviance.gsl_nls <- function(object, ...) {
 #' @export
 sigma.gsl_nls <- function(object, ...) {
   w <- object$weights
-  if(is.null(w)) {
+  if(is.null(w) && is.null(object$irls)) {
     NextMethod()
+  } else if(!is.null(object$irls)) {
+    sqrt(object$irls$irls_sigma)
   } else {
     sqrt(sum(as.vector(object$m$lhs() - object$m$fitted())^2)/df.residual(object))
   }
@@ -156,7 +158,7 @@ formula.gsl_nls <- function(x, ...) {
 #' parameters is returned and printed.
 #' @param symbolic.cor logical; if \code{TRUE}, print the correlations in a symbolic form
 #' (see \code{\link[stats]{symnum}}) rather than as numbers.
-#' @return List object of class \code{"summary.nls"} identical to \code{\link[stats]{summary.nls}}
+#' @return List object of class \code{"summary.gsl_nls"} similar to \code{\link[stats]{summary.nls}}
 #' @seealso \code{\link[stats]{summary.nls}}
 #' @examples
 #' ## data
@@ -172,43 +174,41 @@ formula.gsl_nls <- function(x, ...) {
 #' summary(obj)
 #' @export
 summary.gsl_nls <- function (object, correlation = FALSE, symbolic.cor = FALSE, ...) {
-  if(inherits(object, "nls")) {
-    NextMethod()
+  r <- as.vector(object$m$resid())  ## these are weighted residuals
+  w <- object$weights
+  n <- if (!is.null(w)) sum(w > 0) else length(r)
+  param <- coef(object)
+  pnames <- names(param)
+  p <- length(param)
+  rdf <- n - p
+  if(is.null(object$irls)) {
+    sigma <- if (rdf <= 0) NaN else sqrt(deviance(object)/rdf)
   } else {
-    r <- as.vector(object$m$resid()) # These are weighted residuals.
-    w <- object$weights
-    n <- if (!is.null(w)) sum(w > 0) else length(r)
-    param <- coef(object)
-    pnames <- names(param)
-    p <- length(param)
-    rdf <- n - p
-    resvar <- if(rdf <= 0) NaN else deviance(object)/rdf
-    XtXinv <- chol2inv(object$m$Rmat())
-    dimnames(XtXinv) <- list(pnames, pnames)
-    se <- sqrt(diag(XtXinv) * resvar)
-    tval <- param/se
-    param <- cbind(param, se, tval, 2 * pt(abs(tval), rdf, lower.tail = FALSE))
-    dimnames(param) <-
-      list(pnames, c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))
-    ans <- list(formula = as.formula(sprintf("y ~ fn(%s)",
-                                             paste(names(formals(formula(object))), collapse = ", "))),
-                residuals = r, sigma = sqrt(resvar),
-                df = c(p, rdf), cov.unscaled = XtXinv,
-                call = object$call,
-                convInfo = object$convInfo,
-                control = object$control,
-                na.action = object$na.action,
-                coefficients = param,
-                parameters = param)# never documented, for back-compatibility
-    if(correlation && rdf > 0) {
-      ans$correlation <- (XtXinv * resvar)/outer(se, se)
-      ans$symbolic.cor <- symbolic.cor
-    }
-    ## if(identical(object$call$algorithm, "port"))
-    ##     ans$message <- object$message
-    class(ans) <- "summary.nls"
-    ans
+    sigma <- object$irls$irls_sigma
   }
+  XtXinv <- chol2inv(object$m$Rmat())
+  dimnames(XtXinv) <- list(pnames, pnames)
+  se <- sigma * sqrt(diag(XtXinv))
+  tval <- param/se
+  param <- cbind(param, se, tval, 2 * pt(abs(tval), rdf, lower.tail = FALSE))
+  dimnames(param) <- list(pnames, c("Estimate", "Std. Error",
+                                    "t value", "Pr(>|t|)"))
+  if(inherits(object, "nls")) {
+    frm <- formula(object)
+  } else {
+    frm <- as.formula(sprintf("y ~ fn(%s)", paste(names(formals(formula(object))), collapse = ", ")))
+  }
+  ans <- list(formula = frm, residuals = r, sigma = sigma,
+              df = c(p, rdf), cov.unscaled = XtXinv, call = object$call,
+              convInfo = object$convInfo, control = object$control,
+              na.action = object$na.action, coefficients = param, parameters = param,
+              irls = object$irls)
+  if (correlation && rdf > 0) {
+    ans$correlation <- (XtXinv * sigma^2) / outer(se, se)
+    ans$symbolic.cor <- symbolic.cor
+  }
+  class(ans) <- "summary.gsl_nls"
+  ans
 }
 
 #' Print model object
@@ -232,6 +232,49 @@ print.gsl_nls <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
       "residual sum-of-squares: ", format(x$m$deviance(), digits = digits),
       "\n", sep = "")
   convInfo(x, digits = digits)
+  invisible(x)
+}
+
+#' Print model summary
+#' @description Print method for a summary \code{"summary.gsl_nls"} object
+#' @param x An object inheriting from class \code{"summary.gsl_nls"}
+#' @param digits Minimal number of significant digits, see \code{\link{print.default}}
+#' @inheritParams summary.nls
+#' @return Returns the object \code{x} \emph(invisibly) (via \code{\link{invisible}}).
+#' @noRd
+#' @export
+print.summary.gsl_nls <- function (x, digits = max(3L, getOption("digits") - 3L), symbolic.cor = x$symbolic.cor,
+                                   signif.stars = getOption("show.signif.stars"), ...) {
+  cat("\nFormula: ", paste(deparse(x$formula), sep = "\n",
+                           collapse = "\n"), "\n", sep = "")
+  df <- x$df
+  rdf <- df[2L]
+  cat("\nParameters:\n")
+  printCoefmat(x$coefficients, digits = digits, signif.stars = signif.stars,
+               ...)
+  cat("\nResidual standard error:", format(signif(x$sigma,
+                                                  digits)), "on", rdf, "degrees of freedom")
+  cat("\n")
+  correl <- x$correlation
+  if (!is.null(correl)) {
+    p <- NCOL(correl)
+    if (p > 1) {
+      cat("\nCorrelation of Parameter Estimates:\n")
+      if (is.logical(symbolic.cor) && symbolic.cor) {
+        print(symnum(correl, abbr.colnames = NULL))
+      }
+      else {
+        correl <- format(round(correl, 2), nsmall = 2L,
+                         digits = digits)
+        correl[!lower.tri(correl)] <- ""
+        print(correl[-1, -p, drop = FALSE], quote = FALSE)
+      }
+    }
+  }
+  convInfo(x, digits = digits)
+  if (nzchar(mess <- naprint(x$na.action)))
+    cat("  (", mess, ")\n", sep = "")
+  cat("\n")
   invisible(x)
 }
 
@@ -282,8 +325,6 @@ predict.gsl_nls <- function(object, newdata, scale = NULL, interval = c("none", 
     fit <- object$m$predict(newdata)
     if(interval != "none") {
       Fdot <- object$m$gradient1(newdata)
-      if(!is.null(object$weights))
-        warning("unweighted Jacobian matrix used to calculate standard errors, evaluate predictions without 'newdata' argument to use weighted Jacobian.")
     }
   }
   if(interval != "none") {
@@ -681,20 +722,38 @@ confintd.gsl_nls <- function(object, expr, level = 0.95, dtype = "symbolic", ...
 }
 
 convInfo <- function(x, digits, show. = getOption("show.nls.convergence", TRUE)) {
-  with(x$convInfo, {
-    cat(sprintf("\nAlgorithm: %s, (scaling: %s, solver: %s)\n", trsName, x$control$scale, x$control$solver))
-    if(!isConv || show.) {
-      cat("\nNumber of iterations",
-          if(isConv) "to convergence:" else "till stop:", finIter,
-          "\nAchieved convergence tolerance:",
-          format(finTol, digits = digits))
-      cat("\n")
-    }
-    if(!isConv) {
-      cat("Reason stopped:", stopMessage)
-      cat("\n")
-    }
-  })
-
+  if(!inherits(x, "summary.gsl_nls")) {
+    cat(sprintf("\nAlgorithm: %s, (scaling: %s, solver: %s)\n", x$convInfo$trsName, x$control$scale, x$control$solver))
+  }
+  if(!is.null(x$irls)) {
+    with(x$irls, {
+      if (!irls_conv || show.) {
+        cat("\nNumber of IRLS iterations", if (irls_conv)
+          "to convergence:"
+          else "till stop:", irls_niter, "\nAchieved IRLS tolerance:",
+          format(irls_tol, digits = digits))
+        cat("\n")
+      }
+      if (!irls_conv) {
+        cat("Reason stopped:", irls_status)
+        cat("\n")
+      }
+    })
+  }
+  if(is.null(x$irls) || x$irls$irls_conv) {
+    with(x$convInfo, {
+      if (!isConv || show.) {
+        cat("\nNumber of", if(!is.null(x$irls)) "NLS iterations" else "iterations",
+            if (isConv) "to convergence:" else "till stop:", finIter,
+            "\nAchieved", if(!is.null(x$irls)) "NLS tolerance:" else "convergence tolerance:",
+            format(finTol, digits = digits))
+        cat("\n")
+      }
+      if (!isConv) {
+        cat("Reason stopped:", stopMessage)
+        cat("\n")
+      }
+    })
+  }
   invisible()
 }
