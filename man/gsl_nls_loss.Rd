@@ -11,7 +11,7 @@ gsl_nls_loss(
 )
 }
 \arguments{
-\item{rho}{character loss function name, one of \code{"huber", "bisquare", "hampel", "ggw", "lqq", "optimal", "welsh"}.}
+\item{rho}{character loss function name, one of \code{"default", "huber", "barron", "absolute", "bisquare", "welsh", "optimal", "hampel", "ggw", "lqq"}.}
 
 \item{cc}{numeric vector of loss function tuning parameters, with length depends on the chosen loss function.
 If \code{NULL}, the default tuning parameters are returned.}

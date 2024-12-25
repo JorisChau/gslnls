@@ -3,7 +3,7 @@
 #' Allow the user to tune the coefficient(s) of the loss functions
 #' available in \code{\link{gsl_nls}} and \code{\link{gsl_nls_large}}.
 #'
-#' @param rho character loss function name, one of \code{"huber", "bisquare", "hampel", "ggw", "lqq", "optimal", "welsh"}.
+#' @param rho character loss function name, one of \code{"default", "huber", "barron", "absolute", "bisquare", "welsh", "optimal", "hampel", "ggw", "lqq"}.
 #' @param cc numeric vector of loss function tuning parameters, with length depends on the chosen loss function.
 #' If \code{NULL}, the default tuning parameters are returned.
 #' @seealso \url{https://CRAN.R-project.org/package=robustbase/vignettes/psi_functions.pdf}
@@ -25,7 +25,7 @@ gsl_nls_loss <- function(rho = c("default", "huber", "barron", "bisquare", "wels
   cc_default <- switch(rho,
        default = numeric(0),   ## not used
        huber = 1.345,
-       barron = c(0.0, 1.345),  ## cauchy loss
+       barron = c(1.0, 1.345),  ## L1-L2 loss
        bisquare = 4.685061,
        welsh = 2.11,
        optimal = 1.060158,

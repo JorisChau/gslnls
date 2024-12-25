@@ -33,6 +33,8 @@ gsl_nls(fn, ...)
   y,
   start,
   algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
+  loss = c("default", "huber", "barron", "bisquare", "welsh", "optimal", "hampel", "ggw",
+    "lqq"),
   control = gsl_nls_control(),
   lower,
   upper,

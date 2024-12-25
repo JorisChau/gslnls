@@ -126,7 +126,7 @@
 #' applicable to objects of both classes.
 #' @useDynLib gslnls, .registration = TRUE
 #' @importFrom stats nls numericDeriv deriv as.formula coef deviance df.residual fitted vcov formula getInitial model.weights
-#' @importFrom stats pf pt qt setNames sigma nobs hatvalues printCoefmat symnum
+#' @importFrom stats pf pt qt setNames sigma nobs hatvalues printCoefmat symnum cooks.distance
 #' @seealso \code{\link[stats]{nls}}
 #' @seealso \url{https://www.gnu.org/software/gsl/doc/html/nls.html}
 #' @seealso \url{https://CRAN.R-project.org/package=robustbase/vignettes/psi_functions.pdf}
@@ -696,7 +696,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   cFit <- .Call(C_nls, .fn, .lhs, .jac, .fvv, environment(), start, wts, .lupars, .ctrl_int, .ctrl_dbl, .has_start, .loss_config, PACKAGE = "gslnls")
 
   ## convert to nls object
-  m <- nlsModel(formula, mf, cFit$par, wts, jac, upper = NULL, irls = cFit$irls)
+  m <- nlsModel(formula, mf, cFit, wts, jac, upper = NULL)
 
   convInfo <- list(
     isConv = as.logical(!cFit$conv),
@@ -753,6 +753,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
 #' @export
 gsl_nls.function <- function(fn, y, start,
                              algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
+                             loss = c("default", "huber", "barron", "bisquare", "welsh", "optimal", "hampel", "ggw", "lqq"),
                              control = gsl_nls_control(), lower, upper, jac = NULL, fvv = NULL,
                              trace = FALSE, weights, ...) {
 
@@ -927,6 +928,14 @@ gsl_nls.function <- function(fn, y, start,
     }
   }
 
+  ## loss function
+  if(is.character(loss)) {
+    .loss_config <- gsl_nls_loss(rho = loss)
+  } else {
+    .loss_config <- do.call(gsl_nls_loss, args = as.list(loss))
+  }
+  .loss_config$rho <- match(.loss_config$rho, c("default", "huber", "barron", "bisquare", "welsh", "optimal", "hampel", "ggw", "lqq"), nomatch = 1L) - 1L
+
   ## control arguments
   trace <- isTRUE(trace)
   .ctrl <- do.call(gsl_nls_control, args = if(!missing(control)) as.list(control) else list())
@@ -951,7 +960,9 @@ gsl_nls.function <- function(fn, y, start,
     is.numeric(.ctrl$mstart_tol), length(.ctrl$mstart_tol) == 1, .ctrl$mstart_tol > 0,
     is.numeric(.ctrl$mstart_maxiter), length(.ctrl$mstart_maxiter) == 1, .ctrl$mstart_maxiter >= 1,
     is.numeric(.ctrl$mstart_maxstart), length(.ctrl$mstart_maxstart) == 1, .ctrl$mstart_maxstart >= 1,
-    is.numeric(.ctrl$mstart_minsp), length(.ctrl$mstart_minsp) == 1, .ctrl$mstart_minsp >= 1
+    is.numeric(.ctrl$mstart_minsp), length(.ctrl$mstart_minsp) == 1, .ctrl$mstart_minsp >= 1,
+    is.numeric(.ctrl$irls_maxiter), length(.ctrl$irls_maxiter) == 1, .ctrl$irls_maxiter >= 1,
+    is.numeric(.ctrl$irls_xtol), length(.ctrl$irls_xtol) == 1, .ctrl$irls_xtol > 0
   )
   .ctrl_int <- c(
     as.integer(.ctrl$maxiter),
@@ -967,9 +978,10 @@ gsl_nls.function <- function(fn, y, start,
     as.integer(.ctrl$mstart_maxiter),
     as.integer(.ctrl$mstart_maxstart),
     as.integer(.ctrl$mstart_minsp),
-    as.integer(!is.list(start))
+    as.integer(!is.list(start)),
+    as.integer(.ctrl$irls_maxiter)
   )
-  .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol", "mstart_r", "mstart_tol")])
+  .ctrl_dbl <- unlist(.ctrl[c("factor_up", "factor_down", "avmax", "h_df", "h_fvv", "xtol", "ftol", "gtol", "mstart_r", "mstart_tol", "irls_xtol")])
   if(!all(.has_start)) {
     .ctrl_dbl[["mstart_r"]] <- 10 * .ctrl_dbl[["mstart_r"]]
   }
@@ -985,9 +997,9 @@ gsl_nls.function <- function(fn, y, start,
   }
 
   ## optimize
-  cFit <- .Call(C_nls, .fn, y, .jac, .fvv, environment(), .start, weights, .lupars, .ctrl_int, .ctrl_dbl, .has_start, PACKAGE = "gslnls")
+  cFit <- .Call(C_nls, .fn, y, .jac, .fvv, environment(), .start, weights, .lupars, .ctrl_int, .ctrl_dbl, .has_start, .loss_config, PACKAGE = "gslnls")
 
-  m <- gslModel(fn, y, cFit, if(!all(.has_start) && is.list(start)) as.list(.start[1L, ]) else if(!all(.has_start) || is.matrix(start)) .start[1L, ] else .start, weights, jac, cFit$irls, ...)
+  m <- gslModel(fn, y, cFit, if(!all(.has_start) && is.list(start)) as.list(.start[1L, ]) else if(!all(.has_start) || is.matrix(start)) .start[1L, ] else .start, weights, jac, ...)
 
   ## mimick nls object
   convInfo <- list(
@@ -1016,7 +1028,8 @@ gsl_nls.function <- function(fn, y, start,
     nls.out$upper <- .lupars[2L, ]
   }
   if(!is.null(cFit$irls)) {
-    nls.out$irls <- cFit$irls[c("irls_weights", "irls_niter", "irls_tol")]
+    nls.out$irls <- cFit$irls
+    nls.out$irls$irls_conv <- as.logical(!cFit$irls$irls_conv)
   }
   class(nls.out) <- "gsl_nls"
 
@@ -1073,7 +1086,7 @@ gsl_nls.function <- function(fn, y, start,
 #' @param ftol numeric value, termination occurs when the relative change in sum of squared residuals between iterations is \code{<= ftol},
 #' defaults to \code{sqrt(.Machine$double.eps)}.
 #' @param gtol numeric value, termination occurs when the relative size of the gradient of the sum of squared residuals is \code{<= gtol},
-#' indicating a local minimum, defaults to \code{.Machine$double.eps^(1/3)}
+#' indicating a local minimum, defaults to \code{sqrt(.Machine$double.eps)}
 #' @param mstart_n positive integer, number of quasi-random points drawn in each major iteration, parameter \code{N} in Hickernell and Yuan (1997). Default is 30.
 #' @param mstart_p positive integer, number of iterations of inexpensive local search to concentrate the sample, parameter \code{p} in Hickernell and Yuan (1997). Default is 5.
 #' @param mstart_q positive integer, number of points retained in the concentrated sample, parameter \code{q} in Hickernell and Yuan (1997). Default is \code{mstart_n \%/\% 10}..
@@ -1084,9 +1097,9 @@ gsl_nls.function <- function(fn, y, start,
 #' @param mstart_maxiter positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to 10.
 #' @param mstart_maxstart positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 250.
 #' @param mstart_minsp positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.
-#' @param irls_maxiter postivive integer, maximum number of IRLS iterations. Only used in case of a non-default loss function optimized through IRLS.
-#' @param irls_xtol numeric value, termination of the IRLS procedure occurs when the relative change in parameters between IRLS iterations is \code{<= irls_xtol}. Only used
-#' in case of a non-default loss function optimized through IRLS.
+#' @param irls_maxiter postivive integer, maximum number of IRLS iterations, defaults to 50. Only used in case of a non-default loss function (\code{loss != "default"}) optimized by IRLS.
+#' @param irls_xtol numeric value, termination of the IRLS procedure occurs when the relative change in parameters between IRLS iterations is \code{<= irls_xtol}, defaults to \code{.Machine$double.eps^(1/4)}.
+#' Only used in case of a non-default loss function (\code{loss != "default"}) optimized by IRLS.
 #' @param ... any additional arguments (currently not used).
 #' @importFrom stats nls.control
 #' @seealso \code{\link[stats]{nls.control}}
@@ -1131,7 +1144,7 @@ gsl_nls_control <- function(maxiter = 100, scale = "more", solver = "qr",
                             ftol = sqrt(.Machine$double.eps), gtol = sqrt(.Machine$double.eps),
                             mstart_n = 30, mstart_p = 5, mstart_q = mstart_n %/% 10, mstart_r = 4, mstart_s = 2,
                             mstart_tol = 0.25, mstart_maxiter = 10, mstart_maxstart = 250, mstart_minsp = 1,
-                            irls_maxiter = 25, irls_xtol = 1e-4, ...) {
+                            irls_maxiter = 50, irls_xtol = .Machine$double.eps**.25, ...) {
 
   scale <- match.arg(scale, c("more", "levenberg", "marquardt"))
   solver <- match.arg(solver, c("qr", "cholesky", "svd"))
@@ -1170,9 +1183,10 @@ gsl_nls_control <- function(maxiter = 100, scale = "more", solver = "qr",
 
 }
 
-nlsModel <- function(form, data, start, wts, jac, upper=NULL, irls=NULL) {
+nlsModel <- function(form, data, cFit, wts, jac, upper=NULL) {
   ## thisEnv <- environment() # shared by all functions in the 'm' list; variable no longer needed
   env <- new.env(hash = TRUE, parent = environment(form))
+  start <- cFit$par
   for(i in names(data)) env[[i]] <- data[[i]]
   ind <- as.list(start)
   parLength <- 0L
@@ -1193,8 +1207,8 @@ nlsModel <- function(form, data, start, wts, jac, upper=NULL, irls=NULL) {
   rhs <- eval(form[[3L]], envir = env)
   .swts <- if(!missing(wts) && length(wts)) sqrt(wts) else rep_len(1, length(rhs))
   env$.swts <- .swts
-  resid <- .swts * (lhs - rhs)
-  dev <- sum(resid^2)
+  resid <- -cFit$resid
+  dev <- cFit$ssr
   if(is.null(attr(rhs, "gradient"))) {
     getRHS.noVarying <- function() numericDeriv(form[[3L]], names(ind), env)
     getRHS <- getRHS.noVarying
@@ -1237,8 +1251,9 @@ nlsModel <- function(form, data, start, wts, jac, upper=NULL, irls=NULL) {
     qrDim <- min(dim(QR$qr))
     if(QR$rank < qrDim)
       warning("singular gradient matrix at parameter estimates")
-    if(!is.null(irls)) {
-      tau <- mean(irls$irls_psi^2) / mean(irls$irls_dpsi)^2
+    if(!is.null(cFit$irls)) {
+      ## MM correction [Yohai, 1987. Thrm. 4.1]
+      tau <- mean(cFit$irls$irls_psi^2) / mean(cFit$irls$irls_dpsi)^2
       QR$qr <- QR$qr / sqrt(tau)
     }
   } else {
@@ -1343,7 +1358,7 @@ nlsModel <- function(form, data, start, wts, jac, upper=NULL, irls=NULL) {
   m
 }
 
-gslModel <- function(fn, lhs, cFit, start, wts, jac, irls, ...) {
+gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
   env <- new.env(hash = TRUE, parent = environment(fn))
   env$fn <- fn
   data <- list(...)
@@ -1368,8 +1383,9 @@ gslModel <- function(fn, lhs, cFit, start, wts, jac, irls, ...) {
     qrDim <- min(dim(QR$qr))
     if(QR$rank < qrDim)
       warning("singular gradient matrix at parameter estimates")
-    if(!is.null(irls)) {
-      tau <- mean(irls$irls_psi^2) / mean(irls$irls_dpsi)^2
+    if(!is.null(cFit$irls)) {
+      ## MM correction [Yohai, 1987. Thrm. 4.1]
+      tau <- mean(cFit$irlsirls_psi^2) / mean(cFit$irls$irls_dpsi)^2
       QR$qr <- QR$qr / sqrt(tau)
     }
   } else {

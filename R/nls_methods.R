@@ -117,13 +117,10 @@ deviance.gsl_nls <- function(object, ...) {
 #' sigma(obj)
 #' @export
 sigma.gsl_nls <- function(object, ...) {
-  w <- object$weights
-  if(is.null(w) && is.null(object$irls)) {
+  if(is.null(object$irls)) {
     NextMethod()
-  } else if(!is.null(object$irls)) {
-    sqrt(object$irls$irls_sigma)
   } else {
-    sqrt(sum(as.vector(object$m$lhs() - object$m$fitted())^2)/df.residual(object))
+    object$irls$irls_sigma
   }
 }
 
@@ -223,12 +220,14 @@ print.gsl_nls <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat("Nonlinear regression model\n")
   if(inherits(formula(x), "formula")) {
     cat("  model: ", deparse(formula(x)), "\n", sep = "")
-    cat("   data: ", deparse(x$data), "\n", sep = "")
+    if(is.symbol(x$data)) {
+      cat("   data: ", deparse(x$data), "\n", sep = "")
+    }
   } else {
     cat("  model: ", sprintf("y ~ fn(%s)", paste(names(formals(formula(x))), collapse = ", ")), "\n", sep = "")
   }
   print(x$m$getAllPars(), digits = digits, ...)
-  cat(" ", if(!is.null(x$weights)) "weighted ",
+  cat(" ", if(!is.null(x$weights) || !is.null(x$irls)) "weighted ",
       "residual sum-of-squares: ", format(x$m$deviance(), digits = digits),
       "\n", sep = "")
   convInfo(x, digits = digits)
@@ -319,12 +318,14 @@ predict.gsl_nls <- function(object, newdata, scale = NULL, interval = c("none", 
   if (missing(newdata)) {
     fit <- as.vector(fitted(object))
     if(interval != "none") {
-      Fdot <- object$m$gradient()
+      Fdot <- object$m$gradient()  ## weighted gradient
+      if(!is.null(object$weights))
+        Fdot <- Fdot / sqrt(object$weights)
     }
   } else {
     fit <- object$m$predict(newdata)
     if(interval != "none") {
-      Fdot <- object$m$gradient1(newdata)
+      Fdot <- object$m$gradient1(newdata)  ## unweighted gradient
     }
   }
   if(interval != "none") {
@@ -461,8 +462,10 @@ df.residual.gsl_nls <- function(object, ...) {
 #' vcov(obj)
 #' @export
 vcov.gsl_nls <- function(object, ...) {
-  sm <- summary(object)
-  sm$cov.unscaled * sm$sigma^2
+  pnames <- names(coef(object))
+  XtXinv <- chol2inv(object$m$Rmat())
+  dimnames(XtXinv) <- list(pnames, pnames)
+  sigma(object)^2 * XtXinv
 }
 
 #' Calculate leverage values
@@ -486,9 +489,37 @@ vcov.gsl_nls <- function(object, ...) {
 #' hatvalues(obj)
 #' @export
 hatvalues.gsl_nls <- function(model, ...) {
-  J <- model$m$gradient()
-  JtJinv <- chol2inv(model$m$Rmat())
-  diag((J %*% JtJinv) %*% t(J))
+  Fdot <- model$m$gradient()
+  rowSums(Fdot %*% chol2inv(model$m$Rmat()) * Fdot)
+}
+
+#' Calculate Cook's distance
+#' @description Returns Cook's distance values from a fitted \code{"gsl_nls"} object based on the estimated
+#' variance-covariance matrix of the model parameters.
+#' @inheritParams coef.gsl_nls
+#' @param model An object inheriting from class \code{"gsl_nls"}.
+#' @return Numeric vector of Cook's distance values similar to \code{\link[stats]{cooks.distance}}.
+#' @seealso \code{\link[stats]{cooks.distance}}
+#' @examples
+#' ## data
+#' set.seed(1)
+#' n <- 25
+#' xy <- data.frame(
+#'  x = (1:n) / n,
+#'  y = 2.5 * exp(-1.5 * (1:n) / n) + rnorm(n, sd = 0.1)
+#' )
+#' ## model
+#' obj <- gsl_nls(fn = y ~ A * exp(-lam * x), data = xy, start = c(A = 1, lam = 1))
+#'
+#' cooks.distance(obj)
+#' @export
+cooks.distance.gsl_nls <- function(model, ...) {
+  df <- df.residual(model)
+  res <- model$m$resid()        # weighted residuals
+  ssr <- deviance(model)        # weighted ssr
+  p <- length(res) - df
+  h <- hatvalues(model)
+  res^2 / (p * (ssr / df)) * (h / (1 - h)^2)
 }
 
 #' Anova tables
