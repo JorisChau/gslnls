@@ -448,6 +448,7 @@ SEXP C_nls_internal(void *data)
 
         status = gsl_multifit_nlinear_rho_driver(pars, &fdf, wgt_i, niter, xtol, gtol, ftol, &params,
                                                  &info, &chisq0, &chisq1, &irls_sigma, &irls_iter, &irls_status, verbose);
+
         /* irls x tolerance */
         for (R_len_t k = 0; k < p; k++)
         {
@@ -455,6 +456,7 @@ SEXP C_nls_internal(void *data)
             double x1 = gsl_vector_get((pars->w)->x, k);
             irls_delta = gsl_max(irls_delta, fabs(x0 - x1));
         }
+
     }
 
     R_len_t iter = (R_len_t)gsl_multifit_nlinear_niter(pars->w);
@@ -716,7 +718,7 @@ static int gsl_f(const gsl_vector *x, void *params, gsl_vector *f)
         if (R_IsNaN(fvalptr[i]) || !R_finite(fvalptr[i]))
             gsl_vector_set(f, i, (double)GSL_POSINF);
         else
-            gsl_vector_set(f, i, yptr[i] - fvalptr[i]);
+            gsl_vector_set(f, i, fvalptr[i] - yptr[i]);
     }
 
     UNPROTECT(2);

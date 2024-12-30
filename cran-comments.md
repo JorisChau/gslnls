@@ -1,13 +1,6 @@
-## CRAN package version 1.3.2
+## CRAN package version 1.4.0
 
 * System requirements: GSL (>= 2.2)
-
-## Comments
-
-* Fix errors cran check results (fedora builds)
-* Removed configure.win + Makevars.win.in 
-* Added static Makevars.win as recommended by T. Kalibera
-* Fix prototype warning in config.log
 
 ## Test environments
 
@@ -21,4 +14,4 @@
 
 * ubuntu-rchk R-devel (docker)
 * fedora gcc R-devel --use-valgrind (rhub)
-* ubuntu gcc R-4.3 --use-gct (local install)
+* ubuntu gcc R-4.4 --use-gct (local install)

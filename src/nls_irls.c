@@ -149,12 +149,15 @@ static double psip_opt(double x, double c)
 }
 
 
-static double psi_hmpl(double x, double *k)
+static double psi_hmpl(double x, double k)
 {
     /*
      * psi = rho' : First derivative of Hampel's loss function
-     * constants  (a, b, r) == k[0:2]   s.t. slope of psi is 1 in the center
+     * constants  (a, b, r) s.t. slope of psi is 1 in the center
      */
+    double a = 1.5 * k;
+    double b = 3.5 * k;
+    double r = 8.0 * k;
     double sx, u;
     if (x < 0)
     {
@@ -166,30 +169,33 @@ static double psi_hmpl(double x, double *k)
         sx = +1;
         u = x;
     }
-    if (u <= k[0])
+    if (u <= a)
         return (x);
-    else if (u <= k[1])
-        return sx * k[0];
-    else if (u <= k[2])
-        return sx * k[0] * (k[2] - u) / (k[2] - k[1]);
+    else if (u <= b)
+        return sx * a;
+    else if (u <= r)
+        return sx * a * (r - u) / (r - b);
     else
         return 0.;
 }
 
-static double psip_hmpl(double x, double *k)
+static double psip_hmpl(double x, double k)
 {
     /*
      * psi' = rho'' : Second derivative of Hampel's loss function
-     * constants  (a, b, r) == k[0:2]   s.t. slope of psi is 1 in the center
+     * constants  (a, b, r) s.t. slope of psi is 1 in the center
      */
+    double a = 1.5 * k;
+    double b = 3.5 * k;
+    double r = 8.0 * k;
     double u = fabs(x);
 
-    if (u <= k[0])
+    if (u <= a)
         return (1);
-    else if (u <= k[1])
+    else if (u <= b)
         return (0);
-    else if (u <= k[2])
-        return (k[0] / (k[1] - k[2]));
+    else if (u <= r)
+        return (a / (b - r));
     else
         return (0);
 }
@@ -299,7 +305,7 @@ double psi(double x, double *c, int i)
     case 5:
         return (psi_opt(x, c[0])); // Optimal
     case 6:
-        return (psi_hmpl(x, c)); // Hampel
+        return (psi_hmpl(x, c[0])); // Hampel
     case 7:
         return (psi_ggw(x, c)); // GGW
     case 8:
@@ -326,7 +332,7 @@ double psip(double x, double *c, int i)
     case 5:
         return (psip_opt(x, c[0])); // Optimal
     case 6:
-        return (psip_hmpl(x, c)); // Hampel
+        return (psip_hmpl(x, c[0])); // Hampel
     case 7:
         return (psip_ggw(x, c)); // GGW
     case 8:
@@ -466,31 +472,18 @@ int gsl_multifit_nlinear_rho_driver(
          */
         if (status == GSL_EBADFUNC || (status == GSL_ENOPROG && *irls_iter == 1))
         {
+            UNPROTECT(1);
             *info = status;
             return status;
         }
 
         /* update weights */
-        // double rmin = GSL_POSINF;
-        // double rmax = GSL_NEGINF; 
         for (R_len_t i = 0; i < n; i++)
         {
             resid[i] = gsl_vector_get((pars->w)->f, i) / gsl_vector_get((pars->w)->sqrt_wts, i);
             abs_resid[i] = fabs(resid[i]);
-            // if(abs_resid[i] < rmin)
-            //     rmin = abs_resid[i];
-            // if(abs_resid[i] > rmax)
-            //     rmax = abs_resid[i];
         }
         *irls_sigma = 1.48258 * gsl_stats_median(abs_resid, 1, n);
-
-        /* dynamic updates (Sigl 2015)*/ 
-        // if (wgt_i == 3)
-        // {
-        //     rmin /= *irls_sigma;
-        //     rmax /= *irls_sigma;
-        //     *wgt_cc_ptr = GSL_MIN(GSL_MIN(GSL_MAX(rmin, GSL_SQRT_DBL_EPSILON), *wgt_cc_ptr), rmax);
-        // }
 
         double sum_wts = 0.0;
         for (R_len_t i = 0; i < n; i++)
@@ -518,6 +511,7 @@ int gsl_multifit_nlinear_rho_driver(
 
         if(*irls_status == GSL_SUCCESS)
         {
+            UNPROTECT(1);
             *info = status;
             return status;
         }
@@ -532,8 +526,6 @@ int gsl_multifit_nlinear_rho_driver(
 
     } while (*irls_status == GSL_CONTINUE && *irls_iter < irls_maxiter);
 
-    UNPROTECT(1);
-
     /* check if max iterations reached */
     if (*irls_iter >= irls_maxiter && *irls_status != GSL_SUCCESS)
     {
@@ -542,5 +534,6 @@ int gsl_multifit_nlinear_rho_driver(
         status = GSL_EMAXITER;
     }
 
+    UNPROTECT(1);
     return status;
 } /* gsl_multifit_nlinear_rho_driver() */

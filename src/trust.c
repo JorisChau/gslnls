@@ -259,6 +259,7 @@ int trust_iterate_lu(void *vstate, const gsl_vector *swts,
             status = gsl_multifit_nlinear_eval_df(x_trial, f_trial, swts,
                                                   params->h_df, params->fdtype,
                                                   fdf, J, state->workn);
+
             if (status)
                 return status;
 

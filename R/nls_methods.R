@@ -374,8 +374,7 @@ residuals.gsl_nls <- function(object, type = c("response", "pearson"), ...) {
       attr(val, "label") <- "Standardized residuals"
     } else {
       val <- as.vector(object$m$lhs() - object$m$fitted())
-      lab <- "Residuals"
-      attr(val, "label") <- lab
+      attr(val, "label") <- "Residuals"
     }
     val
   }

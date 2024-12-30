@@ -31,9 +31,6 @@
 #' the values of \code{mstart_n}, \code{mstart_r} or \code{mstart_minsp} to avoid early termination of the algorithm at the cost of
 #' increased computational effort.
 #'
-#' @section Robust loss functions:
-#' If \code{loss}
-#'
 #' @param fn a nonlinear model defined either as a two-sided \link{formula} including variables and parameters,
 #' or as a \link{function} returning a numeric vector, with first argument the vector of parameters to be estimated.
 #' See the individual method descriptions below.
@@ -72,16 +69,18 @@
 #' \itemize{
 #' \item \code{"default"} default squared loss function.
 #' \item \code{"huber"} Huber loss function.
-#' \item \code{"barron"} Smooth family of robust loss functions from (Barron (2019)).
-#' \item \code{"biweight"} Tukey's bisquare loss function.
-#' \item \code{"welsh"} Welsh loss function.
-#' \item \code{"optimal"} Optimal loss function as given by (Maronna et al. (2006)).
-#' \item \code{"hampel"} Hampel loss function (Hampel et al. (1986)).
-#' \item \code{"ggw"} Generalized Gauss-Weight loss function (Koller and Stahel (2011)).
-#' \item \code{"lqq"} Linear Quadratic Quadratic loss function (Koller and Stahel (2011)).
-#' }.
+#' \item \code{"barron"} Barron's smooth family of loss functions.
+#' \item \code{"biweight"} Tukey's biweight/bisquare loss function.
+#' \item \code{"welsh"} Welsh/Leclerc loss function.
+#' \item \code{"optimal"} Optimal loss function (Maronna et al. (2006), Section 5.9.1).
+#' \item \code{"hampel"} Hampel loss function.
+#' \item \code{"ggw"} Generalized Gauss-Weight loss function.
+#' \item \code{"lqq"} Linear Quadratic Quadratic loss function.
+#' }
 #' If a character string, the default tuning parameters as specified by \code{\link{gsl_nls_loss}} are used.
-#' Instead, a list as returned by \code{\link{gsl_nls_loss}} with non-default tuning parmaeters is also accepted.
+#' Instead, a list as returned by \code{\link{gsl_nls_loss}} with non-default tuning parameters is also accepted.
+#' For all choices other than \code{rho = "default"}, iterative reweighted least squares (IRLS) is used to
+#' solve the MM-estimation problem.
 #' @param control an optional list of control parameters to tune the least squares iterations and multistart algorithm.
 #' See \code{\link{gsl_nls_control}} for the available control parameters and their default values.
 #' @param lower	a named list or named numeric vector of parameter lower bounds, or an unnamed numeric
@@ -126,7 +125,7 @@
 #' applicable to objects of both classes.
 #' @useDynLib gslnls, .registration = TRUE
 #' @importFrom stats nls numericDeriv deriv as.formula coef deviance df.residual fitted vcov formula getInitial model.weights
-#' @importFrom stats pf pt qt setNames sigma nobs hatvalues printCoefmat symnum cooks.distance
+#' @importFrom stats pf pt qt setNames sigma nobs hatvalues printCoefmat symnum cooks.distance naprint
 #' @seealso \code{\link[stats]{nls}}
 #' @seealso \url{https://www.gnu.org/software/gsl/doc/html/nls.html}
 #' @seealso \url{https://CRAN.R-project.org/package=robustbase/vignettes/psi_functions.pdf}
@@ -163,6 +162,14 @@
 #'   fn = y ~ A * exp(-lam * x) + b,                        ## model formula
 #'   data = data.frame(x = x, y = y),                       ## model fit data
 #'   start = c(A = NA, lam = NA, b = NA)                    ## dynamic starting ranges
+#' )
+#'
+#' ## robust regression
+#' gsl_nls(
+#'   fn = y ~ A * exp(-lam * x) + b,                      ## model formula
+#'   data = data.frame(x = x, y = y),                     ## model fit data
+#'   start = c(A = 0, lam = 0, b = 0),                    ## starting values
+#'   loss = "barron"                                      ## L1-L2 loss
 #' )
 #'
 #' ## analytic Jacobian 1
@@ -303,7 +310,7 @@ gsl_nls <- function (fn, ...) {
 #' If \code{fn} is a \code{formula}, the returned list object is of classes \code{gsl_nls} and \code{nls}.
 #' Therefore, all generic functions applicable to objects of class \code{nls}, such as \code{anova}, \code{coef}, \code{confint},
 #' \code{deviance}, \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print}, \code{profile},
-#' \code{residuals}, \code{summary}, \code{vcov} and \code{weights} are also applicable to the returned list object.
+#' \code{residuals}, \code{summary}, \code{vcov}, \code{hatvalues}, \code{cooks.distance} and \code{weights} are also applicable to the returned list object.
 #' In addition, a method \code{confintd} is available for inference of derived parameters.
 #' @export
 gsl_nls.formula <- function(fn, data = parent.frame(), start,
@@ -696,7 +703,7 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   cFit <- .Call(C_nls, .fn, .lhs, .jac, .fvv, environment(), start, wts, .lupars, .ctrl_int, .ctrl_dbl, .has_start, .loss_config, PACKAGE = "gslnls")
 
   ## convert to nls object
-  m <- nlsModel(formula, mf, cFit, wts, jac, upper = NULL)
+  m <- nlsModel(formula, mf, cFit, wts, jac)
 
   convInfo <- list(
     isConv = as.logical(!cFit$conv),
@@ -748,8 +755,8 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
 #' Although the returned object is not of class \code{nls}, the following generic functions remain
 #' applicable for an object of class \code{gsl_nls}: \code{anova}, \code{coef}, \code{confint}, \code{deviance},
 #' \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print},
-#' \code{residuals}, \code{summary}, \code{vcov} and \code{weights}. In addition, a method \code{confintd}
-#' is available for inference of derived parameters.
+#' \code{residuals}, \code{summary}, \code{vcov}, \code{hatvalues}, \code{cooks.distance} and \code{weights}.
+#' In addition, a method \code{confintd} is available for inference of derived parameters.
 #' @export
 gsl_nls.function <- function(fn, y, start,
                              algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D"),
@@ -1097,7 +1104,7 @@ gsl_nls.function <- function(fn, y, start,
 #' @param mstart_maxiter positive integer, maximum number of iterations in the efficient local search algorithm (Algorithm B, Hickernell and Yuan (1997)), defaults to 10.
 #' @param mstart_maxstart positive integer, minimum number of major iterations (Algorithm 2.1, Hickernell and Yuan (1997)) before the multi-start algorithm terminates, defaults to 250.
 #' @param mstart_minsp positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.
-#' @param irls_maxiter postivive integer, maximum number of IRLS iterations, defaults to 50. Only used in case of a non-default loss function (\code{loss != "default"}) optimized by IRLS.
+#' @param irls_maxiter posivive integer, maximum number of IRLS iterations, defaults to 50. Only used in case of a non-default loss function (\code{loss != "default"}) optimized by IRLS.
 #' @param irls_xtol numeric value, termination of the IRLS procedure occurs when the relative change in parameters between IRLS iterations is \code{<= irls_xtol}, defaults to \code{.Machine$double.eps^(1/4)}.
 #' Only used in case of a non-default loss function (\code{loss != "default"}) optimized by IRLS.
 #' @param ... any additional arguments (currently not used).
@@ -1378,18 +1385,24 @@ gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
     gcall <- fcall
   }
   gcall[[2]] <- do.call(call, args = c(ifelse(is.list(start), "list", "c"), sapply(names(start), as.name)), quote = TRUE)
-  if(!any(is.na(cFit$grad) | is.infinite(cFit$grad))) {
-    QR <- qr(cFit$grad)
+  if(is.null(cFit$irls)) {
+    gr <- cFit$grad
+  } else {
+    .swts <- if(!missing(wts) && length(wts)) sqrt(wts) else rep_len(1, dim(cFit$grad)[1])
+    gr <- .swts * cFit$grad / sqrt(cFit$irls$irls_weights)  ## gradient w/o irls weights
+  }
+  if(!any(is.na(gr) | is.infinite(gr))) {
+    QR <- qr(gr)
     qrDim <- min(dim(QR$qr))
     if(QR$rank < qrDim)
       warning("singular gradient matrix at parameter estimates")
     if(!is.null(cFit$irls)) {
       ## MM correction [Yohai, 1987. Thrm. 4.1]
-      tau <- mean(cFit$irlsirls_psi^2) / mean(cFit$irls$irls_dpsi)^2
+      tau <- mean(cFit$irls$irls_psi^2) / mean(cFit$irls$irls_dpsi)^2
       QR$qr <- QR$qr / sqrt(tau)
     }
   } else {
-    QR <- structure(list(qr = cFit$grad), class = "qr")
+    QR <- structure(list(qr = gr), class = "qr")
     QR$qr[] <- NA_real_
     qrDim <- 0L
     warning("NA/NaN/Inf in gradient matrix at parameter estimates")
@@ -1400,7 +1413,7 @@ gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
             formula = function() fn,
             deviance = function() cFit$ssr,
             lhs = function() lhs,
-            gradient = function() cFit$grad,
+            gradient = function() gr,
             gradient1 = function(newdata = list()) {
               rho <- new.env(hash = TRUE, parent = env)
               for(i in names(newdata)) rho[[i]] <- newdata[[i]]

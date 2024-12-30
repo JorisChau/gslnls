@@ -1,21 +1,107 @@
-#' Loss functions with tunable parameters
+#' Robust loss functions with tunable parameters
 #'
-#' Allow the user to tune the coefficient(s) of the loss functions
-#' available in \code{\link{gsl_nls}} and \code{\link{gsl_nls_large}}.
+#' @description
+#' Allow the user to tune the coefficient(s) of the robust loss functions
+#' supported by \code{\link{gsl_nls}}. For all choices other than \code{rho = "default"}, the MM-estimation
+#' problem is optimized by means of iterative reweighted least squares (IRLS).
 #'
-#' @param rho character loss function name, one of \code{"default", "huber", "barron", "absolute", "bisquare", "welsh", "optimal", "hampel", "ggw", "lqq"}.
-#' @param cc numeric vector of loss function tuning parameters, with length depends on the chosen loss function.
+#' @section Loss function details:
+#' \describe{
+#'   \item{\code{default}}{
+#'     Default squared loss, no iterative reweighted least squares (IRLS) is required in this case.
+#'     \deqn{\rho(x) = x^2}
+#'   }
+#'   \item{\code{huber}}{
+#'     Huber loss function with scaling constant \eqn{k}, defaulting to \eqn{k = 1.345} for 95\% efficiency of the regression estimator.
+#'     \deqn{\rho(x, k) = \left\{ \begin{array}{ll} \frac{1}{2} x^2 &\quad \text{ if } |x| \leq k \\[2pt] k(|x| - \frac{k}{2}) &\quad \text{ if } |x| > k \end{array} \right. }
+#'   }
+#'   \item{\code{barron}}{
+#'     Barron's smooth family of loss functions with robustness parameter \eqn{\alpha \leq 2} (default \eqn{\alpha = 1}) and scaling constant \eqn{k} (default \eqn{k = 1.345}).
+#'     Special cases include: (scaled) squared loss for \eqn{\alpha = 2}; L1-L2 loss for \eqn{\alpha = 1}; Cauchy loss for \eqn{\alpha = 0}; Geman-McClure loss for \eqn{\alpha = -2};
+#'     and Welsch/Leclerc loss for \eqn{\alpha = -\infty}. See Barron (2019) for additional details.
+#'     \deqn{\rho(x, \alpha, k) = \left\{ \begin{array}{ll}
+#'           \frac{1}{2} (x / k)^2 &\quad \text{ if } \alpha = 2 \\[2pt]
+#'           \log\left(\frac{1}{2} (x / k)^2 + 1 \right) &\quad \text{ if } \alpha = 0 \\[2pt]
+#'           1 - \exp\left( -\frac{1}{2} (x / k)^2 \right) &\quad \text{ if } \alpha = -\infty \\[2pt]
+#'           \frac{|\alpha - 2|}{\alpha} \left( \left( \frac{(x / k)^2}{|\alpha-2|} + 1 \right)^{\alpha / 2} - 1 \right) &\quad \text{ otherwise }
+#'           \end{array} \right.
+#'      }
+#'   }
+#'   \item{\code{bisquare}}{
+#'     Tukey's biweight/bisquare loss function with scaling constant \eqn{k}, defaulting to \eqn{k = 4.685} for 95\% efficiency of the regression estimator,
+#'     (\eqn{k = 1.548} gives a breakdown point of 0.5 of the S-estimator).
+#'     \deqn{\rho(x, k) = \left\{ \begin{array}{ll} 1 - (1 - (x / k)^2)^3 &\quad \text{ if } |x| \leq k \\[2pt] 1 &\quad \text{ if } |x| > k \end{array} \right. }
+#'   }
+#'   \item{\code{welsh}}{
+#'      Welsh/Leclerc loss function with scaling constant \eqn{k}, defaulting to \eqn{k = 2.11} for 95\% efficiency of the regression estimator, (\eqn{k = 0.577} gives a
+#'      breakdown point of 0.5 of the S-estimator). This is equivalent to the Barron loss function with robustness parameter \eqn{\alpha = -\infty}.
+#'      \deqn{\rho(x, k) = 1 - \exp\left( -\frac{1}{2} (x / k)^2 \right) }
+#'   }
+#'   \item{\code{optimal}}{
+#'      Optimal loss function as in Section 5.9.1 of Maronna et al. (2006) with scaling constant \eqn{k}, defaulting to \eqn{k = 1.060} for 95\% efficiency of the regression estimator,
+#'      (\eqn{k = 0.405} gives a breakdown point of 0.5 of the S-estimator).
+#'      \deqn{\rho(x, k) = \int_0^x \text{sign}(u) \left( - \dfrac{\phi'(|u|) + k}{\phi(|u|)} \right)^+ du}
+#'      with \eqn{\phi} the standard normal density.
+#'   }
+#'   \item{\code{hampel}}{
+#'      Hampel loss function with a single scaling constant \eqn{k}, setting \eqn{a = 1.5k}, \eqn{b = 3.5k} and \eqn{r = 8k}. \eqn{k = 0.902} by default,
+#'      resulting in 95\% efficiency of the regression estimator, (\eqn{k = 0.212} gives a breakdown point of 0.5 of the S-estimator).
+#'      \deqn{\rho(x, a, b, r) = \left\{ \begin{array}{ll}
+#'            \frac{1}{2} x^2 / C &\quad \text{ if } |x| \leq a \\[2pt]
+#'            \left( \frac{1}{2}a^2 + a(|x|-a)\right) / C  &\quad \text{ if } a < |x| \leq b \\[2pt]
+#'            \frac{a}{2}\left( 2b - a + (|x| - b) \left(1 + \frac{r - |x|}{r-b}\right) \right) / C &\quad \text{ if } b < |x| \leq r \\[2pt]
+#'            1  &\quad \text{ if } r < |x|
+#'            \end{array} \right. }
+#'      with \eqn{C = \rho(\infty) = \frac{a}{2} (b - a + r)}.
+#'   }
+#'   \item{\code{ggw}}{
+#'      Generalized Gauss-Weight loss function, a generalization of the Welsh/Leclerc loss with tuning constants \eqn{a, b, c}, defaulting to \eqn{a = 1.387},
+#'      \eqn{b = 1.5}, \eqn{c = 1.063} for 95\% efficiency of the regression estimator, (\eqn{a = 0.204, b = 1.5, c = 0.296} gives a breakdown point of 0.5 of the S-estimator).
+#'      \deqn{\rho(x, a, b, c) = \int_0^x \psi(u, a, b, c) du}
+#'      with,
+#'      \deqn{\psi(x, a, b, c) = \left\{ \begin{array}{ll}
+#'            x &\quad \text{ if } |x| \leq c \\[2pt]
+#'            \exp\left( -\frac{1}{2} \frac{(|x| - c)^b}{a} \right) x &\quad \text{ if } |x| > c
+#'            \end{array} \right. }
+#'   }
+#'   \item{\code{lqq}}{
+#'      Linear Quadratic Quadratic loss function with tuning constants \eqn{b, c, s}, defaulting to \eqn{b = 1.473}, \eqn{c = 0.982}, \eqn{s = 1.5} for
+#'      95\% efficiency of the regression estimator, (\eqn{b = 0.402, c = 0.268, s = 1.5} gives a breakdown point of 0.5 of the S-estimator).
+#'      \deqn{\rho(x, b, c, s) = \int_0^x \psi(u, b, c, s) du}
+#'      with,
+#'      \deqn{\psi(x, b, c, s) = \left\{ \begin{array}{ll}
+#'            x &\quad \text{ if } |x| \leq c \\[2pt]
+#'            \text{sign}(x) \left( |x| - \frac{s}{2b} (|x| - c)^2 \right) &\quad \text{ if } c < |x| \leq b + c \\[2pt]
+#'            \text{sign}(x) \left( c + b - \frac{bs}{2} + \frac{s-1}{a} \left( \frac{1}{2} \tilde{x}^2 - a\tilde{x}\right) \right) &\quad \text{ if } b + c < |x| \leq a + b + c \\[2pt]
+#'            0 &\quad \text{ otherwise }
+#'            \end{array} \right. }
+#'      where \eqn{\tilde{x} = |x| - b - c} and \eqn{a = (2c + 2b - bs) / (s - 1)}.
+#'   }
+#' }
+#'
+#' @param rho character loss function, one of \code{"default", "huber", "barron", "bisquare", "welsh", "optimal", "hampel", "ggw", "lqq"}.
+#' @param cc named or unnamed numeric vector of tuning parameters. The length of this argument depends on the selected \code{rho} function (see \sQuote{Details}).
 #' If \code{NULL}, the default tuning parameters are returned.
-#' @seealso \url{https://CRAN.R-project.org/package=robustbase/vignettes/psi_functions.pdf}
+#' @seealso \url{https://CRAN.R-project.org/package=robustbase}
+#' @references J.T. Barron (2019). \emph{A general and adaptive robust loss function}. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition (pp. 4331-4339).
+#' @references M. Galassi et al., \emph{GNU Scientific Library Reference Manual (3rd Ed.)}, ISBN 0954612078.
+#' @references R.A. Maronna et al., \emph{Robust Statistics: Theory and Methods}, ISBN 0470010924.
 #' @examples
-#' ## huber loss function with default tuning parameter
-#' huber_loss()
+#' ## Huber loss with default scale k
+#' gsl_nls_loss(rho = "huber")
+#'
+#' ## L1-L2 loss (alpha = 1)
+#' gsl_nls_loss(rho = "barron", cc = c(1, 1.345))
+#'
+#' ## Cauchy loss (alpha = 0)
+#' gsl_nls_loss(rho = "barron", cc = c(k = 1.345, alpha = 0))
+#'
 #' @return A \code{list} with two components:
 #' \itemize{
 #' \item rho
 #' \item cc
 #' }
-#' with meanings as explained under 'Arguments'.
+#' with meanings as explained under \sQuote{Arguments}.
 #' @export
 gsl_nls_loss <- function(rho = c("default", "huber", "barron", "bisquare", "welsh", "optimal", "hampel", "ggw", "lqq"), cc = NULL) {
 
@@ -23,29 +109,36 @@ gsl_nls_loss <- function(rho = c("default", "huber", "barron", "bisquare", "wels
 
   ## default tuning parameters
   cc_default <- switch(rho,
-       default = numeric(0),   ## not used
-       huber = 1.345,
-       barron = c(1.0, 1.345),  ## L1-L2 loss
-       bisquare = 4.685061,
-       welsh = 2.11,
-       optimal = 1.060158,
-       hampel = c(1.352413, 3.155630, 7.212868),
-       ggw = c(0.648, 1.0, 1.694),
-       lqq = c(1.473, 0.982, 1.5)
+                       default = numeric(0),
+                       huber = c(k = 1.345),
+                       barron = c(alpha = 1.0, k = 1.345),
+                       bisquare = c(k = 4.685061),
+                       welsh = c(k = 2.11),
+                       optimal = c(k = 1.060158),
+                       hampel = c(k = 0.9016085),
+                       ggw = c(a = 1.387, b = 1.5, c = 1.063),
+                       lqq = c(b = 1.473, c = 0.982, s = 1.5)
   )
 
+  ## check tuning parameters
   if(is.null(cc) || identical(rho, "default")) {
     cc <- cc_default
   } else if(length(cc) != length(cc_default)) {
     stop(sprintf("'cc' must be of length %d for function '%s'", length(cc_default), rho))
-  } else {
+  } else if(is.null(names(cc))) {
     cc <- as.numeric(cc)
-    if(identical(rho, "barron") && cc[1] > 2) {
-      warning("Robustness parameter (alpha) in Barron loss function cannot be larger than 2")
-      cc[1] <- 2
+    names(cc) <- names(cc_default)
+  } else {
+    if(!all(is.element(names(cc_default), names(cc)))) {
+      stop(sprintf("'cc' must be unnamed or include names %s", paste(names(cc_default), collapse = ", ")))
     }
+    cc <- as.numeric(cc)[match(names(cc_default), names(cc))]
+    names(cc) <- names(cc_default)
+  }
+  if(identical(rho, "barron") && cc[["alpha"]] > 2) {
+    warning("Robustness parameter (alpha) in Barron loss function cannot be larger than 2")
+    cc[["alpha"]] <- 2
   }
 
-  list(rho = rho, cc = cc)
-
+  return(list(rho = rho, cc = cc))
 }

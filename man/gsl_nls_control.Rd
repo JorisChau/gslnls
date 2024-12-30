@@ -108,7 +108,7 @@ If the starting ranges for one or more parameters are unbounded and updated dyna
 
 \item{mstart_minsp}{positive integer, minimum number of detected stationary points before the multi-start algorithm terminates, defaults to 1.}
 
-\item{irls_maxiter}{postivive integer, maximum number of IRLS iterations, defaults to 50. Only used in case of a non-default loss function (\code{loss != "default"}) optimized by IRLS.}
+\item{irls_maxiter}{posivive integer, maximum number of IRLS iterations, defaults to 50. Only used in case of a non-default loss function (\code{loss != "default"}) optimized by IRLS.}
 
 \item{irls_xtol}{numeric value, termination of the IRLS procedure occurs when the relative change in parameters between IRLS iterations is \code{<= irls_xtol}, defaults to \code{.Machine$double.eps^(1/4)}.
 Only used in case of a non-default loss function (\code{loss != "default"}) optimized by IRLS.}

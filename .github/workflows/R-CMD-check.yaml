@@ -38,7 +38,7 @@ jobs:
           - {os: macOS-latest, r: 'release'}
           - {os: windows-latest, r: 'devel', rtools: '44'}
           - {os: windows-latest, r: 'next', rtools: '44'}
-          - {os: windows-latest, r: 'release', rtools: '43'}
+          - {os: windows-latest, r: 'release', rtools: '44'}
           - {os: ubuntu-latest, r: 'devel'}
           - {os: ubuntu-latest, r: 'next'}
           - {os: ubuntu-latest, r: 'release'}

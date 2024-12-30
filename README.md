@@ -18,11 +18,12 @@ optimization with the [GNU Scientific Library
 (GSL)](https://www.gnu.org/software/gsl/). The function `gsl_nls()`
 solves small to moderate sized nonlinear least-squares problems with the
 `gsl_multifit_nlinear` interface with built-in support for multi-start
-optimization. For large problems, where factoring the full Jacobian
-matrix becomes prohibitively expensive, the `gsl_nls_large()` function
-can be used to solve the system with the `gsl_multilarge_nlinear`
-interface. The `gsl_nls_large()` function is also appropriate for
-systems with sparse structure in the Jacobian matrix.
+optimization and nonlinear robust regression. For large problems, where
+factoring the full Jacobian matrix becomes prohibitively expensive, the
+`gsl_nls_large()` function can be used to solve the system with the
+`gsl_multilarge_nlinear` interface. The `gsl_nls_large()` function is
+also appropriate for systems with sparse structure in the Jacobian
+matrix.
 
 The following trust region methods to solve nonlinear least-squares
 problems are available in `gsl_nls()` (and `gsl_nls_large()`):
@@ -81,8 +82,9 @@ instructions in the included README and INSTALL files.
 
 ##### Windows
 
-A binary version of GSL (2.7) can be installed using the Rtools package
-manager (see
+Using Rtools \>= 42, GSL is available with the Rtools installation. For
+earlier versions of Rtools, a binary version of GSL can be installed
+using the Rtools package manager (see
 e.g. <https://github.com/r-windows/docs/blob/master/rtools40.md>):
 
     pacman -S mingw-w64-{i686,x86_64}-gsl
@@ -126,7 +128,7 @@ install.packages("gslnls")
 
 #### Data
 
-The code below simulates
+Below, we simulate
 ![n = 25](https://latex.codecogs.com/png.latex?n%20%3D%2025 "n = 25")
 noisy observations
 ![y_1,\ldots,y_n](https://latex.codecogs.com/png.latex?y_1%2C%5Cldots%2Cy_n "y_1,\ldots,y_n")
@@ -149,7 +151,7 @@ The exponential model parameters are set to
 ![A = 5](https://latex.codecogs.com/png.latex?A%20%3D%205 "A = 5"),
 ![\lambda = 1.5](https://latex.codecogs.com/png.latex?%5Clambda%20%3D%201.5 "\lambda = 1.5"),
 ![b = 1](https://latex.codecogs.com/png.latex?b%20%3D%201 "b = 1"), with
-a noise standard deviation of
+noise standard deviation
 ![\sigma = 0.25](https://latex.codecogs.com/png.latex?%5Csigma%20%3D%200.25 "\sigma = 0.25").
 
 ``` r
@@ -164,11 +166,11 @@ y <- f(A = 5, lam = 1.5, b = 1, x) + rnorm(n, sd = 0.25)
 
 #### Model fit
 
-The exponential model is fitted to the data using the `gsl_nls()`
-function by passing the nonlinear model as a two-sided `formula` and
+The exponential model is fitted to the data using the function
+`gsl_nls()` by passing the nonlinear model as a two-sided `formula` and
 providing starting parameters for the model parameters
 ![A, \lambda, b](https://latex.codecogs.com/png.latex?A%2C%20%5Clambda%2C%20b "A, \lambda, b")
-analogous to an `nls()` function call.
+analogous to a standard `nls()` call.
 
 ``` r
 library(gslnls)
@@ -182,7 +184,6 @@ ex1_fit <- gsl_nls(
 ex1_fit
 #> Nonlinear regression model
 #>   model: y ~ A * exp(-lam * x) + b
-#>    data: data.frame(x = x, y = y)
 #>     A   lam     b 
 #> 4.893 1.417 1.010 
 #>  residual sum-of-squares: 1.316
@@ -190,17 +191,17 @@ ex1_fit
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 9 
-#> Achieved convergence tolerance: 0
+#> Achieved convergence tolerance: 4.441e-16
 ```
 
-Here, the nonlinear least squares problem has been solved with the
+Here, the nonlinear least squares problem is solved with the
 Levenberg-Marquardt algorithm (default) in the `gsl_multifit_nlinear`
-interface using the following `control` parameters:
+interface with `control` parameters:
 
 ``` r
 ## default control parameters
 gsl_nls_control() |> str()
-#> List of 21
+#> List of 23
 #>  $ maxiter        : int 100
 #>  $ scale          : chr "more"
 #>  $ solver         : chr "qr"
@@ -222,12 +223,14 @@ gsl_nls_control() |> str()
 #>  $ mstart_maxiter : int 10
 #>  $ mstart_maxstart: int 250
 #>  $ mstart_minsp   : int 1
+#>  $ irls_maxiter   : int 50
+#>  $ irls_xtol      : num 0.000122
 ```
 
-Run `?gsl_nls_control` or check the [GSL reference
+Check `?gsl_nls_control` or the [GSL reference
 manual](https://www.gnu.org/software/gsl/doc/html/nls.html#tunable-parameters)
-for further details on the available tuning parameters to control the
-trust region algorithms.
+for details on the available tuning parameters to control the trust
+region algorithms.
 
 #### Object methods
 
@@ -235,8 +238,8 @@ The fitted model object returned by `gsl_nls()` is of class `"gsl_nls"`,
 which inherits from class `"nls"`. For this reason, generic functions
 such as `anova`, `coef`, `confint`, `deviance`, `df.residual`, `fitted`,
 `formula`, `logLik`, `predict`, `print` `profile`, `residuals`,
-`summary`, `vcov` and `weights` are also applicable for models fitted
-with `gsl_nls()`.
+`summary`, `vcov`, `hatvalues`, `cooks.distance` and `weights` are also
+applicable for models fitted with `gsl_nls()`.
 
 ``` r
 ## model summary
@@ -255,7 +258,7 @@ summary(ex1_fit)
 #> Residual standard error: 0.2446 on 22 degrees of freedom
 #> 
 #> Number of iterations to convergence: 9 
-#> Achieved convergence tolerance: 0
+#> Achieved convergence tolerance: 4.441e-16
 
 ## asymptotic confidence intervals
 confint(ex1_fit)
@@ -300,26 +303,25 @@ confintd(ex1_fit, expr = c("b", "A + b", "log(lam)"), level = 0.95)
 
 #### Jacobian calculation
 
-If the `jac` argument in `gsl_nls()` is undefined, the Jacobian matrix
-used to solve the [trust region
+If the `jac` argument in `gsl_nls()` is undefined, the Jacobian to solve
+the [trust region
 subproblem](https://www.gnu.org/software/gsl/doc/html/nls.html#solving-the-trust-region-subproblem-trs)
-is approximated by forward (or centered) finite differences. Instead, an
-analytic Jacobian can be passed to `jac` by defining a function that
-returns the
+is approximated numerically by (forward or centered) finite differences.
+Instead, an analytic Jacobian can be passed to `jac` by defining a
+function that returns the
 ![(n \times p)](https://latex.codecogs.com/png.latex?%28n%20%5Ctimes%20p%29 "(n \times p)")-dimensional
 Jacobian matrix of the nonlinear model `fn`, where the first argument
 must be the vector of parameters of length
 ![p](https://latex.codecogs.com/png.latex?p "p").
 
-In the exponential model example, the Jacobian matrix is a
-![(50 \times 3)](https://latex.codecogs.com/png.latex?%2850%20%5Ctimes%203%29 "(50 \times 3)")-dimensional
-matrix
+In the above example, the Jacobian is a
+![(50 \times 3)](https://latex.codecogs.com/png.latex?%2850%20%5Ctimes%203%29 "(50 \times 3)")-matrix
 ![\[\boldsymbol{J}\_{ij}\]\_{ij}](https://latex.codecogs.com/png.latex?%5B%5Cboldsymbol%7BJ%7D_%7Bij%7D%5D_%7Bij%7D "[\boldsymbol{J}_{ij}]_{ij}")
 with rows:
 
 ![\boldsymbol{J}\_i \\= \\\left\[ \frac{\partial f_i}{\partial A}, \frac{\partial f_i}{\partial \lambda}, \frac{\partial f_i}{\partial b} \right\] \\= \\\left\[ \exp(-\lambda \cdot x_i), -A \cdot \exp(-\lambda \cdot x_i) \cdot x_i, 1 \right\]](https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BJ%7D_i%20%5C%20%3D%20%5C%20%5Cleft%5B%20%5Cfrac%7B%5Cpartial%20f_i%7D%7B%5Cpartial%20A%7D%2C%20%5Cfrac%7B%5Cpartial%20f_i%7D%7B%5Cpartial%20%5Clambda%7D%2C%20%5Cfrac%7B%5Cpartial%20f_i%7D%7B%5Cpartial%20b%7D%20%5Cright%5D%20%5C%20%3D%20%5C%20%5Cleft%5B%20%5Cexp%28-%5Clambda%20%5Ccdot%20x_i%29%2C%20-A%20%5Ccdot%20%5Cexp%28-%5Clambda%20%5Ccdot%20x_i%29%20%5Ccdot%20x_i%2C%201%20%5Cright%5D "\boldsymbol{J}_i \ = \ \left[ \frac{\partial f_i}{\partial A}, \frac{\partial f_i}{\partial \lambda}, \frac{\partial f_i}{\partial b} \right] \ = \ \left[ \exp(-\lambda \cdot x_i), -A \cdot \exp(-\lambda \cdot x_i) \cdot x_i, 1 \right]")
 
-which is encoded in the following call to `gsl_nls()`:
+which can be encoded as:
 
 ``` r
 ## analytic Jacobian (1)
@@ -332,7 +334,6 @@ gsl_nls(
 )
 #> Nonlinear regression model
 #>   model: y ~ A * exp(-lam * x) + b
-#>    data: data.frame(x = x, y = y)
 #>     A   lam     b 
 #> 4.893 1.417 1.010 
 #>  residual sum-of-squares: 1.316
@@ -345,8 +346,7 @@ gsl_nls(
 
 If the model formula `fn` can be derived with `stats::deriv()`, then the
 analytic Jacobian in `jac` can be computed automatically using symbolic
-differentiation and no manual calculations are necessary. To evaluate
-`jac` by means of symbolic differentiation, set `jac = TRUE`:
+differentiation and it suffices to set `jac = TRUE`:
 
 ``` r
 ## analytic Jacobian (2)
@@ -358,7 +358,6 @@ gsl_nls(
 )
 #> Nonlinear regression model
 #>   model: y ~ A * exp(-lam * x) + b
-#>    data: data.frame(x = x, y = y)
 #>     A   lam     b 
 #> 4.893 1.417 1.010 
 #>  residual sum-of-squares: 1.316
@@ -383,7 +382,6 @@ ss_fit <- gsl_nls(
 ss_fit
 #> Nonlinear regression model
 #>   model: y ~ SSasymp(x, Asym, R0, lrc)
-#>    data: data.frame(x = x, y = y)
 #>   Asym     R0    lrc 
 #> 1.0097 5.9028 0.3484 
 #>  residual sum-of-squares: 1.316
@@ -391,7 +389,7 @@ ss_fit
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 1 
-#> Achieved convergence tolerance: 1.068e-13
+#> Achieved convergence tolerance: 1.181e-13
 ```
 
 The self-starting model `SSasymp()` uses a different model
@@ -427,15 +425,14 @@ gsl_nls(
 )
 #> Nonlinear regression model
 #>   model: y ~ A * exp(-lam * x) + b
-#>    data: data.frame(x = x, y = y)
 #>     A   lam     b 
 #> 4.893 1.417 1.010 
 #>  residual sum-of-squares: 1.316
 #> 
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
-#> Number of iterations to convergence: 2 
-#> Achieved convergence tolerance: 6.106e-14
+#> Number of iterations to convergence: 3 
+#> Achieved convergence tolerance: 8.882e-16
 ```
 
 The multi-start procedure is a modified version of the algorithm
@@ -454,7 +451,6 @@ gsl_nls(
 )
 #> Nonlinear regression model
 #>   model: y ~ A * exp(-lam * x) + b
-#>    data: data.frame(x = x, y = y)
 #>     A   lam     b 
 #> 4.893 1.417 1.010 
 #>  residual sum-of-squares: 1.316
@@ -462,7 +458,7 @@ gsl_nls(
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 3 
-#> Achieved convergence tolerance: 0
+#> Achieved convergence tolerance: 2.22e-16
 ```
 
 **Remark**: the dynamic multi-start procedure is not expected to always
@@ -470,6 +466,44 @@ return a global minimum of the NLS objective. Especially when the
 objective function contains many local optima, the multi-start algorithm
 may be unable to select parameter ranges that include the global
 minimizing solution.
+
+#### Robust loss functions
+
+The `loss` argument in `gsl_nls()` allows to specify a robust loss
+function
+![\rho(x)](https://latex.codecogs.com/png.latex?%5Crho%28x%29 "\rho(x)")
+other than the default squared loss
+![\rho(x) = \frac{1}{2}x^2](https://latex.codecogs.com/png.latex?%5Crho%28x%29%20%3D%20%5Cfrac%7B1%7D%7B2%7Dx%5E2 "\rho(x) = \frac{1}{2}x^2")
+in the optimization objective:
+
+![\arg \min\_{\boldsymbol{\theta}} \sum\_{i=1}^n \rho\left(y_i - f(x_i, \boldsymbol{\theta})\right)](https://latex.codecogs.com/png.latex?%5Carg%20%5Cmin_%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%20%5Csum_%7Bi%3D1%7D%5En%20%5Crho%5Cleft%28y_i%20-%20f%28x_i%2C%20%5Cboldsymbol%7B%5Ctheta%7D%29%5Cright%29 "\arg \min_{\boldsymbol{\theta}} \sum_{i=1}^n \rho\left(y_i - f(x_i, \boldsymbol{\theta})\right)")
+
+The (MM-)estimates in the robust regression problem are obtained by
+iterative reweighted least squares (IRLS), see `?gsl_nls_loss` for the
+available loss functions and their (optional) tuning parameters.
+
+``` r
+## Huber loss
+gsl_nls(
+  fn = y ~ A * exp(-lam * x) + b,    ## model formula
+  data = data.frame(x = x, y = y),   ## model fit data
+  start = c(A = 0, lam = 0, b = 0),  ## starting values
+  loss = "huber"
+)
+#> Nonlinear regression model
+#>   model: y ~ A * exp(-lam * x) + b
+#>     A   lam     b 
+#> 4.796 1.463 1.092 
+#>  weighted residual sum-of-squares: 0.8127
+#> 
+#> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
+#> 
+#> Number of IRLS iterations to convergence: 8 
+#> Achieved IRLS tolerance: 0.0001023
+#> 
+#> Number of NLS iterations to convergence: 9 
+#> Achieved NLS tolerance: 1.11e-16
+```
 
 ### Example 2: Gaussian function
 
@@ -535,23 +569,23 @@ ex2a_fit <- gsl_nls(
 #> iter   2: ssr = 171.29, par = (1.85555, 2.84851, -5.66642)
 #> iter   3: ssr = 168.703, par = (1.93316, 2.34745, -6.33662)
 #> iter   4: ssr = 167.546, par = (1.84665, 1.24131, -7.399)
-#> iter   5: ssr = 166.799, par = (1.87948, 0.380488, -7.61723)
-#> iter   6: ssr = 165.623, par = (1.90658, -2.00515, -7.19306)
-#> iter   7: ssr = 163.944, par = (2.18675, -3.19622, -5.38804)
+#> iter   5: ssr = 166.799, par = (1.87948, 0.380487, -7.61723)
+#> iter   6: ssr = 165.623, par = (1.90658, -2.00516, -7.19306)
+#> iter   7: ssr = 163.944, par = (2.18675, -3.19622, -5.38805)
 #> iter   8: ssr = 161.679, par = (2.41824, -3.1487, -5.03149)
-#> iter   9: ssr = 159.955, par = (2.67372, -3.18703, -4.20169)
-#> iter  10: ssr = 157.391, par = (3.1083, -2.84066, -3.10574)
-#> iter  11: ssr = 153.131, par = (3.54614, -2.38071, -2.53824)
-#> iter  12: ssr = 150.129, par = (4.02799, -1.97822, -1.96376)
-#> iter  13: ssr = 146.735, par = (4.49887, -1.35879, -1.39554)
-#> iter  14: ssr = 142.928, par = (3.14455, -0.573017, -1.08117)
-#> iter  15: ssr = 124.562, par = (2.14743, 0.465351, -0.443335)
-#> iter  16: ssr = 102.183, par = (3.74451, 0.263346, 0.353849)
-#> iter  17: ssr = 35.4869, par = (3.49962, 0.437339, 0.18613)
-#> iter  18: ssr = 9.24985, par = (4.41273, 0.381446, 0.16023)
-#> iter  19: ssr = 3.13669, par = (4.94382, 0.40041, 0.150317)
-#> iter  20: ssr = 2.7623, par = (5.11741, 0.397815, 0.14729)
-#> iter  21: ssr = 2.75831, par = (5.13786, 0.397886, 0.146865)
+#> iter   9: ssr = 159.955, par = (2.67373, -3.18704, -4.20168)
+#> iter  10: ssr = 157.391, par = (3.10831, -2.84066, -3.10573)
+#> iter  11: ssr = 153.131, par = (3.54614, -2.3807, -2.53824)
+#> iter  12: ssr = 150.129, par = (4.028, -1.97822, -1.96376)
+#> iter  13: ssr = 146.735, par = (4.49887, -1.35878, -1.39554)
+#> iter  14: ssr = 142.928, par = (3.14454, -0.573011, -1.08117)
+#> iter  15: ssr = 124.564, par = (2.14741, 0.465371, -0.443323)
+#> iter  16: ssr = 102.171, par = (3.74447, 0.263284, 0.353778)
+#> iter  17: ssr = 35.4992, par = (3.4995, 0.437365, 0.186149)
+#> iter  18: ssr = 9.25455, par = (4.41259, 0.381433, 0.160233)
+#> iter  19: ssr = 3.13721, par = (4.94369, 0.400412, 0.15032)
+#> iter  20: ssr = 2.76231, par = (5.11738, 0.397815, 0.14729)
+#> iter  21: ssr = 2.75831, par = (5.13785, 0.397886, 0.146865)
 #> iter  22: ssr = 2.7583, par = (5.1389, 0.397884, 0.146831)
 #> iter  23: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
 #> iter  24: ssr = 2.7583, par = (5.13894, 0.397884, 0.146829)
@@ -560,21 +594,19 @@ ex2a_fit <- gsl_nls(
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt'
 #> number of iterations: 26
-#> reason for stopping: input domain error
-#> initial ssr = 210.146
-#> final ssr = 2.7583
-#> ssr/dof = 0.0586872
-#> ssr achieved tolerance = 8.88178e-16
-#> function evaluations: 125
+#> initial ssr: 210.146
+#> final ssr: 2.7583
+#> ssr/dof: 0.0586872
+#> ssr achieved tolerance: 1.33227e-15
+#> function evaluations: 124
 #> jacobian evaluations: 0
 #> fvv evaluations: 0
-#> status = success
+#> status: success
 #> *******************
 
 ex2a_fit
 #> Nonlinear regression model
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
-#>    data: data.frame(x = x, y = y)
 #>      a      b      c 
 #> 5.1389 0.3979 0.1468 
 #>  residual sum-of-squares: 2.758
@@ -582,7 +614,7 @@ ex2a_fit
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 26 
-#> Achieved convergence tolerance: 8.882e-16
+#> Achieved convergence tolerance: 1.332e-15
 ```
 
 #### Geodesic acceleration
@@ -604,8 +636,8 @@ ex2b_fit <- gsl_nls(
 #> iter   1: ssr = 158.039, par = (1.58476, 0.502555, 0.511498)
 #> iter   2: ssr = 126.469, par = (1.8444, 0.366374, 0.403898)
 #> iter   3: ssr = 77.0115, par = (2.5025, 0.392374, 0.272717)
-#> iter   4: ssr = 26.4036, par = (3.64063, 0.394564, 0.205619)
-#> iter   5: ssr = 5.35492, par = (4.63506, 0.396865, 0.16366)
+#> iter   4: ssr = 26.4036, par = (3.64063, 0.394564, 0.205618)
+#> iter   5: ssr = 5.35491, par = (4.63506, 0.396865, 0.163659)
 #> iter   6: ssr = 2.82529, par = (5.05578, 0.397909, 0.149333)
 #> iter   7: ssr = 2.75877, par = (5.13246, 0.397896, 0.147057)
 #> iter   8: ssr = 2.7583, par = (5.13862, 0.397885, 0.146843)
@@ -616,21 +648,19 @@ ex2b_fit <- gsl_nls(
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt+accel'
 #> number of iterations: 12
-#> reason for stopping: input domain error
-#> initial ssr = 210.146
-#> final ssr = 2.7583
-#> ssr/dof = 0.0586872
-#> ssr achieved tolerance = 3.24185e-14
+#> initial ssr: 210.146
+#> final ssr: 2.7583
+#> ssr/dof: 0.0586872
+#> ssr achieved tolerance: 3.19744e-14
 #> function evaluations: 76
 #> jacobian evaluations: 0
 #> fvv evaluations: 0
-#> status = success
+#> status: success
 #> *******************
 
 ex2b_fit
 #> Nonlinear regression model
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
-#>    data: data.frame(x = x, y = y)
 #>      a      b      c 
 #> 5.1389 0.3979 0.1468 
 #>  residual sum-of-squares: 2.758
@@ -638,7 +668,7 @@ ex2b_fit
 #> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 12 
-#> Achieved convergence tolerance: 3.242e-14
+#> Achieved convergence tolerance: 3.197e-14
 ```
 
 With geodesic acceleration enabled the method converges after 12
@@ -754,19 +784,17 @@ gsl_nls(
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt+accel'
 #> number of iterations: 12
-#> reason for stopping: input domain error
-#> initial ssr = 210.146
-#> final ssr = 2.7583
-#> ssr/dof = 0.0586872
-#> ssr achieved tolerance = 3.28626e-14
+#> initial ssr: 210.146
+#> final ssr: 2.7583
+#> ssr/dof: 0.0586872
+#> ssr achieved tolerance: 3.10862e-14
 #> function evaluations: 58
 #> jacobian evaluations: 0
 #> fvv evaluations: 18
-#> status = success
+#> status: success
 #> *******************
 #> Nonlinear regression model
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
-#>    data: data.frame(x = x, y = y)
 #>      a      b      c 
 #> 5.1389 0.3979 0.1468 
 #>  residual sum-of-squares: 2.758
@@ -774,7 +802,7 @@ gsl_nls(
 #> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 12 
-#> Achieved convergence tolerance: 3.286e-14
+#> Achieved convergence tolerance: 3.109e-14
 ```
 
 If the model formula `fn` can be derived with `stats::deriv()`, then the
@@ -808,19 +836,17 @@ gsl_nls(
 #> *******************
 #> summary from method 'multifit/levenberg-marquardt+accel'
 #> number of iterations: 12
-#> reason for stopping: input domain error
-#> initial ssr = 210.146
-#> final ssr = 2.7583
-#> ssr/dof = 0.0586872
-#> ssr achieved tolerance = 2.93099e-14
+#> initial ssr: 210.146
+#> final ssr: 2.7583
+#> ssr/dof: 0.0586872
+#> ssr achieved tolerance: 3.10862e-14
 #> function evaluations: 58
 #> jacobian evaluations: 0
 #> fvv evaluations: 18
-#> status = success
+#> status: success
 #> *******************
 #> Nonlinear regression model
 #>   model: y ~ a * exp(-(x - b)^2/(2 * c^2))
-#>    data: data.frame(x = x, y = y)
 #>      a      b      c 
 #> 5.1389 0.3979 0.1468 
 #>  residual sum-of-squares: 2.758
@@ -828,7 +854,7 @@ gsl_nls(
 #> Algorithm: multifit/levenberg-marquardt+accel, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 12 
-#> Achieved convergence tolerance: 2.931e-14
+#> Achieved convergence tolerance: 3.109e-14
 ```
 
 ### Example 3: Branin function
@@ -914,7 +940,7 @@ ex3_fit
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 20 
-#> Achieved convergence tolerance: 0
+#> Achieved convergence tolerance: 1.665e-16
 ```
 
 **Note**: When using the `function` method of `gsl_nls()`, the returned
@@ -1047,7 +1073,7 @@ system.time({
   )
 })
 #>    user  system elapsed 
-#>  33.720   0.084  33.812
+#>  57.948   0.229  58.200
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_lm), "\n")
 #> Residual sum-of-squares: 0.004778845
@@ -1069,7 +1095,7 @@ system.time({
   )
 })
 #>    user  system elapsed 
-#>   1.214   0.312   1.527
+#>   2.154   0.664   2.819
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_cgst), "\n")
 #> Residual sum-of-squares: 0.004778845
@@ -1114,10 +1140,10 @@ bench::mark(
 #> # A tibble: 4 × 6
 #>   expression       min   median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>  <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl>
-#> 1 Dense LM       6.33s    6.39s     0.157     1.8GB    6.61  
-#> 2 Dense CGST     1.29s    1.36s     0.726    1.02GB    16.4  
-#> 3 Sparse LM      4.87s    4.91s     0.203   33.19MB    0.122
-#> 4 Sparse CGST 166.09ms 176.09ms     4.66    23.04MB    3.73
+#> 1 Dense LM      11.91s   12.36s    0.0816    1.82GB   3.39  
+#> 2 Dense CGST     1.95s    2.03s    0.467     1.02GB   9.89  
+#> 3 Sparse LM      9.61s    9.62s    0.104    33.41MB   0.0624
+#> 4 Sparse CGST 252.96ms 262.35ms    3.83     23.04MB   2.30
 ```
 
 ## NLS test problems
@@ -1215,7 +1241,7 @@ solutions and a vector of suggested starting values for the parameters:
 #> 
 #> $fn
 #> y ~ b1/(1 + exp(b2 - b3 * x))
-#> <environment: 0x55b96bf04da0>
+#> <environment: 0x5587a5b2c0e8>
 #> 
 #> $start
 #>    b1    b2    b3 
@@ -1245,7 +1271,7 @@ with(ratkowsky2,
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 10 
-#> Achieved convergence tolerance: 4.619e-14
+#> Achieved convergence tolerance: 5.151e-14
 
 ## example optimization problem
 madsen <- nls_test_problem(name = "Madsen")
@@ -1266,7 +1292,7 @@ with(madsen,
 #> Algorithm: multifit/levenberg-marquardt, (scaling: more, solver: qr)
 #> 
 #> Number of iterations to convergence: 42 
-#> Achieved convergence tolerance: 1.11e-16
+#> Achieved convergence tolerance: 2.22e-16
 ```
 
 ## Other R-packages
@@ -1281,9 +1307,19 @@ for this package include:
 - [RcppZiggurat](https://cran.r-project.org/web/packages/RcppZiggurat/index.html)
   by Dirk Eddelbuettel
 
+Except for Barron’s family of loss functions, all robust loss functions
+are credited to
+[robustbase](https://cran.r-project.org/web/packages/robustbase/index.html)
+by Martin Maechler and others.
+
+## License
+
+LGPL-3
+
 # References
 
-<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent"
+entry-spacing="0">
 
 <div id="ref-BW88" class="csl-entry">
 

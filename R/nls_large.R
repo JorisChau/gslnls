@@ -127,8 +127,8 @@ gsl_nls_large <- function (fn, ...) {
 #' If \code{fn} is a \code{formula}, the returned list object is of classes \code{gsl_nls} and \code{nls}.
 #' Therefore, all generic functions applicable to objects of class \code{nls}, such as \code{anova}, \code{coef}, \code{confint},
 #' \code{deviance}, \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print}, \code{profile},
-#' \code{residuals}, \code{summary}, \code{vcov} and \code{weights} are also applicable to the returned list object.
-#' In addition, a method \code{confintd} is available for inference of derived parameters.
+#' \code{residuals}, \code{summary}, \code{vcov}, \code{hatvalues}, \code{cooks.distance} and \code{weights} are also applicable to the returned
+#' list object. In addition, a method \code{confintd} is available for inference of derived parameters.
 #' @export
 gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
                                   algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst"),
@@ -409,7 +409,7 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
   cFit <- .Call(C_nls_large, .fn, .lhs, .jac, .fvv, environment(), start, wts, .ctrl_int, .ctrl_dbl, PACKAGE = "gslnls")
 
   ## convert to nls object
-  m <- nlsModel(formula, mf, cFit$par, wts, jac)
+  m <- nlsModel(formula, mf, cFit, wts, jac)
 
   convInfo <- list(
     isConv = as.logical(!cFit$conv),
@@ -451,8 +451,8 @@ gsl_nls_large.formula <- function(fn, data = parent.frame(), start,
 #' Although the returned object is not of class \code{nls}, the following generic functions remain
 #' applicable for an object of class \code{gsl_nls}: \code{anova}, \code{coef}, \code{confint}, \code{deviance},
 #' \code{df.residual}, \code{fitted}, \code{formula}, \code{logLik}, \code{nobs}, \code{predict}, \code{print},
-#' \code{residuals}, \code{summary}, \code{vcov} and \code{weights}. In addition, a method \code{confintd}
-#' is available for inference of derived parameters.
+#' \code{residuals}, \code{summary}, \code{vcov}, \code{hatvalues}, \code{cooks.distance} and \code{weights}.
+#' In addition, a method \code{confintd} is available for inference of derived parameters.
 #' @export
 gsl_nls_large.function <- function(fn, y, start,
                                    algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst"),
