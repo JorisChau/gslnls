@@ -5,12 +5,10 @@
 
 <!-- badges: start -->
 
-[![CRAN
-version](http://www.r-pkg.org/badges/version/gslnls)](https://cran.r-project.org/package=gslnls)
+[![CRAN version](http://www.r-pkg.org/badges/version/gslnls)](https://cran.r-project.org/package=gslnls)
 [![R-CMD-check](https://github.com/JorisChau/gslnls/workflows/R-CMD-check/badge.svg)](https://github.com/JorisChau/gslnls/actions)
 [![codecov](https://codecov.io/gh/JorisChau/gslnls/branch/master/graph/badge.svg)](https://app.codecov.io/gh/JorisChau/gslnls)
-[![Total
-Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gslnls)](https://cran.r-project.org/package=gslnls)
+[![Total Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gslnls)](https://cran.r-project.org/package=gslnls)
 <!-- badges: end -->
 
 The {gslnls}-package provides R bindings to nonlinear least-squares
