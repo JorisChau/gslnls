@@ -7,7 +7,7 @@
 * ubuntu gcc R-oldrel, R-release, R-next, R-devel (rhub, gh-actions)
 * debian gcc/clang R-devel (rhub)
 * fedora gcc/clang R-devel (rhub)
-* macos-monterey clang R-release, R-next (gh-actions)
+* macos-14 clang R-release, R-next, R-devel (gh-actions, rhub)
 * windows gcc R-oldrel, R-release, R-next, R-devel (r-winbuilder, gh-actions)
 
 ## Compiled code checks
