@@ -5,10 +5,12 @@
 
 <!-- badges: start -->
 
-[![CRAN version](http://www.r-pkg.org/badges/version/gslnls)](https://cran.r-project.org/package=gslnls)
+[![CRAN
+version](https://www.r-pkg.org/badges/version/gslnls)](https://cran.r-project.org/package=gslnls)
 [![R-CMD-check](https://github.com/JorisChau/gslnls/workflows/R-CMD-check/badge.svg)](https://github.com/JorisChau/gslnls/actions)
 [![codecov](https://codecov.io/gh/JorisChau/gslnls/branch/master/graph/badge.svg)](https://app.codecov.io/gh/JorisChau/gslnls)
-[![Total Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gslnls)](https://cran.r-project.org/package=gslnls)
+[![Total
+Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gslnls)](https://cran.r-project.org/package=gslnls)
 <!-- badges: end -->
 
 The {gslnls}-package provides R bindings to nonlinear least-squares
@@ -1071,7 +1073,7 @@ system.time({
   )
 })
 #>    user  system elapsed 
-#>  57.948   0.229  58.200
+#>  44.783   0.168  44.953
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_lm), "\n")
 #> Residual sum-of-squares: 0.004778845
@@ -1093,7 +1095,7 @@ system.time({
   )
 })
 #>    user  system elapsed 
-#>   2.154   0.664   2.819
+#>   1.829   0.396   2.225
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_cgst), "\n")
 #> Residual sum-of-squares: 0.004778845
@@ -1138,10 +1140,10 @@ bench::mark(
 #> # A tibble: 4 × 6
 #>   expression       min   median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>  <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl>
-#> 1 Dense LM      11.91s   12.36s    0.0816    1.82GB   3.39  
-#> 2 Dense CGST     1.95s    2.03s    0.467     1.02GB   9.89  
-#> 3 Sparse LM      9.61s    9.62s    0.104    33.41MB   0.0624
-#> 4 Sparse CGST 252.96ms 262.35ms    3.83     23.04MB   2.30
+#> 1 Dense LM       9.44s    9.59s     0.104    1.82GB   4.33  
+#> 2 Dense CGST     1.57s    1.59s     0.588    1.02GB  12.5   
+#> 3 Sparse LM       7.5s    7.57s     0.132   33.41MB   0.0795
+#> 4 Sparse CGST 196.63ms 200.77ms     4.99    23.04MB   2.99
 ```
 
 ## NLS test problems
@@ -1239,7 +1241,7 @@ solutions and a vector of suggested starting values for the parameters:
 #> 
 #> $fn
 #> y ~ b1/(1 + exp(b2 - b3 * x))
-#> <environment: 0x5587a5b2c0e8>
+#> <environment: 0x55bfccd947a0>
 #> 
 #> $start
 #>    b1    b2    b3 
