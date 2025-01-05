@@ -38,6 +38,8 @@ static void C_nls_cleanup(void *data)
         gsl_vector_free(pars->workn);
     if (pars->workp)
         gsl_vector_free(pars->workp);
+    if (pars->worknp)
+        gsl_matrix_free(pars->worknp);
     if (pars->mpopt1)
         gsl_vector_free(pars->mpopt1);
     if (pars->psi)
@@ -217,7 +219,7 @@ SEXP C_nls_internal(void *data)
     if (!Rf_isNull(pars->weights))
         for (R_len_t i = 0; i < n; i++)
             gsl_vector_set(pars->wts, i, REAL_ELT(pars->weights, i));
-    if (wgt_i)
+    else
         gsl_vector_set_all(pars->wts, 1.0);
 
     /* initialize solver */
@@ -245,6 +247,8 @@ SEXP C_nls_internal(void *data)
     pars->w = gsl_multifit_nlinear_alloc(T, &fdf_params, n, p);
     pars->mpopt = gsl_vector_alloc(p);
     pars->workp = gsl_vector_alloc(p);
+    pars->workn = gsl_vector_alloc(n);
+    pars->worknp = gsl_matrix_alloc(n, p);
     gsl_vector_set_zero(pars->mpopt);
 
     /* multistart algorithm */
@@ -258,18 +262,17 @@ SEXP C_nls_internal(void *data)
 
         /* manually initialize workspace */
         (pars->w)->fdf = &fdf;
+        (pars->w)->sqrt_wts = (pars->w)->sqrt_wts_work;
         if (!Rf_isNull(pars->weights))
         {
-            double wi;
-            (pars->w)->sqrt_wts = (pars->w)->sqrt_wts_work;
             for (R_len_t i = 0; i < n; i++)
             {
-                wi = gsl_vector_get(pars->wts, i);
+                double wi = gsl_vector_get(pars->wts, i);
                 gsl_vector_set((pars->w)->sqrt_wts, i, sqrt(wi));
             }
         }
         else
-            (pars->w)->sqrt_wts = NULL;
+            gsl_vector_set_all((pars->w)->sqrt_wts, 1.0);
 
         /* multistart parameters */
         mdata mpars;
@@ -280,6 +283,7 @@ SEXP C_nls_internal(void *data)
         mpars.niter = INTEGER_ELT(pars->control_int, 10);
         mpars.max = INTEGER_ELT(pars->control_int, 11);
         mpars.minsp = INTEGER_ELT(pars->control_int, 12);
+        mpars.wgt_i = wgt_i;
         mpars.all_start = TRUE;
         mpars.has_start = LOGICAL(pars->has_start);
         mpars.r = REAL_ELT(pars->control_dbl, 8);
@@ -319,7 +323,6 @@ SEXP C_nls_internal(void *data)
         pars->diag = gsl_vector_alloc(p);
         pars->JTJ = gsl_matrix_alloc(p, p);
         pars->mpopt1 = gsl_vector_alloc(p);
-        pars->workn = gsl_vector_alloc(mpars.n);
 
         double *startptr = REAL(pars->start);
         for (R_len_t k = 0; k < p; k++)
@@ -349,7 +352,7 @@ SEXP C_nls_internal(void *data)
         /* multi-start global iterations */
         do
         {
-            gsl_multistart_driver(pars, &mpars, &fdf, mssr, xtol, ftol, verbose);
+            gsl_multistart_driver(pars, &mpars, &fdf, mssr, xtol, ftol, FALSE, verbose);
 
             /* check stopping criterion */
             mpars.mstarts += 1;
@@ -364,7 +367,6 @@ SEXP C_nls_internal(void *data)
             {
                 /* reduce determinant tolerance */
                 mpars.dtol = gsl_max(0.5 * mpars.dtol, GSL_DBL_EPSILON);
-
                 if (!(mpars.mstarts % 100)) // reset start ranges
                 {
                     for (R_len_t k = 0; k < p; k++)
@@ -376,6 +378,103 @@ SEXP C_nls_internal(void *data)
             }
 
         } while (mpars.mstop == GSL_CONTINUE);
+        /* second pass multi-start global iterations */
+        if(wgt_i)
+        {
+            /* 
+                outliers are identified as observations with Di > min(4 / n, 5 * mad(Di)), 
+                associated weights are set to zero in the second pass of the multi-start procedure.
+            */
+            if (mpars.mssropt[1] < mpars.mssropt[0])
+                gsl_vector_memcpy(pars->mpopt, pars->mpopt1);
+            // compute J and J^T * J using pars->mpopt
+            gsl_multifit_nlinear_winit(pars->mpopt, pars->wts, &fdf, pars->w);
+            det_eval_jtj((pars->w)->params, (pars->w)->sqrt_wts, (pars->w)->fdf, (pars->w)->x, (pars->w)->f, (pars->w)->J, pars->JTJ, pars->workn);
+            // compute cook's d
+            mpars.mstop = cooks_d((pars->w)->f, (pars->w)->J, pars->JTJ, pars->workn, pars->worknp);
+
+            if(!mpars.mstop) 
+            {
+                // update weights
+                R_len_t noutlier = 0;
+                double *workn = (double *)R_alloc(n, sizeof(double));
+                double mad = gsl_stats_mad((pars->workn)->data, 1, n, workn);
+                double thresh = gsl_min(4.0 / n, 5 * mad);
+                (pars->w)->sqrt_wts = (pars->w)->sqrt_wts_work;
+                for (R_len_t i = 0; i < n; i++)
+                {
+                    double di = gsl_vector_get(pars->workn, i);
+                    if (di > thresh)
+                    {
+                        gsl_vector_set(pars->wts, i, 0.0);
+                        gsl_vector_set((pars->w)->sqrt_wts, i, 0.0);
+                        noutlier += 1;
+                    }
+                    else 
+                    {
+                        double wi = gsl_vector_get(pars->wts, i);
+                        gsl_vector_set((pars->w)->sqrt_wts, i, sqrt(wi));
+                    }
+                }
+                if((noutlier > 0) && (noutlier < (n - p))) 
+                {
+                    /* reset qrng workspace */
+                    gsl_qrng_init(pars->q);
+                    // reset counters
+                    mpars.mstop = GSL_CONTINUE;
+                    mpars.mstarts = 0;
+                    mpars.nsp = 0;
+                    mpars.nwsp = 0;
+                    mpars.dtol = 1.0e-6;
+                    mpars.rejectscl = 1.25;
+                    mpars.mssropt[0] = (double)GSL_POSINF;
+                    mpars.mssropt[1] = (double)GSL_POSINF;
+                    mpars.ssrconv[0] = 1.0;
+                    mpars.ssrconv[1] = 1.0;
+                    memset(mpars.ntix, 0, mpars.n * sizeof(int));
+                    memset(mpars.luchange, 0, p * sizeof(int));
+                    // second pass multi-start
+                    do
+                    {
+                        gsl_multistart_driver(pars, &mpars, &fdf, mssr, xtol, ftol, TRUE, verbose);
+
+                        /* check stopping criterion */
+                        mpars.mstarts += 1;
+
+                        if (mpars.mstarts > mpars.max)
+                            mpars.mstop = GSL_EMAXITER;
+
+                        if (mpars.nsp >= mpars.minsp && mpars.nwsp > (mpars.r + sqrt(mpars.r) * mpars.nsp))
+                            mpars.mstop = GSL_SUCCESS;
+
+                        if (!(mpars.mstarts % 10) && !(mpars.mssropt[0] < (double)GSL_POSINF))
+                        {
+                            /* reduce determinant tolerance */
+                            mpars.dtol = gsl_max(0.5 * mpars.dtol, GSL_DBL_EPSILON);
+                            if (!(mpars.mstarts % 100)) // reset start ranges
+                            {
+                                for (R_len_t k = 0; k < p; k++)
+                                {
+                                    mpars.start[2 * k] = startptr[2 * k];
+                                    mpars.start[2 * k + 1] = startptr[2 * k + 1];
+                                }
+                            }
+                        }
+                    } while (mpars.mstop == GSL_CONTINUE);
+                }
+                // reset original weights
+                if (!Rf_isNull(pars->weights))
+                {
+                    for (R_len_t i = 0; i < n; i++)
+                    {
+                        double wi = REAL_ELT(pars->weights, i);
+                        gsl_vector_set(pars->wts, i, wi);
+                    }
+                }
+                else 
+                    gsl_vector_set_all(pars->wts, 1.0);
+            } 
+        }
         if (verbose)
         {
             if (mpars.mstop == GSL_SUCCESS)
@@ -429,8 +528,8 @@ SEXP C_nls_internal(void *data)
 
     /* solve the system  */
     int info = GSL_CONTINUE;
-    int status;
-    int irls_status;
+    int status = GSL_FAILURE;
+    int irls_status = GSL_FAILURE;
     R_len_t irls_iter = 0;
     double irls_delta = 0.0;
     double irls_sigma = 1.0;
@@ -619,8 +718,8 @@ SEXP C_nls_internal(void *data)
     /* irls weights */
     if (wgt_i)
     {
-        const char *nms[] = {"irls_weights", "irls_psi", "irls_dpsi", "irls_sigma", "irls_status", "irls_niter", "irls_tol", "irls_conv", ""};
-        SEXP ansirls = PROTECT(Rf_mkNamed(VECSXP, nms));
+        const char *irlsnms[] = {"irls_weights", "irls_psi", "irls_dpsi", "irls_sigma", "irls_status", "irls_niter", "irls_tol", "irls_conv", ""};
+        SEXP ansirls = PROTECT(Rf_mkNamed(VECSXP, irlsnms));
         SEXP irlswts = PROTECT(Rf_allocVector(REALSXP, n));
         SEXP irlspsi = PROTECT(Rf_allocVector(REALSXP, n));
         SEXP irlspsip = PROTECT(Rf_allocVector(REALSXP, n));

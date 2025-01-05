@@ -43,7 +43,8 @@ typedef struct
     gsl_matrix *JTJ;                   // workspace hessian matrix Jt * J
     gsl_vector *workn;                 // workspace n-length vector
     gsl_vector *workp;                 // workspace p-length vector
-    gsl_vector *psi;                   // IRLS psi vector 
+    gsl_matrix *worknp;                // workspace pxn-dimensional matrix
+    gsl_vector *psi;                   // IRLS psi vector
     gsl_vector *psip;                  // IRLS psi' vector
 } pdata;
 
@@ -82,6 +83,7 @@ typedef struct
     R_len_t niter;     // number of local search iters
     R_len_t max;       // maximum number of major iters
     R_len_t minsp;     // minimum number of stationary points
+    int wgt_i;         // loss function identifier
     double r;          // stopping criterion nwsp >= r * nsp
     double tol;        // start local search if mssr < (1 + tol) * mssropt
     double dtol;       // discard point if det(J^T * J) < dtol
@@ -114,8 +116,8 @@ typedef struct
     gsl_vector *diag;    /* D = diag(J^T J) */
     gsl_vector *x_trial; /* trial parameter vector */
     gsl_vector *f_trial; /* trial function vector */
-    gsl_vector *workp;   /* workspace, length p */
-    gsl_vector *workn;   /* workspace, length n */
+    gsl_vector *workp;   /* workspace p-length vector */
+    gsl_vector *workn;   /* workspace n-length vector */
     void *trs_state;     /* workspace for trust region subproblem */
     void *solver_state;  /* workspace for linear least squares solver */
     double avratio;      /* current |a| / |v| */
@@ -144,7 +146,8 @@ void gsl_multistart_driver(pdata *pars,
                            SEXP mssr,
                            const double xtol,
                            const double ftol,
-                           Rboolean verbose);
+                           const Rboolean use_weights,
+                           const Rboolean verbose);
 
 int gsl_multifit_nlinear_rho_driver(pdata *pars,
                                     gsl_multifit_nlinear_fdf *fdff,
@@ -160,7 +163,7 @@ int gsl_multifit_nlinear_rho_driver(pdata *pars,
                                     double *irls_scale,
                                     R_len_t *irls_iter,
                                     int *irls_status,
-                                    Rboolean verbose);
+                                    const Rboolean verbose);
 
 int trust_iterate_lu(void *vstate,
                      const gsl_vector *swts,
@@ -178,6 +181,10 @@ double det_eval_jtj(const gsl_multifit_nlinear_parameters params,
                     const gsl_vector *swts, gsl_multifit_nlinear_fdf *fdf,
                     const gsl_vector *x, gsl_vector *f, gsl_matrix *J,
                     gsl_matrix *JTJ, gsl_vector *workn);
+
+int hat_values(gsl_matrix *J, gsl_matrix *JTJ, gsl_vector *h, gsl_matrix *worknp);
+
+int cooks_d(gsl_vector *f, gsl_matrix *J, gsl_matrix *JTJ, gsl_vector *d, gsl_matrix *worknp);
 
 SEXP C_nls(SEXP fn,
            SEXP y,

@@ -285,7 +285,7 @@ static double psip_lqq(double x, double *k)
     }
 }
 
-double psi(double x, double *c, int i)
+static double psi(double x, double *c, int i)
 {
     /*
      * return the correct psi function according to i
@@ -313,7 +313,7 @@ double psi(double x, double *c, int i)
     }
 }
 
-double psip(double x, double *c, int i)
+static double psip(double x, double *c, int i)
 {
     /*
      * return the correct rho'' according to i
@@ -424,7 +424,7 @@ int gsl_multifit_nlinear_rho_driver(
     double *irls_sigma,
     R_len_t *irls_iter,
     int *irls_status,
-    Rboolean verbose)
+    const Rboolean verbose)
 {
     /* initialize parameters */
     SEXP wgt_cc = PROTECT(VECTOR_ELT(pars->loss_config, 1));

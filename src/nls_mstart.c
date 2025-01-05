@@ -4,12 +4,13 @@
 #include "gsl_nls.h"
 
 void gsl_multistart_driver(pdata *pars,
-                                  mdata *mpars,
-                                  gsl_multifit_nlinear_fdf *fdff,
-                                  SEXP mssr,
-                                  const double xtol,
-                                  const double ftol,
-                                  Rboolean verbose)
+                           mdata *mpars,
+                           gsl_multifit_nlinear_fdf *fdff,
+                           SEXP mssr,
+                           const double xtol,
+                           const double ftol,
+                           const Rboolean use_weights,
+                           Rboolean verbose)
 {
     // initialize variables
     int minfo;
@@ -60,7 +61,7 @@ void gsl_multistart_driver(pdata *pars,
             gsl_matrix_get_row(pars->workp, pars->mx, nn);
 
             /* concentrate point */
-            if (!Rf_isNull(pars->weights))
+            if (use_weights || !Rf_isNull(pars->weights))
                 gsl_multifit_nlinear_winit(pars->workp, pars->wts, fdff, pars->w);
             else
                 gsl_multifit_nlinear_init(pars->workp, fdff, pars->w);
@@ -218,7 +219,7 @@ void gsl_multistart_driver(pdata *pars,
             if ((mpars->nsp) == 0 || REAL_ELT(mssr, nn) < (1 + (mpars->tol)) * (mpars->mssropt)[0])
             {
                 gsl_matrix_get_row(pars->workp, pars->mx, nn);
-                if (!Rf_isNull(pars->weights))
+                if (use_weights || !Rf_isNull(pars->weights))
                     gsl_multifit_nlinear_winit(pars->workp, pars->wts, fdff, pars->w);
                 else
                     gsl_multifit_nlinear_init(pars->workp, fdff, pars->w);
@@ -302,7 +303,8 @@ void gsl_multistart_driver(pdata *pars,
                         }
                         if (verbose)
                         {
-                            Rprintf("mstart ssr* = %g, det(JTJ) = %g, NSP = %d, NWSP = %d, par = (", (mpars->mssropt)[0], det_jtj, mpars->nsp, mpars->nwsp);
+                            Rprintf("mstart%s ssr* = %g, det(JTJ) = %g, NSP = %d, NWSP = %d, par = (", use_weights ? " (second pass)" : "",
+                                    (mpars->mssropt)[0], det_jtj, mpars->nsp, mpars->nwsp);
                             for (R_len_t k = 0; k < p; k++)
                                 Rprintf((k < (p - 1)) ? "%g, " : "%g)\n", gsl_vector_get((pars->w)->x, k));
                         }

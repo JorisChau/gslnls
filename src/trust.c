@@ -1,9 +1,8 @@
 #include "gsl_nls.h"
 
 /*
-    these internal functions are copied from multifit_nlinear/trust.c
-    in order to modify the internal function trust_iterate() to include
-    parameter bounds constraints
+    these internal functions are adapted from multifit_nlinear/trust.c
+    modifying trust_iterate() to allow for parameter bounds constraints
 */
 
 /* compute x_trial = x + dx */
@@ -299,61 +298,3 @@ int trust_iterate_lu(void *vstate, const gsl_vector *swts,
 
     return GSL_SUCCESS;
 } /* trust_iterate_lu() */
-
-/*
-det_eval_jtj()
-  Evaluate Jacobian J and calculate det(J^T * J) from Cholesky decomposition
-
-  Inputs: vstate - workspace
-        params - parameter workspace
-        workn  - workspace length-n vector
-        swts   - sqrt(W) vector
-        fdf    - user callback functions
-        x      - length-p parameter vector
-        f      - length-n f(x) vector
-        J      - nxp jacobian matrix
-        JTJ    - workspace pxp hessian matrix
-
-*/
-double det_eval_jtj(const gsl_multifit_nlinear_parameters params,
-                    const gsl_vector *swts, gsl_multifit_nlinear_fdf *fdf,
-                    const gsl_vector *x, gsl_vector *f, gsl_matrix *J,
-                    gsl_matrix *JTJ, gsl_vector *workn)
-{
-    int status;
-    double det = 0.0;
-
-    /* evaluate f(x) */
-    status = gsl_multifit_nlinear_eval_f(fdf, x, swts, f);
-    if (status)
-        return det;
-
-    /* evaluate J(x) */
-    status = gsl_multifit_nlinear_eval_df(x, f, swts, params.h_df, params.fdtype, fdf, J, workn);
-    if (status)
-        return det;
-
-    det = det_cholesky_jtj(J, JTJ);
-
-    return det;
-}
-
-double det_cholesky_jtj(gsl_matrix *J, gsl_matrix *JTJ)
-{
-    int status;
-    double det = 0.0;
-
-    /* compute J^T * J */
-    gsl_blas_dsyrk(CblasLower, CblasTrans, 1.0, J, 0.0, JTJ);
-
-    /* calculate det(J^T * J) from lower Cholesky matrix */
-    status = gsl_linalg_cholesky_decomp1(JTJ);
-    if (status)
-        return det;
-
-    det = 1.0;
-    for (size_t i = 0; i < (JTJ->size1); ++i)
-        det *= gsl_matrix_get(JTJ, i, i); // product of diagonal elements
-
-    return det * det;
-}
