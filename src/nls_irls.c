@@ -342,7 +342,7 @@ static double psip(double x, double *c, int i)
 
 static int test_delta_irls(const gsl_vector *x0, const gsl_vector *x1, double xtol)
 {
-    int status;
+    int status = GSL_CONTINUE;
     R_len_t n = x1->size;
 
     for (R_len_t i = 0; i < n; i++)
