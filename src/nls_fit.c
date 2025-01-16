@@ -25,9 +25,10 @@ Inputs: maxiter  - maximum iterations to allow
                                precision (gtol is too small)
                    GSL_ETOLF = change in ||f|| is smaller than machine
                                precision (ftol is too small)
-        lu       - (2 x p)-matrix with top row the lower
+        lu       - optional (2 x p)-matrix with top row the lower
                     parameter bounds and bottom row the
                     upper parameter bounds
+        Lw       - optional unit lower triangular matrix L in LDDL' decomposition of W
         w        - workspace
 
 Return:
@@ -37,17 +38,18 @@ GSL_MAXITER if maxiter exceeded without converging
 GSL_ENOPROG if no accepted step found on first iteration
 */
 int gsl_multifit_nlinear_driver2(const R_len_t maxiter,
-                                        const double xtol,
-                                        const double gtol,
-                                        const double ftol,
-                                        void (*callback)(const R_len_t iter, void *params,
-                                                         const gsl_multifit_nlinear_workspace *w),
-                                        void *callback_params,
-                                        int *info,
-                                        double *chisq0,
-                                        double *chisq1,
-                                        const gsl_matrix *lu,
-                                        gsl_multifit_nlinear_workspace *w)
+                                 const double xtol,
+                                 const double gtol,
+                                 const double ftol,
+                                 void (*callback)(const R_len_t iter, void *params,
+                                                  const gsl_multifit_nlinear_workspace *w),
+                                 void *callback_params,
+                                 int *info,
+                                 double *chisq0,
+                                 double *chisq1,
+                                 const gsl_matrix *lu,
+                                 const gsl_matrix *Lw,
+                                 gsl_multifit_nlinear_workspace *w)
 {
     int status = GSL_CONTINUE;
     R_len_t iter = 0;
@@ -58,13 +60,14 @@ int gsl_multifit_nlinear_driver2(const R_len_t maxiter,
         /* current ssr */
         chisq0[0] = chisq1[0];
 
-        /* iterator */
-        if (!lu)
-            status = gsl_multifit_nlinear_iterate(w);
-        else // with parameter constraints
+        if (lu || Lw)  // custom iterator
         {
-            status = trust_iterate_lu(w->state, w->sqrt_wts, w->fdf, w->x, w->f, w->J, w->g, w->dx, lu);
+            status = trust_iterate_lu_LD(w->state, w->sqrt_wts, Lw, w->fdf, w->x, w->f, w->J, w->g, w->dx, lu);
             w->niter++;
+        }
+        else  // default iterator
+        {
+            status = gsl_multifit_nlinear_iterate(w);
         }
 
         /* new ssr */

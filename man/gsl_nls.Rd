@@ -134,8 +134,9 @@ are printed after each iteration.}
 \item{subset}{an optional vector specifying a subset of observations to be used in the fitting process.
 This argument is only used if \code{fn} is defined as a \link{formula}.}
 
-\item{weights}{an optional numeric vector of (fixed) weights. When present, the objective function is
-weighted least squares.}
+\item{weights}{an optional numeric vector of (fixed) weights of length \code{n} or an \code{n}-by-\code{n}
+symmetric positive definite weight matrix. If \code{weights} is a vector or a diagonal matrix, the objective function is weighted least squares.
+If \code{weights} is a general matrix, the objective function is generalized least squares.}
 
 \item{na.action}{a function which indicates what should happen when the data contain \code{NA}s. The
 default is set by the \code{na.action} setting of \code{\link{options}}, and is \code{\link{na.fail}} if that is unset.

@@ -108,8 +108,9 @@
 #' are printed after each iteration.
 #' @param subset an optional vector specifying a subset of observations to be used in the fitting process.
 #' This argument is only used if \code{fn} is defined as a \link{formula}.
-#' @param weights an optional numeric vector of (fixed) weights. When present, the objective function is
-#' weighted least squares.
+#' @param weights an optional numeric vector of (fixed) weights of length \code{n} or an \code{n}-by-\code{n}
+#' symmetric positive definite weight matrix. If \code{weights} is a vector or a diagonal matrix, the objective function is weighted least squares.
+#' If \code{weights} is a general matrix, the objective function is generalized least squares.
 #' @param na.action a function which indicates what should happen when the data contain \code{NA}s. The
 #' default is set by the \code{na.action} setting of \code{\link{options}}, and is \code{\link{na.fail}} if that is unset.
 #' The 'factory-fresh' default is \code{\link{na.omit}}. Value \code{\link{na.exclude}} can be useful.
@@ -439,7 +440,6 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   ## then it is probably a variable.
   ## This may fail (e.g. when LHS contains parameters):
   respLength <- length(eval(formula[[2L]], data, env))
-
   if(length(n) > 0L) {
     varIndex <- n %% respLength == 0
     if(is.list(data) && diff(range(n[names(n) %in% names(data)])) > 0) {
@@ -481,8 +481,21 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
       mf <- as.list(mf)
       wts <- if (!mWeights) model.weights(mf) else NULL
     }
-    if (!is.null(wts) && any(wts <= 0 | is.na(wts)))
-      stop("missing or non-positive weights not allowed")
+    if(!is.null(wts)) {
+      stopifnot(
+        "'weights' should be numeric" =  is.numeric(wts),
+        "missing weights not allowed" = !any(is.na(wts))
+      )
+      if(is.matrix(wts)) {
+        ## error if non-positive definite
+        .swts <- t(chol(wts))
+      } else {
+        stopifnot("non-positive weights not allowed" = all(wts > 0))
+        .swts <- sqrt(wts)
+      }
+    } else {
+      .swts <- NULL
+    }
   }
   else {
     stop("no data variables present")
@@ -700,10 +713,14 @@ gsl_nls.formula <- function(fn, data = parent.frame(), start,
   }
 
   ## optimize
-  cFit <- .Call(C_nls, .fn, .lhs, .jac, .fvv, environment(), start, wts, .lupars, .ctrl_int, .ctrl_dbl, .has_start, .loss_config, PACKAGE = "gslnls")
+  cFit <- .Call(
+    C_nls,
+    .fn, .lhs, .jac, .fvv, environment(), start, .swts, .lupars, .ctrl_int, .ctrl_dbl, .has_start, .loss_config,
+    PACKAGE = "gslnls"
+  )
 
   ## convert to nls object
-  m <- nlsModel(formula, mf, cFit, wts, jac)
+  m <- nlsModel(formula, mf, cFit, .swts, jac)
 
   convInfo <- list(
     isConv = as.logical(!cFit$conv),
@@ -995,18 +1012,39 @@ gsl_nls.function <- function(fn, y, start,
 
   ## weights
   if(!missing(weights)) {
-    if(!is.numeric(weights) || !identical(length(weights), length(y)))
-      stop("'weights' should be numeric equal in length to 'y'")
-    if (any(weights <= 0 | is.na(weights)))
-      stop("missing or non-positive weights not allowed")
+    stopifnot(
+      "'weights' should be numeric" =  is.numeric(weights),
+      "missing weights not allowed" =  !any(is.na(weights))
+    )
+    if(is.matrix(weights)) {
+      stopifnot(
+        "dimensions of 'weights' should be equal to length of 'y'" =  all(dim(weights) == length(y))
+      )
+      ## error if non-positive definite
+      .swts <- t(chol(weights))
+    } else {
+      stopifnot(
+        "'weights' should be equal in length to 'y'" = identical(length(weights), length(y)),
+        "non-positive weights not allowed" =  all(weights > 0)
+      )
+      .swts <- sqrt(weights)
+    }
   } else {
-    weights <- NULL
+    .swts <- NULL
   }
 
   ## optimize
-  cFit <- .Call(C_nls, .fn, y, .jac, .fvv, environment(), .start, weights, .lupars, .ctrl_int, .ctrl_dbl, .has_start, .loss_config, PACKAGE = "gslnls")
+  cFit <- .Call(
+    C_nls,
+    .fn, y, .jac, .fvv, environment(), .start, .swts, .lupars, .ctrl_int, .ctrl_dbl, .has_start, .loss_config,
+    PACKAGE = "gslnls"
+  )
 
-  m <- gslModel(fn, y, cFit, if(!all(.has_start) && is.list(start)) as.list(.start[1L, ]) else if(!all(.has_start) || is.matrix(start)) .start[1L, ] else .start, weights, jac, ...)
+  m <- gslModel(
+    fn, y, cFit,
+    if(!all(.has_start) && is.list(start)) as.list(.start[1L, ]) else if(!all(.has_start) || is.matrix(start)) .start[1L, ] else .start,
+    .swts, jac, ...
+  )
 
   ## mimick nls object
   convInfo <- list(
@@ -1028,7 +1066,7 @@ gsl_nls.function <- function(fn, y, start,
     nls.out$devtrace <- cFit$ssrtrace[seq_len(cFit$niter + 1L)]
   }
   nls.out$control <- .ctrl
-  if(!is.null(weights))
+  if(!missing(weights))
     nls.out$weights <- weights
   if(!is.null(.lupars)) {
     nls.out$lower <- .lupars[1L, ]
@@ -1190,7 +1228,7 @@ gsl_nls_control <- function(maxiter = 100, scale = "more", solver = "qr",
 
 }
 
-nlsModel <- function(form, data, cFit, wts, jac, upper=NULL) {
+nlsModel <- function(form, data, cFit, swts, jac, upper=NULL) {
   ## thisEnv <- environment() # shared by all functions in the 'm' list; variable no longer needed
   env <- new.env(hash = TRUE, parent = environment(form))
   start <- cFit$par
@@ -1212,7 +1250,7 @@ nlsModel <- function(form, data, cFit, wts, jac, upper=NULL) {
   useParams <- rep_len(TRUE, parLength)
   lhs <- eval(form[[2L]], envir = env)
   rhs <- eval(form[[3L]], envir = env)
-  .swts <- if(!missing(wts) && length(wts)) sqrt(wts) else rep_len(1, length(rhs))
+  .swts <- if(!missing(swts) && length(swts)) swts else rep_len(1, length(rhs))
   env$.swts <- .swts
   resid <- -cFit$resid
   dev <- cFit$ssr
@@ -1254,7 +1292,7 @@ nlsModel <- function(form, data, cFit, wts, jac, upper=NULL) {
     attr(rhs, "gradient") <- gr <- as.vector(gr)
 
   if(!any(is.na(gr) | is.infinite(gr))) {
-    QR <- qr(.swts * gr)
+    QR <- if(is.matrix(.swts)) qr(.swts %*% gr) else qr(.swts * gr)
     qrDim <- min(dim(QR$qr))
     if(QR$rank < qrDim)
       warning("singular gradient matrix at parameter estimates")
@@ -1302,7 +1340,13 @@ nlsModel <- function(form, data, cFit, wts, jac, upper=NULL) {
             formula = function() form,
             deviance = function() dev,
             lhs = function() lhs,
-            gradient = function() .swts * attr(rhs, "gradient"),
+            gradient = function() {
+              if(is.matrix(.swts)) {
+                .swts %*% attr(rhs, "gradient")
+              } else {
+                .swts * attr(rhs, "gradient")
+              }
+            },
             gradient1 = function(newdata = list()) {
               rho <- new.env(hash = TRUE, parent = env)
               for(i in names(newdata)) rho[[i]] <- newdata[[i]]
@@ -1344,10 +1388,11 @@ nlsModel <- function(form, data, cFit, wts, jac, upper=NULL) {
             },
             setPars = function(newPars) {
               setPars(newPars)
-              resid <<- .swts * (lhs - (rhs <<- getRHS())) # envir = thisEnv {2 x}
+              resid0 <- (lhs - (rhs <<- getRHS()))
+              resid <<- if(is.matrix(.swts)) c(.swts %*% resid0) else .swts * resid0 # envir = thisEnv {2 x}
               dev   <<- sum(resid^2) # envir = thisEnv
               if(length(gr <- attr(rhs, "gradient")) == 1L) gr <- c(gr)
-              QR <<- qr(.swts * gr) # envir = thisEnv
+              QR <<- if(is.matrix(.swts)) qr(.swts %*% gr) else qr(.swts * gr) # envir = thisEnv
               (QR$rank < min(dim(QR$qr))) # to catch the singular gradient matrix
             },
             getPars = function() getPars(),
@@ -1365,7 +1410,7 @@ nlsModel <- function(form, data, cFit, wts, jac, upper=NULL) {
   m
 }
 
-gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
+gslModel <- function(fn, lhs, cFit, start, swts, jac, ...) {
   env <- new.env(hash = TRUE, parent = environment(fn))
   env$fn <- fn
   data <- list(...)
@@ -1388,8 +1433,9 @@ gslModel <- function(fn, lhs, cFit, start, wts, jac, ...) {
   if(is.null(cFit$irls)) {
     gr <- cFit$grad
   } else {
-    .swts <- if(!missing(wts) && length(wts)) sqrt(wts) else rep_len(1, dim(cFit$grad)[1])
-    gr <- .swts * cFit$grad / sqrt(cFit$irls$irls_weights)  ## gradient w/o irls weights
+    .swts <- if(!missing(swts) && length(swts)) swts else rep_len(1, dim(cFit$grad)[1])
+    gr <- if(is.matrix(.swts)) .swts %*% cFit$grad else .swts * cFit$grad  ## weighted gradient
+    gr <- gr / sqrt(cFit$irls$irls_weights)  ## gradient w/o irls weights
   }
   if(!any(is.na(gr) | is.infinite(gr))) {
     QR <- qr(gr)

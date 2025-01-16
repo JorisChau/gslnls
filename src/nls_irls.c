@@ -375,7 +375,7 @@ static void callback_irls(const R_len_t iter, void *params, const gsl_multifit_n
 
 /*
 gsl_multifit_nlinear_rho_driver()
-  Iterate the nonlinear least squares solver until completion
+  Iterate the (robust) reweighted least squares solver until completion
 
 Inputs: pars     - pdata, parameter workspace
         fdff     - gsl_multifit_nlinear_fdf, function workspace
@@ -437,6 +437,9 @@ int gsl_multifit_nlinear_rho_driver(
     double *resid = (double *)S_alloc(n, sizeof(double));
     double *abs_resid = (double *)S_alloc(n, sizeof(double));
 
+    /* initialize irls weights */
+    gsl_vector_memcpy(pars->workn, pars->wts);
+
     do
     {
         *irls_iter += 1;
@@ -445,7 +448,10 @@ int gsl_multifit_nlinear_rho_driver(
         {
             /* re-initialize workspace */
             gsl_vector_memcpy(pars->workp, (pars->w)->x);
-            gsl_multifit_nlinear_winit(pars->mpopt, pars->wts, fdff, pars->w);
+            if(pars->Lw)
+                gsl_multifit_nlinear_winit_LD(pars->mpopt, pars->workn, pars->Lw, fdff, pars->w);
+            else
+                gsl_multifit_nlinear_winit(pars->mpopt, pars->workn, fdff, pars->w);
             *chisq0 = (double)GSL_POSINF;
         }
         else 
@@ -455,7 +461,7 @@ int gsl_multifit_nlinear_rho_driver(
         status = gsl_multifit_nlinear_driver2(
             maxiter, xtol, gtol, ftol, verbose ? callback_irls : NULL,
             verbose ? callback_params : NULL, info, chisq0, chisq1,
-            pars->lu, pars->w);
+            pars->lu, pars->Lw, pars->w);
 
         if (verbose)
         {
@@ -480,6 +486,7 @@ int gsl_multifit_nlinear_rho_driver(
         /* update weights */
         for (R_len_t i = 0; i < n; i++)
         {
+            // unweighted residuals
             resid[i] = gsl_vector_get((pars->w)->f, i) / gsl_vector_get((pars->w)->sqrt_wts, i);
             abs_resid[i] = fabs(resid[i]);
         }
@@ -491,19 +498,19 @@ int gsl_multifit_nlinear_rho_driver(
             double residsc = resid[i] / *irls_sigma;
             double psii = psi(residsc, wgt_cc_ptr, wgt_i);
             double wti = gsl_max(psii / residsc, GSL_DBL_EPSILON);
-            gsl_vector_set(pars->wts, i, wti);
+            gsl_vector_set(pars->workn, i, wti);
             gsl_vector_set(pars->psi, i, psii);
             gsl_vector_set(pars->psip, i, psip(residsc, wgt_cc_ptr, wgt_i));
             sum_wts += wti;
         }
         /* normalize weights */
-        gsl_vector_scale(pars->wts, n / sum_wts);
+        gsl_vector_scale(pars->workn, n / sum_wts);
 
-        /* include user weights */
-        if (!Rf_isNull(pars->weights))
+        /* multiply by user weights */
+        if (!Rf_isNull(pars->swts))
         {
             for (R_len_t i = 0; i < n; i ++)
-                gsl_vector_set(pars->wts, i, REAL_ELT(pars->weights, i) * gsl_vector_get(pars->wts, i));
+                gsl_vector_set(pars->workn, i, gsl_vector_get(pars->wts, i) * gsl_vector_get(pars->workn, i));
         }
 
         /* check irls convergence */
@@ -522,7 +529,7 @@ int gsl_multifit_nlinear_rho_driver(
         //     Rprintf((i < (n - 1)) ? "%g, " : "%g)\n", resid[i] / scale);
         // Rprintf("weight = (");
         // for (R_len_t i = 0; i < n; i++)
-        //     Rprintf((i < (n - 1)) ? "%g, " : "%g)\n", gsl_vector_get(pars->wts, i));
+        //     Rprintf((i < (n - 1)) ? "%g, " : "%g)\n", gsl_vector_get(pars->workn, i));
 
     } while (*irls_status == GSL_CONTINUE && *irls_iter < irls_maxiter);
 

@@ -1073,7 +1073,7 @@ system.time({
   )
 })
 #>    user  system elapsed 
-#>  44.783   0.168  44.953
+#>  36.507   0.140  36.661
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_lm), "\n")
 #> Residual sum-of-squares: 0.004778845
@@ -1095,7 +1095,7 @@ system.time({
   )
 })
 #>    user  system elapsed 
-#>   1.829   0.396   2.225
+#>   1.424   0.348   1.779
 
 cat("Residual sum-of-squares:", deviance(ex4_fit_cgst), "\n")
 #> Residual sum-of-squares: 0.004778845
@@ -1140,10 +1140,10 @@ bench::mark(
 #> # A tibble: 4 × 6
 #>   expression       min   median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>  <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl>
-#> 1 Dense LM       9.44s    9.59s     0.104    1.82GB   4.33  
-#> 2 Dense CGST     1.57s    1.59s     0.588    1.02GB  12.5   
-#> 3 Sparse LM       7.5s    7.57s     0.132   33.41MB   0.0795
-#> 4 Sparse CGST 196.63ms 200.77ms     4.99    23.04MB   2.99
+#> 1 Dense LM       7.74s     7.8s     0.128    1.82GB    4.91 
+#> 2 Dense CGST     1.31s    1.32s     0.722    1.02GB   16.0  
+#> 3 Sparse LM      5.65s    5.67s     0.176   33.41MB    0.106
+#> 4 Sparse CGST 149.31ms 158.18ms     6.44    23.04MB    3.86
 ```
 
 ## NLS test problems
@@ -1241,7 +1241,7 @@ solutions and a vector of suggested starting values for the parameters:
 #> 
 #> $fn
 #> y ~ b1/(1 + exp(b2 - b3 * x))
-#> <environment: 0x55bfccd947a0>
+#> <environment: 0x5582f0974200>
 #> 
 #> $start
 #>    b1    b2    b3 

@@ -10,17 +10,19 @@ det_eval_jtj()
 
   Inputs: vstate - workspace
         params - parameter workspace
-        workn  - workspace length-n vector
-        swts   - sqrt(W) vector
+        Dw   - diagonal D in LDDL' decomposition of W
+        Lw   - unit lower triangular matrix L in LDDL' decomposition of W
         fdf    - user callback functions
         x      - length-p parameter vector
         f      - length-n f(x) vector
         J      - nxp jacobian matrix
         JTJ    - workspace pxp hessian matrix
+        workn  - workspace length-n vector
 
 */
 double det_eval_jtj(const gsl_multifit_nlinear_parameters params,
-                    const gsl_vector *swts, gsl_multifit_nlinear_fdf *fdf,
+                    const gsl_vector *Dw, const gsl_matrix *Lw,
+                    gsl_multifit_nlinear_fdf *fdf,
                     const gsl_vector *x, gsl_vector *f, gsl_matrix *J,
                     gsl_matrix *JTJ, gsl_vector *workn)
 {
@@ -28,12 +30,20 @@ double det_eval_jtj(const gsl_multifit_nlinear_parameters params,
     double det = 0.0;
 
     /* evaluate f(x) */
-    status = gsl_multifit_nlinear_eval_f(fdf, x, swts, f);
+    if(Lw)
+        status = gsl_multifit_nlinear_eval_f_LD(fdf, x, Dw, Lw, f);
+    else 
+        status = gsl_multifit_nlinear_eval_f(fdf, x, Dw, f);
+
     if (status)
         return det;
 
     /* evaluate J(x) */
-    status = gsl_multifit_nlinear_eval_df(x, f, swts, params.h_df, params.fdtype, fdf, J, workn);
+    if(Lw) 
+        status = gsl_multifit_nlinear_eval_df_LD(x, f, Dw, Lw, params.h_df, params.fdtype, fdf, J, workn);
+    else
+        status = gsl_multifit_nlinear_eval_df(x, f, Dw, params.h_df, params.fdtype, fdf, J, workn);
+
     if (status)
         return det;
 

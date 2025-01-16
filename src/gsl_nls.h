@@ -26,14 +26,16 @@ typedef struct
     SEXP fvv;                          // fvv function
     SEXP env;                          // function environment
     SEXP start;                        // start parameter values
-    SEXP weights;                      // weights
+    SEXP swts;                         // (cholesky) square root of weights
     SEXP lupars;                       // lower/upper parameter bounds
     SEXP control_int;                  // integer control paramaters
     SEXP control_dbl;                  // double control paramaters
     SEXP has_start;                    // flags if starting values fixed
     SEXP loss_config;                  // loss function configuration
     gsl_multifit_nlinear_workspace *w; // workspace
-    gsl_vector *wts;                   // weights vector
+    gsl_vector *wts;                   // weights n-length vector 
+    gsl_matrix *Lw;                    // unit lower triangular matrix L in LDL' 
+                                       // decomposition of (n-by-n) matrix W
     gsl_qrng *q;                       // qrng workspace
     gsl_matrix *mx;                    // multistart initial value matrix
     gsl_vector *mpopt;                 // multistart optimal parameter vector
@@ -125,7 +127,20 @@ typedef struct
     gsl_multifit_nlinear_parameters params;
 } trust_state_t;
 
-// double wgt(double x, double *c, int i);
+/* from multifit_nlinear/lm.c */
+typedef struct
+{
+    size_t n;          /* number of observations */
+    size_t p;          /* number of parameters */
+    gsl_vector *fvv;   /* D_v^2 f(x), size n */
+    gsl_vector *vel;   /* geodesic velocity (standard LM step), size p */
+    gsl_vector *acc;   /* geodesic acceleration, size p */
+    gsl_vector *workp; /* workspace, length p */
+    gsl_vector *workn; /* workspace, length n */
+    int accel; /* use geodesic acceleration? */
+    /* tunable parameters */
+    gsl_multifit_nlinear_parameters params;
+} lm_state_t;
 
 int gsl_multifit_nlinear_driver2(const R_len_t maxiter,
                                  const double xtol,
@@ -138,6 +153,7 @@ int gsl_multifit_nlinear_driver2(const R_len_t maxiter,
                                  double *chisq0,
                                  double *chisq1,
                                  const gsl_matrix *lu,
+                                 const gsl_matrix *Lw,
                                  gsl_multifit_nlinear_workspace *w);
 
 void gsl_multistart_driver(pdata *pars,
@@ -165,20 +181,62 @@ int gsl_multifit_nlinear_rho_driver(pdata *pars,
                                     int *irls_status,
                                     const Rboolean verbose);
 
-int trust_iterate_lu(void *vstate,
-                     const gsl_vector *swts,
-                     gsl_multifit_nlinear_fdf *fdf,
-                     gsl_vector *x,
-                     gsl_vector *f,
-                     gsl_matrix *J,
-                     gsl_vector *g,
-                     gsl_vector *dx,
-                     const gsl_matrix *lu);
+int gsl_multifit_nlinear_winit_LD(const gsl_vector *x,
+                                    const gsl_vector *DDw,
+                                    const gsl_matrix *Lw,
+                                    gsl_multifit_nlinear_fdf *fdf,
+                                    gsl_multifit_nlinear_workspace *w);
+
+int gsl_multifit_nlinear_eval_f_LD(gsl_multifit_nlinear_fdf *fdf,
+                                     const gsl_vector *x,
+                                     const gsl_vector *Dw,
+                                     const gsl_matrix *Lw,
+                                     gsl_vector *y);
+
+int gsl_multifit_nlinear_eval_df_LD(const gsl_vector *x,
+                                      const gsl_vector *f,
+                                      const gsl_vector *Dw,
+                                      const gsl_matrix *Lw,
+                                      const double h,
+                                      const gsl_multifit_nlinear_fdtype fdtype,
+                                      gsl_multifit_nlinear_fdf *fdf,
+                                      gsl_matrix *df,
+                                      gsl_vector *work);
+
+int gsl_multifit_nlinear_eval_fvv_LD(const double h,
+                                       const gsl_vector *x,
+                                       const gsl_vector *v,
+                                       const gsl_vector *f,
+                                       const gsl_matrix *J,
+                                       const gsl_vector *Dw,
+                                       const gsl_matrix *Lw,
+                                       gsl_multifit_nlinear_fdf *fdf,
+                                       gsl_vector *yvv, gsl_vector *work);
+
+int gsl_multifit_nlinear_fdfvv_LD(const double h, const gsl_vector *x, const gsl_vector *v,
+                                    const gsl_vector *f, const gsl_matrix *J, const gsl_vector *Dw,
+                                    const gsl_matrix *Lw, gsl_multifit_nlinear_fdf *fdf,
+                                    gsl_vector *fvv, gsl_vector *work);
+
+int gsl_multifit_nlinear_df_LD(const double h, const gsl_multifit_nlinear_fdtype fdtype,
+                                 const gsl_vector *x, const gsl_vector *Dw, 
+                                 const gsl_matrix *Lw, gsl_multifit_nlinear_fdf *fdf,
+                                 const gsl_vector *f, gsl_matrix *J, gsl_vector *work);
+
+int trust_iterate_lu_LD(void *vstate, const gsl_vector *Dw, const gsl_matrix *Lw,
+                          gsl_multifit_nlinear_fdf *fdf, gsl_vector *x,
+                          gsl_vector *f, gsl_matrix *J, gsl_vector *g,
+                          gsl_vector *dx, const gsl_matrix *lu);
+
+int trust_init_LD(void *vstate, const gsl_vector *Dw, const gsl_matrix *Lw,
+                    gsl_multifit_nlinear_fdf *fdf, const gsl_vector *x,
+                    gsl_vector *f, gsl_matrix *J, gsl_vector *g);
 
 double det_cholesky_jtj(gsl_matrix *J, gsl_matrix *JTJ);
 
 double det_eval_jtj(const gsl_multifit_nlinear_parameters params,
-                    const gsl_vector *swts, gsl_multifit_nlinear_fdf *fdf,
+                    const gsl_vector *Dw, const gsl_matrix *Lw,
+                    gsl_multifit_nlinear_fdf *fdf,
                     const gsl_vector *x, gsl_vector *f, gsl_matrix *J,
                     gsl_matrix *JTJ, gsl_vector *workn);
 

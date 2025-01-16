@@ -70,10 +70,7 @@ fitted.gsl_nls <- function(object, ...) {
 #' nobs(obj)
 #' @export
 nobs.gsl_nls <- function(object, ...) {
-  if (is.null(w <- object$weights))
-    length(object$m$resid())
-  else
-    sum(w != 0)
+  length(object$m$resid())
 }
 
 #' Model deviance
@@ -95,7 +92,7 @@ nobs.gsl_nls <- function(object, ...) {
 #' deviance(obj)
 #' @export
 deviance.gsl_nls <- function(object, ...) {
-  object$m$deviance()
+  object$m$deviance()  ## weighted ssr
 }
 
 #' Residual standard deviation
@@ -172,8 +169,7 @@ formula.gsl_nls <- function(x, ...) {
 #' @export
 summary.gsl_nls <- function (object, correlation = FALSE, symbolic.cor = FALSE, ...) {
   r <- as.vector(object$m$resid())  ## these are weighted residuals
-  w <- object$weights
-  n <- if (!is.null(w)) sum(w > 0) else length(r)
+  n <- length(r)
   param <- coef(object)
   pnames <- names(param)
   p <- length(param)
@@ -319,8 +315,14 @@ predict.gsl_nls <- function(object, newdata, scale = NULL, interval = c("none", 
     fit <- as.vector(fitted(object))
     if(interval != "none") {
       Fdot <- object$m$gradient()  ## weighted gradient
-      if(!is.null(object$weights))
-        Fdot <- Fdot / sqrt(object$weights)
+      if(!is.null(object$weights)) {
+        ## undo weighting
+        if(is.matrix(object$weights)) {
+          Fdot <- solve(t(chol(object$weights)), Fdot)
+        } else {
+          Fdot <- Fdot / sqrt(object$weights)
+        }
+      }
     }
   } else {
     fit <- object$m$predict(newdata)
@@ -368,12 +370,12 @@ residuals.gsl_nls <- function(object, type = c("response", "pearson"), ...) {
   } else {
     type <- match.arg(type)
     if (type == "pearson") {
-      val <- as.vector(object$m$resid())
+      val <- as.vector(object$m$resid()) ## weighted
       std <- sqrt(sum(val^2)/(length(val) - length(coef(object))))
       val <- val/std
       attr(val, "label") <- "Standardized residuals"
     } else {
-      val <- as.vector(object$m$lhs() - object$m$fitted())
+      val <- as.vector(object$m$lhs() - object$m$fitted()) ## unweighted
       attr(val, "label") <- "Residuals"
     }
     val
@@ -405,10 +407,13 @@ logLik.gsl_nls <- function(object, REML = FALSE, ...) {
   res <- object$m$resid() # These are weighted residuals.
   N <- length(res)
   w <- if(!is.null(object$weights)) object$weights else rep_len(1, N)
-  ## Note the trick for zero weights
-  zw <- w == 0
-  N <- sum(!zw)
-  val <-  -N * (log(2 * pi) + 1 - log(N) - sum(log(w + zw))/N + log(sum(res^2)))/2
+  if(is.matrix(w)) {
+    ## generalized least squares
+    val <- -N * (log(2 * pi) + 1 - log(N) - 2 * sum(log(diag(chol(w)))) / N + log(sum(res^2))) / 2
+  }  else {
+    ## (un)weighted least squares
+    val <- -N * (log(2 * pi) + 1 - log(N) - sum(log(w)) / N + log(sum(res^2))) / 2
+  }
   ## the formula here corresponds to estimating sigma^2.
   attr(val, "df") <- 1L + length(coef(object))
   attr(val, "nobs") <- attr(val, "nall") <- N
@@ -435,9 +440,7 @@ logLik.gsl_nls <- function(object, REML = FALSE, ...) {
 #' df.residual(obj)
 #' @export
 df.residual.gsl_nls <- function(object, ...) {
-  w <- object$weights
-  n <- if(!is.null(w)) sum(w != 0) else length(object$m$resid())
-  n - length(coef(object))
+  length(object$m$resid()) - length(coef(object))
 }
 
 #' Calculate variance-covariance matrix
@@ -488,7 +491,7 @@ vcov.gsl_nls <- function(object, ...) {
 #' hatvalues(obj)
 #' @export
 hatvalues.gsl_nls <- function(model, ...) {
-  Fdot <- model$m$gradient()
+  Fdot <- model$m$gradient()  ## weighted gradient
   rowSums(Fdot %*% chol2inv(model$m$Rmat()) * Fdot)
 }
 

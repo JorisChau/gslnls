@@ -24,6 +24,8 @@ static void C_nls_cleanup(void *data)
         gsl_qrng_free(pars->q);
     if (pars->wts)
         gsl_vector_free(pars->wts);
+    if (pars->Lw)
+        gsl_matrix_free(pars->Lw);
     if (pars->mx)
         gsl_matrix_free(pars->mx);
     if (pars->mpopt)
@@ -49,11 +51,11 @@ static void C_nls_cleanup(void *data)
 }
 
 /* function call w/ cleanup */
-SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP weights, SEXP lupars, SEXP control_int, SEXP control_dbl, SEXP has_start, SEXP loss_config)
+SEXP C_nls(SEXP fn, SEXP y, SEXP jac, SEXP fvv, SEXP env, SEXP start, SEXP swts, SEXP lupars, SEXP control_int, SEXP control_dbl, SEXP has_start, SEXP loss_config)
 {
     /* function arguments */
-    pdata pars = {fn, y, jac, fvv, env, start, weights, lupars, control_int, control_dbl, has_start, loss_config,
-                  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    pdata pars = {fn, y, jac, fvv, env, start, swts, lupars, control_int, control_dbl, has_start, loss_config,
+                  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
     /* safe function call */
     SEXP ans = R_ExecWithCleanup(C_nls_internal, &pars, C_nls_cleanup, &pars);
@@ -216,11 +218,28 @@ SEXP C_nls_internal(void *data)
     /* use weights */
     int wgt_i = INTEGER_ELT(VECTOR_ELT(pars->loss_config, 0), 0);
     pars->wts = gsl_vector_alloc(n);
-    if (!Rf_isNull(pars->weights))
-        for (R_len_t i = 0; i < n; i++)
-            gsl_vector_set(pars->wts, i, REAL_ELT(pars->weights, i));
-    else
-        gsl_vector_set_all(pars->wts, 1.0);
+    gsl_vector_set_all(pars->wts, 1.0);
+    if (!Rf_isNull(pars->swts))
+    {
+        if (Rf_isMatrix(pars->swts))
+        {
+            /* move diagonal to pars->wts */
+            pars->Lw = gsl_matrix_alloc(n, n);
+            double *swts_ptr = REAL(pars->swts);
+            for (R_len_t n1 = 0; n1 < n; n1++)
+            {
+                gsl_vector_set(pars->wts, n1, swts_ptr[n1 + n * n1] * swts_ptr[n1 + n * n1]);
+                for (R_len_t n2 = 0; n2 < n; n2++)
+                    gsl_matrix_set(pars->Lw, n1, n2, swts_ptr[n1 + n * n2] / swts_ptr[n1 + n * n1]);
+            }
+        }
+        else
+        {
+            double *swts_ptr = REAL(pars->swts);
+            for (R_len_t i = 0; i < n; i++)
+                gsl_vector_set(pars->wts, i, swts_ptr[i] * swts_ptr[i]);
+        }
+    }
 
     /* initialize solver */
     const gsl_multifit_nlinear_type *T = gsl_multifit_nlinear_trust;
@@ -263,7 +282,7 @@ SEXP C_nls_internal(void *data)
         /* manually initialize workspace */
         (pars->w)->fdf = &fdf;
         (pars->w)->sqrt_wts = (pars->w)->sqrt_wts_work;
-        if (!Rf_isNull(pars->weights))
+        if (!Rf_isNull(pars->swts))
         {
             for (R_len_t i = 0; i < n; i++)
             {
@@ -379,21 +398,27 @@ SEXP C_nls_internal(void *data)
 
         } while (mpars.mstop == GSL_CONTINUE);
         /* second pass multi-start global iterations */
-        if(wgt_i)
+        if (wgt_i)
         {
-            /* 
-                outliers are identified as observations with Di > min(4 / n, 5 * mad(Di)), 
+            /*
+                outliers are identified as observations with Di > min(4 / n, 5 * mad(Di)),
                 associated weights are set to zero in the second pass of the multi-start procedure.
             */
             if (mpars.mssropt[1] < mpars.mssropt[0])
                 gsl_vector_memcpy(pars->mpopt, pars->mpopt1);
             // compute J and J^T * J using pars->mpopt
-            gsl_multifit_nlinear_winit(pars->mpopt, pars->wts, &fdf, pars->w);
-            det_eval_jtj((pars->w)->params, (pars->w)->sqrt_wts, (pars->w)->fdf, (pars->w)->x, (pars->w)->f, (pars->w)->J, pars->JTJ, pars->workn);
+            if (pars->Lw)
+                gsl_multifit_nlinear_winit_LD(pars->mpopt, pars->wts, pars->Lw, &fdf, pars->w);
+            else
+                gsl_multifit_nlinear_winit(pars->mpopt, pars->wts, &fdf, pars->w);
+
+            det_eval_jtj((pars->w)->params, (pars->w)->sqrt_wts, pars->Lw, (pars->w)->fdf,
+                         (pars->w)->x, (pars->w)->f, (pars->w)->J, pars->JTJ, pars->workn);
+
             // compute cook's d
             mpars.mstop = cooks_d((pars->w)->f, (pars->w)->J, pars->JTJ, pars->workn, pars->worknp);
 
-            if(!mpars.mstop) 
+            if (!mpars.mstop)
             {
                 // update weights
                 R_len_t noutlier = 0;
@@ -410,13 +435,13 @@ SEXP C_nls_internal(void *data)
                         gsl_vector_set((pars->w)->sqrt_wts, i, 0.0);
                         noutlier += 1;
                     }
-                    else 
+                    else
                     {
                         double wi = gsl_vector_get(pars->wts, i);
                         gsl_vector_set((pars->w)->sqrt_wts, i, sqrt(wi));
                     }
                 }
-                if((noutlier > 0) && (noutlier < (n - p))) 
+                if ((noutlier > 0) && (noutlier < (n - p)))
                 {
                     /* reset qrng workspace */
                     gsl_qrng_init(pars->q);
@@ -463,17 +488,24 @@ SEXP C_nls_internal(void *data)
                     } while (mpars.mstop == GSL_CONTINUE);
                 }
                 // reset original weights
-                if (!Rf_isNull(pars->weights))
+                // sqrt_wts is initialized by gsl_multifit_nlinear_winit
+                gsl_vector_set_all(pars->wts, 1.0);
+                if (!Rf_isNull(pars->swts))
                 {
-                    for (R_len_t i = 0; i < n; i++)
+                    if (Rf_isMatrix(pars->swts))
                     {
-                        double wi = REAL_ELT(pars->weights, i);
-                        gsl_vector_set(pars->wts, i, wi);
+                        double *swts_ptr = REAL(pars->swts);
+                        for (R_len_t i = 0; i < n; i++)
+                            gsl_vector_set(pars->wts, i, swts_ptr[i + n * i] * swts_ptr[i + n * i]);
+                    }
+                    else
+                    {
+                        double *swts_ptr = REAL(pars->swts);
+                        for (R_len_t i = 0; i < n; i++)
+                            gsl_vector_set(pars->wts, i, swts_ptr[i] * swts_ptr[i]);
                     }
                 }
-                else 
-                    gsl_vector_set_all(pars->wts, 1.0);
-            } 
+            }
         }
         if (verbose)
         {
@@ -505,7 +537,9 @@ SEXP C_nls_internal(void *data)
     }
 
     /* (re-)initialize solver w/ optimal start parameters */
-    if (!Rf_isNull(pars->weights) || wgt_i)
+    if (pars->Lw)
+        gsl_multifit_nlinear_winit_LD(pars->mpopt, pars->wts, pars->Lw, &fdf, pars->w);
+    else if (!Rf_isNull(pars->swts) || wgt_i)
         gsl_multifit_nlinear_winit(pars->mpopt, pars->wts, &fdf, pars->w);
     else
         gsl_multifit_nlinear_init(pars->mpopt, &fdf, pars->w);
@@ -537,7 +571,8 @@ SEXP C_nls_internal(void *data)
     if (!wgt_i) /* default loss function */
     {
         status = gsl_multifit_nlinear_driver2(niter, xtol, gtol, ftol, verbose ? callback : NULL,
-                                              verbose ? &params : NULL, &info, &chisq0, &chisq1, pars->lu, pars->w);
+                                              verbose ? &params : NULL, &info, &chisq0, &chisq1,
+                                              pars->lu, pars->Lw, pars->w);
     }
     else /* non-default loss function */
     {
@@ -548,6 +583,9 @@ SEXP C_nls_internal(void *data)
         status = gsl_multifit_nlinear_rho_driver(pars, &fdf, wgt_i, niter, xtol, gtol, ftol, &params,
                                                  &info, &chisq0, &chisq1, &irls_sigma, &irls_iter, &irls_status, verbose);
 
+        /* copy irls weights */
+        gsl_vector_memcpy(pars->wts, pars->workn);
+
         /* irls x tolerance */
         for (R_len_t k = 0; k < p; k++)
         {
@@ -555,7 +593,6 @@ SEXP C_nls_internal(void *data)
             double x1 = gsl_vector_get((pars->w)->x, k);
             irls_delta = gsl_max(irls_delta, fabs(x0 - x1));
         }
-
     }
 
     R_len_t iter = (R_len_t)gsl_multifit_nlinear_niter(pars->w);
@@ -574,7 +611,7 @@ SEXP C_nls_internal(void *data)
     {
         /* print summary statistics*/
         Rprintf("*******************\nsummary from method 'multifit/%s'\n", gsl_multifit_nlinear_trs_name(pars->w));
-        if(wgt_i)
+        if (wgt_i)
         {
             Rprintf("IRLS number of iterations: %d\n", irls_iter);
             Rprintf("IRLS achieved tolerance: %g\n", irls_delta);
@@ -723,7 +760,7 @@ SEXP C_nls_internal(void *data)
         SEXP irlswts = PROTECT(Rf_allocVector(REALSXP, n));
         SEXP irlspsi = PROTECT(Rf_allocVector(REALSXP, n));
         SEXP irlspsip = PROTECT(Rf_allocVector(REALSXP, n));
-        if(status == GSL_SUCCESS || status == GSL_EMAXITER)
+        if (status == GSL_SUCCESS || status == GSL_EMAXITER)
         {
             for (R_len_t i = 0; i < n; i++)
             {

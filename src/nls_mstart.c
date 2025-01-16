@@ -3,6 +3,24 @@
 #include <math.h>
 #include "gsl_nls.h"
 
+/*
+gsl_multistart_driver()
+  Iterate the multi-start nonlinear least squares solver until completion
+
+Inputs: pars     - pdata, single-start parameter workspace
+        mpars    - mdata, multistart parameter workspace
+        fdff     - gsl_multifit_nlinear_fdf, function workspace
+        mssr     -
+        xtol     - tolerance in step x
+        ftol     - tolerance in ||f||
+        use_weights - boolean,
+        verbose  - boolean, print verbose messages
+
+Return: no return value, optimal starting values are written to pars->mpopt
+
+Note: see nls.R and Hickernell, F.J. and Yuan, Y. (1997) for additional
+details on the implemented procedure.
+*/
 void gsl_multistart_driver(pdata *pars,
                            mdata *mpars,
                            gsl_multifit_nlinear_fdf *fdff,
@@ -54,18 +72,24 @@ void gsl_multistart_driver(pdata *pars,
         /* calculate det(J^T * J) */
         gsl_vector_view nnx = gsl_matrix_row(pars->mx, nn);
         gsl_vector_memcpy((pars->w)->x, &nnx.vector);
-        det_jtj = det_eval_jtj((pars->w)->params, (pars->w)->sqrt_wts, (pars->w)->fdf, (pars->w)->x, (pars->w)->f, (pars->w)->J, pars->JTJ, pars->workn);
+        det_jtj = det_eval_jtj((pars->w)->params, (pars->w)->sqrt_wts, pars->Lw,
+                               (pars->w)->fdf, (pars->w)->x, (pars->w)->f, (pars->w)->J,
+                               pars->JTJ, pars->workn);
 
         if (det_jtj > mpars->dtol)
         {
             gsl_matrix_get_row(pars->workp, pars->mx, nn);
 
             /* concentrate point */
-            if (use_weights || !Rf_isNull(pars->weights))
+            if (pars->Lw)
+                gsl_multifit_nlinear_winit_LD(pars->workp, pars->wts, pars->Lw, fdff, pars->w);
+            else if (use_weights || !Rf_isNull(pars->swts))
                 gsl_multifit_nlinear_winit(pars->workp, pars->wts, fdff, pars->w);
             else
                 gsl_multifit_nlinear_init(pars->workp, fdff, pars->w);
-            gsl_multifit_nlinear_driver2(mpars->p, xtol, 1e-3, ftol, NULL, NULL, &minfo, &mchisq0, &mchisq1, pars->lu, pars->w);
+
+            gsl_multifit_nlinear_driver2(mpars->p, xtol, 1e-3, ftol, NULL, NULL, &minfo,
+                                         &mchisq0, &mchisq1, pars->lu, pars->Lw, pars->w);
 
             det_jtj = det_cholesky_jtj((pars->w)->J, pars->JTJ);
 
@@ -219,12 +243,15 @@ void gsl_multistart_driver(pdata *pars,
             if ((mpars->nsp) == 0 || REAL_ELT(mssr, nn) < (1 + (mpars->tol)) * (mpars->mssropt)[0])
             {
                 gsl_matrix_get_row(pars->workp, pars->mx, nn);
-                if (use_weights || !Rf_isNull(pars->weights))
+                if (pars->Lw)
+                    gsl_multifit_nlinear_winit_LD(pars->workp, pars->wts, pars->Lw, fdff, pars->w);
+                else if (use_weights || !Rf_isNull(pars->swts))
                     gsl_multifit_nlinear_winit(pars->workp, pars->wts, fdff, pars->w);
                 else
                     gsl_multifit_nlinear_init(pars->workp, fdff, pars->w);
+
                 mchisq1 = REAL_ELT(mssr, nn);
-                gsl_multifit_nlinear_driver2(mpars->niter, xtol, 1e-3, ftol, NULL, NULL, &minfo, &mchisq0, &mchisq1, pars->lu, pars->w);
+                gsl_multifit_nlinear_driver2(mpars->niter, xtol, 1e-3, ftol, NULL, NULL, &minfo, &mchisq0, &mchisq1, pars->lu, pars->Lw, pars->w);
                 det_jtj = det_cholesky_jtj((pars->w)->J, pars->JTJ);
 
                 // gsl_multifit_nlinear_rcond(&rcond, pars->w);

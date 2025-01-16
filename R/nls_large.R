@@ -45,6 +45,8 @@
 #' Default is \code{FALSE}. If \code{TRUE}, the residual (weighted) sum-of-squares,
 #' the squared (Euclidean) norm of the current parameter estimates and the condition number of the Jacobian
 #' are printed after each iteration.
+#' @param weights an optional numeric vector of (fixed) weights of length \code{n}. When present, 
+#' the objective function is weighted least squares. 
 #' @return
 #' If \code{fn} is a \code{formula} returns a list object of class \code{nls}.
 #' If \code{fn} is a \code{function} returns a list object of class \code{gsl_nls}.
