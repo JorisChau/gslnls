@@ -423,7 +423,7 @@ SEXP C_nls_internal(void *data)
                 // update weights
                 R_len_t noutlier = 0;
                 double *workn = (double *)R_alloc(n, sizeof(double));
-                double mad = gsl_stats_mad((pars->workn)->data, 1, n, workn);
+                double mad = gsl_mad((pars->workn)->data, n, workn);
                 double thresh = gsl_min(4.0 / n, 5 * mad);
                 (pars->w)->sqrt_wts = (pars->w)->sqrt_wts_work;
                 for (R_len_t i = 0; i < n; i++)

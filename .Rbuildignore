@@ -6,3 +6,6 @@
 ^CRAN-RELEASE$
 ^CRAN-SUBMISSION$
 ^notes\.txt$
+^\.settings$
+^docker$
+^\.project$

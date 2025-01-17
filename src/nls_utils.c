@@ -98,10 +98,12 @@ int hat_values(gsl_matrix *J, gsl_matrix *JTJ, gsl_vector *h, gsl_matrix *worknp
     gsl_matrix_mul_elements(worknp, J);
 
     // diagonal of H
-    for (R_len_t i = 0; i < (J->size1); ++i)
+    for (R_len_t i = 0; i < (worknp->size1); ++i)
     {
-        gsl_vector_view rowi = gsl_matrix_row(worknp, i);
-        gsl_vector_set(h, i, gsl_vector_sum(&rowi.vector));
+        double hi = 0.0;
+        for (R_len_t j = 0; j < (worknp->size2); ++j)
+            hi += gsl_matrix_get(worknp, i, j);
+        gsl_vector_set(h, i, hi);
     }
 
     return status;
@@ -145,4 +147,71 @@ int cooks_d(gsl_vector *f, gsl_matrix *J, gsl_matrix *JTJ, gsl_vector *d, gsl_ma
     }
 
     return status;
+}
+
+/* gsl_median()
+   included here for compatibility w/ GSL < 2.5. For GSL >= 2.5, 
+   gsl_stats_median() is available as well
+
+   Inputs: 
+        data    - n-length numeric array
+        n       - integer length 
+
+   Output: double median
+*/
+double gsl_median(double *data, const R_len_t n)
+{
+    double median = 0.0;
+    if (n == 0)
+        return median;
+
+    // order vector
+    SEXP data1 = PROTECT(Rf_allocVector(REALSXP, n));
+    int *order1 = (int *)R_alloc(n, sizeof(int));
+    for (R_len_t i = 0; i < n; i++)
+        SET_REAL_ELT(data1, i, data[i]);
+    R_orderVector1(order1, n, data1, TRUE, FALSE);
+    UNPROTECT(1);
+
+    const R_len_t lhs = (n - 1) / 2;
+    const R_len_t rhs = n / 2;
+
+    if (lhs == rhs)
+    {
+        median = data[order1[lhs]];
+    }
+    else
+    {
+        median = (data[order1[lhs]] + data[order1[rhs]]) / 2.0;
+    }
+
+    return median;
+}
+
+/* gsl_mad()
+   included here for compatibility w/ GSL < 2.5. For GSL >= 2.5,
+   gsl_stats_mad() is available as well
+
+   Inputs:
+        data    - n-length numeric array
+        n       - integer length
+        work    - n-length workspace array
+
+   Output: median absolute deviation
+*/
+double gsl_mad(double *data, const R_len_t n, double *work)
+{
+    double median, mad;
+
+    /* median of input data*/
+    median = gsl_median(data, n);
+
+    /* absolute deviation from median */
+    for (R_len_t i = 0; i < n; ++i)
+        work[i] = fabs((double)data[i] - median);
+
+    mad = 1.482602218505602 * gsl_median(work, n);
+
+    return mad;
+
 }

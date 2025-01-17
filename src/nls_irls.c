@@ -490,7 +490,7 @@ int gsl_multifit_nlinear_rho_driver(
             resid[i] = gsl_vector_get((pars->w)->f, i) / gsl_vector_get((pars->w)->sqrt_wts, i);
             abs_resid[i] = fabs(resid[i]);
         }
-        *irls_sigma = 1.48258 * gsl_stats_median(abs_resid, 1, n);
+        *irls_sigma = 1.482602218505602 * gsl_median(abs_resid, n);
 
         double sum_wts = 0.0;
         for (R_len_t i = 0; i < n; i++)

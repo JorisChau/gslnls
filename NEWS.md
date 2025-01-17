@@ -1,3 +1,7 @@
+# gslnls 1.4.1
+
+* Fixed compatibility GSL versions < 2.5
+
 # gslnls 1.4.0
 
 * Robust loss optimization added in `gsl_nls()` via argument `loss`  

@@ -1,5 +1,5 @@
 
-AC_INIT([gslnls],[1.4.0],[https://github.com/JorisChau/gslnls/issues/])
+AC_INIT([gslnls],[1.4.1],[https://github.com/JorisChau/gslnls/issues/])
 
 : ${R_HOME=`R RHOME`}
 if test -z "${R_HOME}"; then

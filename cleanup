@@ -1,5 +1,5 @@
 #! /bin/sh
-rm -f config.log config.status confdehs.h \
+rm -f config.log config.status confdehs.h *.gcno \
        src/*.o src/*.so src/Makevars src/symbols.rds \
        *~ */*~
 rm -rf autom4te.cache

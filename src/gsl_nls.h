@@ -15,7 +15,6 @@
 #include <gsl/gsl_qrng.h>
 #include <gsl/gsl_multifit_nlinear.h>
 #include <gsl/gsl_multilarge_nlinear.h>
-#include <gsl/gsl_statistics.h>
 
 /* nls.c */
 typedef struct
@@ -243,6 +242,10 @@ double det_eval_jtj(const gsl_multifit_nlinear_parameters params,
 int hat_values(gsl_matrix *J, gsl_matrix *JTJ, gsl_vector *h, gsl_matrix *worknp);
 
 int cooks_d(gsl_vector *f, gsl_matrix *J, gsl_matrix *JTJ, gsl_vector *d, gsl_matrix *worknp);
+
+double gsl_median(double *data, const R_len_t n);
+
+double gsl_mad(double *data, const R_len_t n, double *work);
 
 SEXP C_nls(SEXP fn,
            SEXP y,

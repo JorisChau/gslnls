@@ -8,6 +8,7 @@ Meta
 .Rhistory
 .project
 .settings
+docker
 README.Rmd
 *.tex
 *.aux
