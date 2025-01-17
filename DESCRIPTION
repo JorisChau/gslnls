@@ -13,6 +13,6 @@ Imports: stats, Matrix
 Encoding: UTF-8
 Language: en-US
 License: LGPL-3
-SystemRequirements: GSL (>= 2.2)
+SystemRequirements: GSL (>= 2.3)
 Biarch: true
 RoxygenNote: 7.3.1

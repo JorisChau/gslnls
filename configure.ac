@@ -36,7 +36,7 @@ else
 fi
 
 # check gsl version
-AC_MSG_CHECKING([if GSL version >= 2.2])
+AC_MSG_CHECKING([if GSL version >= 2.3])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <string.h>
 #include <gsl/gsl_version.h>
@@ -49,7 +49,7 @@ int main(void) {
    if ((sscanf(gslv, "%d.%d", &major, &minor)) != 2) {
      exit (1);
    }
-   exit(major < 2 || minor < 2);
+   exit(major < 2 || minor < 3);
 #else
   exit(1);
 #endif
@@ -59,7 +59,7 @@ int main(void) {
 [gsl_version_ok=no],
 [gsl_version_ok=yes])
 if test "${gsl_version_ok}" = no; then
-  AC_MSG_ERROR([Missing required GSL headers. Upgrade GSL to version >= 2.2])
+  AC_MSG_ERROR([Missing required GSL headers. Upgrade GSL to version >= 2.3])
 else
   AC_MSG_RESULT([yes])
 fi

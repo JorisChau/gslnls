@@ -55,12 +55,12 @@ relevant mathematical background.
 
 ### System requirements
 
-When installing the R-package from source, verify that GSL (\>= 2.2) is
+When installing the R-package from source, verify that GSL (\>= 2.3) is
 installed on the system, e.g. on Ubuntu/Debian Linux:
 
     gsl-config --version
 
-If GSL (\>= 2.2) is not available on the system, install GSL from a
+If GSL (\>= 2.3) is not available on the system, install GSL from a
 pre-compiled binary package (see the examples below) or install GSL from
 source by downloading the latest stable release
 (<https://www.gnu.org/software/gsl/>) and following the installation
