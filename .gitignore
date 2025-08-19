@@ -21,3 +21,5 @@ README.Rmd
 *.status
 *.html
 *.txt
+*.Rcheck
+CRAN-SUBMISSION

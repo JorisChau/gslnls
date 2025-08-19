@@ -9,3 +9,5 @@
 ^\.settings$
 ^docker$
 ^\.project$
+^Makefile$
+^Dockerfile$

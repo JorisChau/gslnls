@@ -19,7 +19,7 @@
 #' coef(obj)
 #' @export
 coef.gsl_nls <- function(object, ...) {
-  object$m$getAllPars()
+	object$m$getAllPars()
 }
 
 #' Extract model fitted values
@@ -42,13 +42,13 @@ coef.gsl_nls <- function(object, ...) {
 #' fitted(obj)
 #' @export
 fitted.gsl_nls <- function(object, ...) {
-  if(inherits(object, "nls")) {
-    NextMethod()
-  } else {
-    val <- object$m$fitted()
-    attr(val, "label") <- "Fitted values"
-    val
-  }
+	if(inherits(object, "nls")) {
+		NextMethod()
+	} else {
+		val <- object$m$fitted()
+		attr(val, "label") <- "Fitted values"
+		val
+	}
 }
 
 #' Extract the number of observations
@@ -70,7 +70,7 @@ fitted.gsl_nls <- function(object, ...) {
 #' nobs(obj)
 #' @export
 nobs.gsl_nls <- function(object, ...) {
-  length(object$m$resid())
+	length(object$m$resid())
 }
 
 #' Model deviance
@@ -92,7 +92,7 @@ nobs.gsl_nls <- function(object, ...) {
 #' deviance(obj)
 #' @export
 deviance.gsl_nls <- function(object, ...) {
-  object$m$deviance()  ## weighted ssr
+	object$m$deviance()  ## weighted ssr
 }
 
 #' Residual standard deviation
@@ -114,11 +114,11 @@ deviance.gsl_nls <- function(object, ...) {
 #' sigma(obj)
 #' @export
 sigma.gsl_nls <- function(object, ...) {
-  if(is.null(object$irls)) {
-    NextMethod()
-  } else {
-    object$irls$irls_sigma
-  }
+	if(is.null(object$irls)) {
+		NextMethod()
+	} else {
+		object$irls$irls_sigma
+	}
 }
 
 #' Extract model formula
@@ -142,7 +142,7 @@ sigma.gsl_nls <- function(object, ...) {
 #' formula(obj)
 #' @export
 formula.gsl_nls <- function(x, ...) {
-  x$m$formula()
+	x$m$formula()
 }
 
 #' Model summary
@@ -168,40 +168,44 @@ formula.gsl_nls <- function(x, ...) {
 #' summary(obj)
 #' @export
 summary.gsl_nls <- function (object, correlation = FALSE, symbolic.cor = FALSE, ...) {
-  r <- as.vector(object$m$resid())  ## these are weighted residuals
-  n <- length(r)
-  param <- coef(object)
-  pnames <- names(param)
-  p <- length(param)
-  rdf <- n - p
-  if(is.null(object$irls)) {
-    sigma <- if (rdf <= 0) NaN else sqrt(deviance(object)/rdf)
-  } else {
-    sigma <- object$irls$irls_sigma
-  }
-  XtXinv <- chol2inv(object$m$Rmat())
-  dimnames(XtXinv) <- list(pnames, pnames)
-  se <- sigma * sqrt(diag(XtXinv))
-  tval <- param/se
-  param <- cbind(param, se, tval, 2 * pt(abs(tval), rdf, lower.tail = FALSE))
-  dimnames(param) <- list(pnames, c("Estimate", "Std. Error",
-                                    "t value", "Pr(>|t|)"))
-  if(inherits(object, "nls")) {
-    frm <- formula(object)
-  } else {
-    frm <- as.formula(sprintf("y ~ fn(%s)", paste(names(formals(formula(object))), collapse = ", ")))
-  }
-  ans <- list(formula = frm, residuals = r, sigma = sigma,
-              df = c(p, rdf), cov.unscaled = XtXinv, call = object$call,
-              convInfo = object$convInfo, control = object$control,
-              na.action = object$na.action, coefficients = param, parameters = param,
-              irls = object$irls)
-  if (correlation && rdf > 0) {
-    ans$correlation <- (XtXinv * sigma^2) / outer(se, se)
-    ans$symbolic.cor <- symbolic.cor
-  }
-  class(ans) <- "summary.gsl_nls"
-  ans
+	r <- as.vector(object$m$resid())  ## these are weighted residuals
+	n <- length(r)
+	param <- coef(object)
+	pnames <- names(param)
+	p <- length(param)
+	rdf <- n - p
+	if(is.null(object$irls)) {
+		sigma <- if (rdf <= 0) NaN else sqrt(deviance(object)/rdf)
+	} else {
+		sigma <- object$irls$irls_sigma
+	}
+	XtXinv <- tryCatch(chol2inv(object$m$Rmat()), error = function(e) e)
+	if(inherits(XtXinv, "error")) {
+		warning("singular gradient matrix at parameter estimates")
+		XtXinv <- matrix(NaN, ncol = length(pnames), nrow = length(pnames))
+	}
+	dimnames(XtXinv) <- list(pnames, pnames)
+	se <- sigma * sqrt(diag(XtXinv))
+	tval <- param/se
+	param <- cbind(param, se, tval, 2 * pt(abs(tval), rdf, lower.tail = FALSE))
+	dimnames(param) <- list(pnames, c("Estimate", "Std. Error",
+					"t value", "Pr(>|t|)"))
+	if(inherits(object, "nls")) {
+		frm <- formula(object)
+	} else {
+		frm <- as.formula(sprintf("y ~ fn(%s)", paste(names(formals(formula(object))), collapse = ", ")))
+	}
+	ans <- list(formula = frm, residuals = r, sigma = sigma,
+			df = c(p, rdf), cov.unscaled = XtXinv, call = object$call,
+			convInfo = object$convInfo, control = object$control,
+			na.action = object$na.action, coefficients = param, parameters = param,
+			irls = object$irls)
+	if (correlation && rdf > 0) {
+		ans$correlation <- (XtXinv * sigma^2) / outer(se, se)
+		ans$symbolic.cor <- symbolic.cor
+	}
+	class(ans) <- "summary.gsl_nls"
+	ans
 }
 
 #' Print model object
@@ -213,21 +217,21 @@ summary.gsl_nls <- function (object, correlation = FALSE, symbolic.cor = FALSE, 
 #' @noRd
 #' @export
 print.gsl_nls <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
-  cat("Nonlinear regression model\n")
-  if(inherits(formula(x), "formula")) {
-    cat("  model: ", deparse(formula(x)), "\n", sep = "")
-    if(is.symbol(x$data)) {
-      cat("   data: ", deparse(x$data), "\n", sep = "")
-    }
-  } else {
-    cat("  model: ", sprintf("y ~ fn(%s)", paste(names(formals(formula(x))), collapse = ", ")), "\n", sep = "")
-  }
-  print(x$m$getAllPars(), digits = digits, ...)
-  cat(" ", if(!is.null(x$weights) || !is.null(x$irls)) "weighted ",
-      "residual sum-of-squares: ", format(x$m$deviance(), digits = digits),
-      "\n", sep = "")
-  convInfo(x, digits = digits)
-  invisible(x)
+	cat("Nonlinear regression model\n")
+	if(inherits(formula(x), "formula")) {
+		cat("  model: ", deparse(formula(x)), "\n", sep = "")
+		if(is.symbol(x$data)) {
+			cat("   data: ", deparse(x$data), "\n", sep = "")
+		}
+	} else {
+		cat("  model: ", sprintf("y ~ fn(%s)", paste(names(formals(formula(x))), collapse = ", ")), "\n", sep = "")
+	}
+	print(x$m$getAllPars(), digits = digits, ...)
+	cat(" ", if(!is.null(x$weights) || !is.null(x$irls)) "weighted ",
+			"residual sum-of-squares: ", format(x$m$deviance(), digits = digits),
+			"\n", sep = "")
+	convInfo(x, digits = digits)
+	invisible(x)
 }
 
 #' Print model summary
@@ -239,38 +243,38 @@ print.gsl_nls <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
 #' @noRd
 #' @export
 print.summary.gsl_nls <- function (x, digits = max(3L, getOption("digits") - 3L), symbolic.cor = x$symbolic.cor,
-                                   signif.stars = getOption("show.signif.stars"), ...) {
-  cat("\nFormula: ", paste(deparse(x$formula), sep = "\n",
-                           collapse = "\n"), "\n", sep = "")
-  df <- x$df
-  rdf <- df[2L]
-  cat("\nParameters:\n")
-  printCoefmat(x$coefficients, digits = digits, signif.stars = signif.stars,
-               ...)
-  cat("\nResidual standard error:", format(signif(x$sigma,
-                                                  digits)), "on", rdf, "degrees of freedom")
-  cat("\n")
-  correl <- x$correlation
-  if (!is.null(correl)) {
-    p <- NCOL(correl)
-    if (p > 1) {
-      cat("\nCorrelation of Parameter Estimates:\n")
-      if (is.logical(symbolic.cor) && symbolic.cor) {
-        print(symnum(correl, abbr.colnames = NULL))
-      }
-      else {
-        correl <- format(round(correl, 2), nsmall = 2L,
-                         digits = digits)
-        correl[!lower.tri(correl)] <- ""
-        print(correl[-1, -p, drop = FALSE], quote = FALSE)
-      }
-    }
-  }
-  convInfo(x, digits = digits)
-  if (nzchar(mess <- naprint(x$na.action)))
-    cat("  (", mess, ")\n", sep = "")
-  cat("\n")
-  invisible(x)
+		signif.stars = getOption("show.signif.stars"), ...) {
+	cat("\nFormula: ", paste(deparse(x$formula), sep = "\n",
+					collapse = "\n"), "\n", sep = "")
+	df <- x$df
+	rdf <- df[2L]
+	cat("\nParameters:\n")
+	printCoefmat(x$coefficients, digits = digits, signif.stars = signif.stars,
+			...)
+	cat("\nResidual standard error:", format(signif(x$sigma,
+							digits)), "on", rdf, "degrees of freedom")
+	cat("\n")
+	correl <- x$correlation
+	if (!is.null(correl)) {
+		p <- NCOL(correl)
+		if (p > 1) {
+			cat("\nCorrelation of Parameter Estimates:\n")
+			if (is.logical(symbolic.cor) && symbolic.cor) {
+				print(symnum(correl, abbr.colnames = NULL))
+			}
+			else {
+				correl <- format(round(correl, 2), nsmall = 2L,
+						digits = digits)
+				correl[!lower.tri(correl)] <- ""
+				print(correl[-1, -p, drop = FALSE], quote = FALSE)
+			}
+		}
+	}
+	convInfo(x, digits = digits)
+	if (nzchar(mess <- naprint(x$na.action)))
+		cat("  (", mess, ")\n", sep = "")
+	cat("\n")
+	invisible(x)
 }
 
 #' Calculate model predicted values
@@ -309,38 +313,44 @@ print.summary.gsl_nls <- function (x, digits = max(3L, getOption("digits") - 3L)
 #' predict(obj, interval = "prediction", level = 0.99)
 #' @export
 predict.gsl_nls <- function(object, newdata, scale = NULL, interval = c("none", "confidence", "prediction"), level = 0.95, ...) {
-  interval <- match.arg(interval, c("none", "confidence", "prediction"))
+	interval <- match.arg(interval, c("none", "confidence", "prediction"))
 
-  if (missing(newdata)) {
-    fit <- as.vector(fitted(object))
-    if(interval != "none") {
-      Fdot <- object$m$gradient()  ## weighted gradient
-      if(!is.null(object$weights)) {
-        ## undo weighting
-        if(is.matrix(object$weights)) {
-          Fdot <- solve(t(chol(object$weights)), Fdot)
-        } else {
-          Fdot <- Fdot / sqrt(object$weights)
-        }
-      }
-    }
-  } else {
-    fit <- object$m$predict(newdata)
-    if(interval != "none") {
-      Fdot <- object$m$gradient1(newdata)  ## unweighted gradient
-    }
-  }
-  if(interval != "none") {
-    if(is.null(scale))
-      scale <- sigma(object)
-    a <- c((1 - level) / 2, (1 + level) / 2)
-    ses <- scale * sqrt(1 * (interval == "prediction") + rowSums(Fdot %*% chol2inv(object$m$Rmat()) * Fdot))
-    ci <- fit + ses %o% qt(a, df.residual(object))
-    cimat <- cbind(fit = fit, lwr = ci[, 1], upr = ci[, 2])
-    return(cimat)
-  } else {
-    return(fit)
-  }
+	if (missing(newdata)) {
+		fit <- as.vector(fitted(object))
+		if(interval != "none") {
+			Fdot <- object$m$gradient()  ## weighted gradient
+			if(!is.null(object$weights)) {
+				## undo weighting
+				if(is.matrix(object$weights)) {
+					Fdot <- solve(t(chol(object$weights)), Fdot)
+				} else {
+					Fdot <- Fdot / sqrt(object$weights)
+				}
+			}
+		}
+	} else {
+		fit <- object$m$predict(newdata)
+		if(interval != "none") {
+			Fdot <- object$m$gradient1(newdata)  ## unweighted gradient
+		}
+	}
+	if(interval != "none") {
+		if(is.null(scale))
+			scale <- sigma(object)
+		a <- c((1 - level) / 2, (1 + level) / 2)
+		Finv <- tryCatch(chol2inv(object$m$Rmat()), error = function(e) e)
+		if(!inherits(Finv, "error")) {
+			ses <- scale * sqrt(1 * (interval == "prediction") + rowSums(Fdot %*% Finv * Fdot))
+		} else {
+			warning("singular gradient matrix at parameter estimates")
+			ses <- rep(NaN, length(fit))
+		}
+		ci <- fit + ses %o% qt(a, df.residual(object))
+		cimat <- cbind(fit = fit, lwr = ci[, 1], upr = ci[, 2])
+		return(cimat)
+	} else {
+		return(fit)
+	}
 }
 
 #' Extract model residuals
@@ -365,21 +375,21 @@ predict.gsl_nls <- function(object, newdata, scale = NULL, interval = c("none", 
 #' residuals(obj)
 #' @export
 residuals.gsl_nls <- function(object, type = c("response", "pearson"), ...) {
-  if(inherits(object, "nls")) {
-    NextMethod()
-  } else {
-    type <- match.arg(type)
-    if (type == "pearson") {
-      val <- as.vector(object$m$resid()) ## weighted
-      std <- sqrt(sum(val^2)/(length(val) - length(coef(object))))
-      val <- val/std
-      attr(val, "label") <- "Standardized residuals"
-    } else {
-      val <- as.vector(object$m$lhs() - object$m$fitted()) ## unweighted
-      attr(val, "label") <- "Residuals"
-    }
-    val
-  }
+	if(inherits(object, "nls")) {
+		NextMethod()
+	} else {
+		type <- match.arg(type)
+		if (type == "pearson") {
+			val <- as.vector(object$m$resid()) ## weighted
+			std <- sqrt(sum(val^2)/(length(val) - length(coef(object))))
+			val <- val/std
+			attr(val, "label") <- "Standardized residuals"
+		} else {
+			val <- as.vector(object$m$lhs() - object$m$fitted()) ## unweighted
+			attr(val, "label") <- "Residuals"
+		}
+		val
+	}
 }
 
 #' Extract model log-likelihood
@@ -402,23 +412,23 @@ residuals.gsl_nls <- function(object, type = c("response", "pearson"), ...) {
 #' logLik(obj)
 #' @export
 logLik.gsl_nls <- function(object, REML = FALSE, ...) {
-  if (REML)
-    stop("cannot calculate REML log-likelihood for \"nls\" objects")
-  res <- object$m$resid() # These are weighted residuals.
-  N <- length(res)
-  w <- if(!is.null(object$weights)) object$weights else rep_len(1, N)
-  if(is.matrix(w)) {
-    ## generalized least squares
-    val <- -N * (log(2 * pi) + 1 - log(N) - 2 * sum(log(diag(chol(w)))) / N + log(sum(res^2))) / 2
-  }  else {
-    ## (un)weighted least squares
-    val <- -N * (log(2 * pi) + 1 - log(N) - sum(log(w)) / N + log(sum(res^2))) / 2
-  }
-  ## the formula here corresponds to estimating sigma^2.
-  attr(val, "df") <- 1L + length(coef(object))
-  attr(val, "nobs") <- attr(val, "nall") <- N
-  class(val) <- "logLik"
-  val
+	if (REML)
+		stop("cannot calculate REML log-likelihood for \"nls\" objects")
+	res <- object$m$resid() # These are weighted residuals.
+	N <- length(res)
+	w <- if(!is.null(object$weights)) object$weights else rep_len(1, N)
+	if(is.matrix(w)) {
+		## generalized least squares
+		val <- -N * (log(2 * pi) + 1 - log(N) - 2 * sum(log(diag(chol(w)))) / N + log(sum(res^2))) / 2
+	}  else {
+		## (un)weighted least squares
+		val <- -N * (log(2 * pi) + 1 - log(N) - sum(log(w)) / N + log(sum(res^2))) / 2
+	}
+	## the formula here corresponds to estimating sigma^2.
+	attr(val, "df") <- 1L + length(coef(object))
+	attr(val, "nobs") <- attr(val, "nall") <- N
+	class(val) <- "logLik"
+	val
 }
 
 #' Residual degrees-of-freedom
@@ -440,7 +450,7 @@ logLik.gsl_nls <- function(object, REML = FALSE, ...) {
 #' df.residual(obj)
 #' @export
 df.residual.gsl_nls <- function(object, ...) {
-  length(object$m$resid()) - length(coef(object))
+	length(object$m$resid()) - length(coef(object))
 }
 
 #' Calculate variance-covariance matrix
@@ -464,10 +474,16 @@ df.residual.gsl_nls <- function(object, ...) {
 #' vcov(obj)
 #' @export
 vcov.gsl_nls <- function(object, ...) {
-  pnames <- names(coef(object))
-  XtXinv <- chol2inv(object$m$Rmat())
-  dimnames(XtXinv) <- list(pnames, pnames)
-  sigma(object)^2 * XtXinv
+	pnames <- names(coef(object))
+	XtXinv <- tryCatch(chol2inv(object$m$Rmat()), error = function(e) e)
+	if(!inherits(XtXinv, "error")) {
+		Sigma <- sigma(object)^2 * XtXinv
+	} else {
+		warning("singular gradient matrix at parameter estimates")
+		Sigma <- matrix(NaN, nrow = length(pnames), ncol = length(pnames))
+	}
+	dimnames(Sigma) <- list(pnames, pnames)
+	return(Sigma)
 }
 
 #' Calculate leverage values
@@ -491,8 +507,14 @@ vcov.gsl_nls <- function(object, ...) {
 #' hatvalues(obj)
 #' @export
 hatvalues.gsl_nls <- function(model, ...) {
-  Fdot <- model$m$gradient()  ## weighted gradient
-  rowSums(Fdot %*% chol2inv(model$m$Rmat()) * Fdot)
+	Fdot <- model$m$gradient()  ## weighted gradient
+	XtXinv <- tryCatch(chol2inv(model$m$Rmat()), error = function(e) e)
+	if(!inherits(XtXinv, "error")) {
+		h <- rowSums(Fdot %*% XtXinv * Fdot)
+		return(h)
+	} else {
+		stop("singular gradient matrix at parameter estimates, hat-values are undefined.")
+	}
 }
 
 #' Calculate Cook's distance
@@ -516,12 +538,12 @@ hatvalues.gsl_nls <- function(model, ...) {
 #' cooks.distance(obj)
 #' @export
 cooks.distance.gsl_nls <- function(model, ...) {
-  df <- df.residual(model)
-  res <- model$m$resid()        # weighted residuals
-  ssr <- deviance(model)        # weighted ssr
-  p <- length(res) - df
-  h <- hatvalues(model)
-  res^2 / (p * (ssr / df)) * (h / (1 - h)^2)
+	df <- df.residual(model)
+	res <- model$m$resid()        # weighted residuals
+	ssr <- deviance(model)        # weighted ssr
+	p <- length(res) - df
+	h <- hatvalues(model)
+	res^2 / (p * (ssr / df)) * (h / (1 - h)^2)
 }
 
 #' Anova tables
@@ -548,62 +570,62 @@ cooks.distance.gsl_nls <- function(model, ...) {
 #' anova(obj1, obj2)
 #' @export
 anova.gsl_nls <- function(object, ...) {
-  if(length(list(object, ...)) > 1L) {
-    objects <- list(object, ...)
-    responses <- vapply(objects, function(x)
-      if(inherits(formula(x), "formula")) as.character(formula(x)[[2L]]) else "y",
-      character(1))
-    models <- lapply(objects, function(x)
-      if(inherits(formula(x), "formula")) {
-        formula(x)
-      } else {
-        sprintf("y ~ fn(%s)", paste(names(formals(formula(x))), collapse = ", "))
-      })
-    models <- as.character(models)
-    sameresp <- responses == responses[1L]
-    if (!all(sameresp)) {
-      objects <- objects[sameresp]
-      warning(gettextf("models with response %s removed because response differs from model 1",
-                       sQuote(deparse(responses[!sameresp]))),
-              domain = NA)
-    }
-    ## calculate the number of models
-    nmodels <- length(objects)
-    if (nmodels == 1L)
-      stop("'anova' is only defined for sequences of \"nls\" objects")
-    ## extract statistics
-    df.r <- unlist(lapply(objects, df.residual))
-    ss.r <- unlist(lapply(objects, deviance))
-    df <- c(NA, -diff(df.r))
-    ss <- c(NA, -diff(ss.r))
-    ms <- ss/df
-    f <- p <- rep_len(NA_real_, nmodels)
-    for(i in 2:nmodels) {
-      if(df[i] > 0) {
-        f[i] <- ms[i]/(ss.r[i]/df.r[i])
-        p[i] <- pf(f[i], df[i], df.r[i], lower.tail = FALSE)
-      }
-      else if(df[i] < 0) {
-        f[i] <- ms[i]/(ss.r[i-1]/df.r[i-1])
-        p[i] <- pf(f[i], -df[i], df.r[i-1], lower.tail = FALSE)
-      }
-      else {                          # df[i] == 0
-        ss[i] <- 0
-      }
-    }
-    table <- data.frame(df.r,ss.r,df,ss,f,p)
-    dimnames(table) <- list(1L:nmodels, c("Res.Df", "Res.Sum Sq", "Df",
-                                          "Sum Sq", "F value", "Pr(>F)"))
-    ## construct table and title
-    title <- "Analysis of Variance Table\n"
-    topnote <- paste0("Model ", format(1L:nmodels), ": ", models,
-                      collapse = "\n")
-    ## calculate test statistic if needed
-    structure(table, heading = c(title, topnote),
-              class = c("anova", "data.frame")) # was "tabular"
-  } else {
-    stop("anova is only defined for sequences of \"gsl_nls\" objects")
-  }
+	if(length(list(object, ...)) > 1L) {
+		objects <- list(object, ...)
+		responses <- vapply(objects, function(x)
+					if(inherits(formula(x), "formula")) as.character(formula(x)[[2L]]) else "y",
+				character(1))
+		models <- lapply(objects, function(x)
+					if(inherits(formula(x), "formula")) {
+						formula(x)
+					} else {
+						sprintf("y ~ fn(%s)", paste(names(formals(formula(x))), collapse = ", "))
+					})
+		models <- as.character(models)
+		sameresp <- responses == responses[1L]
+		if (!all(sameresp)) {
+			objects <- objects[sameresp]
+			warning(gettextf("models with response %s removed because response differs from model 1",
+							sQuote(deparse(responses[!sameresp]))),
+					domain = NA)
+		}
+		## calculate the number of models
+		nmodels <- length(objects)
+		if (nmodels == 1L)
+			stop("'anova' is only defined for sequences of \"nls\" objects")
+		## extract statistics
+		df.r <- unlist(lapply(objects, df.residual))
+		ss.r <- unlist(lapply(objects, deviance))
+		df <- c(NA, -diff(df.r))
+		ss <- c(NA, -diff(ss.r))
+		ms <- ss/df
+		f <- p <- rep_len(NA_real_, nmodels)
+		for(i in 2:nmodels) {
+			if(df[i] > 0) {
+				f[i] <- ms[i]/(ss.r[i]/df.r[i])
+				p[i] <- pf(f[i], df[i], df.r[i], lower.tail = FALSE)
+			}
+			else if(df[i] < 0) {
+				f[i] <- ms[i]/(ss.r[i-1]/df.r[i-1])
+				p[i] <- pf(f[i], -df[i], df.r[i-1], lower.tail = FALSE)
+			}
+			else {                          # df[i] == 0
+				ss[i] <- 0
+			}
+		}
+		table <- data.frame(df.r,ss.r,df,ss,f,p)
+		dimnames(table) <- list(1L:nmodels, c("Res.Df", "Res.Sum Sq", "Df",
+						"Sum Sq", "F value", "Pr(>F)"))
+		## construct table and title
+		title <- "Analysis of Variance Table\n"
+		topnote <- paste0("Model ", format(1L:nmodels), ": ", models,
+				collapse = "\n")
+		## calculate test statistic if needed
+		structure(table, heading = c(title, topnote),
+				class = c("anova", "data.frame")) # was "tabular"
+	} else {
+		stop("anova is only defined for sequences of \"gsl_nls\" objects")
+	}
 }
 
 #' Confidence interval for model parameters
@@ -643,35 +665,36 @@ anova.gsl_nls <- function(object, ...) {
 #' }
 #' @export
 confint.gsl_nls <- function(object, parm, level = 0.95, method = c("asymptotic", "profile"), ...) {
-  method <- match.arg(method)
-  if(identical(method, "profile")) {
-    if(inherits(object, "nls")) {
-      NextMethod()
-    } else {
-      stop("method 'profile' can only be used for \"nls\" objects")
-    }
-  } else {
-    ## from confint.default
-    cf <- coef(object)
-    pnames <- names(cf)
-    if(missing(parm))
-      parm <- pnames
-    else if(is.numeric(parm))
-      parm <- pnames[parm]
-    a <- c((1 - level) / 2, (1 + level) / 2)
-    ses <- sqrt(diag(vcov(object)))[parm]
-    pct <- paste(format(100 * a, trim = TRUE, scientific = FALSE, digits = 3L), "%")
-    ci <- array(NA_real_, dim = c(length(parm), 2), dimnames = list(parm, pct))
-    ci[] <- cf[parm] + ses %o% qt(a, df.residual(object))
-    ## artifically limit intervals
-    if(!is.null(object$lower) && any(ci[parm, 1L] < object$lower)) {
-      ci[parm, 1L] <- pmax(ci[parm, 1L], object$lower)
-    }
-    if(!is.null(object$upper) && any(ci[parm, 2L] > object$upper)) {
-      ci[parm, 2L] <- pmin(ci[parm, 2L], object$upper)
-    }
-    return(ci)
-  }
+	method <- match.arg(method)
+	if(identical(method, "profile")) {
+		if(inherits(object, "nls")) {
+			NextMethod()
+		} else {
+			stop("method 'profile' can only be used for \"nls\" objects")
+		}
+	} else {
+		## from confint.default
+		cf <- coef(object)
+		pnames <- names(cf)
+		if(missing(parm))
+			parm <- pnames
+		else if(is.numeric(parm))
+			parm <- pnames[parm]
+		a <- c((1 - level) / 2, (1 + level) / 2)
+		## generates warning if singular
+		ses <- sqrt(diag(vcov(object)))[parm]
+		pct <- paste(format(100 * a, trim = TRUE, scientific = FALSE, digits = 3L), "%")
+		ci <- array(NaN, dim = c(length(parm), 2), dimnames = list(parm, pct))
+		ci[] <- cf[parm] + ses %o% qt(a, df.residual(object))
+		## artifically limit intervals
+		if(!is.null(object$lower) && any(ci[parm, 1L] < object$lower)) {
+			ci[parm, 1L] <- pmax(ci[parm, 1L], object$lower)
+		}
+		if(!is.null(object$upper) && any(ci[parm, 2L] > object$upper)) {
+			ci[parm, 2L] <- pmin(ci[parm, 2L], object$upper)
+		}
+		return(ci)
+	}
 }
 
 #' Confidence intervals for derived parameters
@@ -688,7 +711,7 @@ confint.gsl_nls <- function(object, parm, level = 0.95, method = c("asymptotic",
 #' each derived parameter. The row names list the individual derived parameter expressions.
 #' @export
 confintd <- function(object, expr, level = 0.95, ...) {
-  UseMethod("confintd")
+	UseMethod("confintd")
 }
 
 #' Confidence intervals for derived parameters
@@ -725,68 +748,74 @@ confintd <- function(object, expr, level = 0.95, ...) {
 #' confintd(obj, expr = c("log(lam)", "A / lam"))
 #' @export
 confintd.gsl_nls <- function(object, expr, level = 0.95, dtype = "symbolic", ...) {
-  ## prepare expression
-  if(is.character(expr)) {
-    exprstr <- expr
-    expr <- str2expression(expr)
-  } else {
-    expr <- as.expression(expr)
-    exprstr <- as.character(expr)
-  }
-  ## standard errors
-  p <- coef(object)
-  plist <- as.list(p)
-  a <- c((1 - level) / 2, (1 + level) / 2)
-  fit <- vapply(expr, eval, numeric(1), envir = plist)
-  ## derive expression
-  dtype <- match.arg(dtype, choices = c("symbolic", "numeric"))
-  if(identical(dtype, "symbolic")) {
-    dexpr <- lapply(expr, stats::deriv, namevec = names(p))
-    dfit <- lapply(dexpr, eval, envir = plist)
-  } else {
-    dfit <- lapply(expr, stats::numericDeriv, theta = names(p), rho = list2env(plist))
-  }
-  grad <- t(vapply(dfit, attr, p, which = "gradient"))
-  ses <- sigma(object) * sqrt(rowSums(grad %*% chol2inv(object$m$Rmat()) * grad))
-  ci <- fit + ses %o% qt(a, df.residual(object))
-  cimat <- cbind(fit = fit, lwr = ci[, 1], upr = ci[, 2])
-  rownames(cimat) <- exprstr
-  return(cimat)
+	## prepare expression
+	if(is.character(expr)) {
+		exprstr <- expr
+		expr <- str2expression(expr)
+	} else {
+		expr <- as.expression(expr)
+		exprstr <- as.character(expr)
+	}
+	## standard errors
+	p <- coef(object)
+	plist <- as.list(p)
+	a <- c((1 - level) / 2, (1 + level) / 2)
+	fit <- vapply(expr, eval, numeric(1), envir = plist)
+	## derive expression
+	dtype <- match.arg(dtype, choices = c("symbolic", "numeric"))
+	if(identical(dtype, "symbolic")) {
+		dexpr <- lapply(expr, stats::deriv, namevec = names(p))
+		dfit <- lapply(dexpr, eval, envir = plist)
+	} else {
+		dfit <- lapply(expr, stats::numericDeriv, theta = names(p), rho = list2env(plist))
+	}
+	grad <- t(vapply(dfit, attr, p, which = "gradient"))
+	Finv <- tryCatch(chol2inv(object$m$Rmat()), error = function(e) e)
+	if(!inherits(Finv, "error")) {
+		ses <- sigma(object) * sqrt(rowSums(grad %*% Finv * grad))
+	} else {
+		warning("singular gradient matrix at parameter estimates")
+		ses <- rep(NaN, length(fit))
+	}
+	ci <- fit + ses %o% qt(a, df.residual(object))
+	cimat <- cbind(fit = fit, lwr = ci[, 1], upr = ci[, 2])
+	rownames(cimat) <- exprstr
+	return(cimat)
 }
 
 convInfo <- function(x, digits, show. = getOption("show.nls.convergence", TRUE)) {
-  if(!inherits(x, "summary.gsl_nls")) {
-    cat(sprintf("\nAlgorithm: %s, (scaling: %s, solver: %s)\n", x$convInfo$trsName, x$control$scale, x$control$solver))
-  }
-  if(!is.null(x$irls)) {
-    with(x$irls, {
-      if (!irls_conv || show.) {
-        cat("\nNumber of IRLS iterations", if (irls_conv)
-          "to convergence:"
-          else "till stop:", irls_niter, "\nAchieved IRLS tolerance:",
-          format(irls_tol, digits = digits))
-        cat("\n")
-      }
-      if (!irls_conv) {
-        cat("Reason stopped:", irls_status)
-        cat("\n")
-      }
-    })
-  }
-  if(is.null(x$irls) || x$irls$irls_conv) {
-    with(x$convInfo, {
-      if (!isConv || show.) {
-        cat("\nNumber of", if(!is.null(x$irls)) "NLS iterations" else "iterations",
-            if (isConv) "to convergence:" else "till stop:", finIter,
-            "\nAchieved", if(!is.null(x$irls)) "NLS tolerance:" else "convergence tolerance:",
-            format(finTol, digits = digits))
-        cat("\n")
-      }
-      if (!isConv) {
-        cat("Reason stopped:", stopMessage)
-        cat("\n")
-      }
-    })
-  }
-  invisible()
+	if(!inherits(x, "summary.gsl_nls")) {
+		cat(sprintf("\nAlgorithm: %s, (scaling: %s, solver: %s)\n", x$convInfo$trsName, x$control$scale, x$control$solver))
+	}
+	if(!is.null(x$irls)) {
+		with(x$irls, {
+					if (!irls_conv || show.) {
+						cat("\nNumber of IRLS iterations", if (irls_conv)
+											"to convergence:"
+										else "till stop:", irls_niter, "\nAchieved IRLS tolerance:",
+								format(irls_tol, digits = digits))
+						cat("\n")
+					}
+					if (!irls_conv) {
+						cat("Reason stopped:", irls_status)
+						cat("\n")
+					}
+				})
+	}
+	if(is.null(x$irls) || x$irls$irls_conv) {
+		with(x$convInfo, {
+					if (!isConv || show.) {
+						cat("\nNumber of", if(!is.null(x$irls)) "NLS iterations" else "iterations",
+								if (isConv) "to convergence:" else "till stop:", finIter,
+								"\nAchieved", if(!is.null(x$irls)) "NLS tolerance:" else "convergence tolerance:",
+								format(finTol, digits = digits))
+						cat("\n")
+					}
+					if (!isConv) {
+						cat("Reason stopped:", stopMessage)
+						cat("\n")
+					}
+				})
+	}
+	invisible()
 }

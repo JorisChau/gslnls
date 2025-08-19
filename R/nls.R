@@ -1189,7 +1189,7 @@ gsl_nls_control <- function(maxiter = 100, scale = "more", solver = "qr",
                             ftol = sqrt(.Machine$double.eps), gtol = sqrt(.Machine$double.eps),
                             mstart_n = 30, mstart_p = 5, mstart_q = mstart_n %/% 10, mstart_r = 4, mstart_s = 2,
                             mstart_tol = 0.25, mstart_maxiter = 10, mstart_maxstart = 250, mstart_minsp = 1,
-                            irls_maxiter = 50, irls_xtol = .Machine$double.eps**.25, ...) {
+                            irls_maxiter = 50, irls_xtol = .Machine$double.eps^.25, ...) {
 
   scale <- match.arg(scale, c("more", "levenberg", "marquardt"))
   solver <- match.arg(solver, c("qr", "cholesky", "svd"))

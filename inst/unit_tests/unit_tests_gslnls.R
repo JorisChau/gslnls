@@ -5,41 +5,41 @@ cat("Running gsnls unit tests...\n")
 
 ## test helper function
 dotest <- function(itest, observed, expected) {
-  if(!identical(observed, expected)) stop(sprintf("Test %s failed", itest), call. = FALSE)
+	if(!identical(observed, expected)) stop(sprintf("Test %s failed", itest), call. = FALSE)
 }
 dotest_tol <- function(itest, observed, expected, tol = (.Machine$double.eps)^0.25) {
-  if(any(abs(observed - expected) > tol)) stop(sprintf("Test %s failed", itest), call. = FALSE)
+	if(any(abs(observed - expected) > tol)) stop(sprintf("Test %s failed", itest), call. = FALSE)
 }
 
 ## check example problems
 nls_examples <- nls_test_list()
 dotest("1.1", dim(nls_examples), c(59L, 5L))
 dotest("1.2", nls_examples[c(1L, 37L), ], structure(list(name = c("Misra1a", "Rosenbrock"), class = c("formula", "function"),
-                                                         p = c(2L, 2L), n = c(14L, 2L), check = c("p, n fixed", "p, n fixed")),
-                                                    row.names = c(1L, 37L), class = "data.frame"))
+						p = c(2L, 2L), n = c(14L, 2L), check = c("p, n fixed", "p, n fixed")),
+				row.names = c(1L, 37L), class = "data.frame"))
 ## loop through all test formulas
 for(i in 1:33) {
-  nm <- nls_examples[i, "name"]
-  n <- nls_examples[i, "n"]
-  p <- nls_examples[i, "p"]
-  nls_problem <- nls_test_problem(nm)
-  dotest(sprintf("1.3.1: %s", nm), inherits(nls_problem, "nls_test_formula") && is.data.frame(nls_problem[["data"]]) &&
-           inherits(nls_problem[["fn"]], "formula"), TRUE)
-  dotest(sprintf("1.3.2: %s", nm), c(nrow(nls_problem[["data"]]), length(nls_problem[["start"]]), length(nls_problem[["target"]])), c(n, p, p))
+	nm <- nls_examples[i, "name"]
+	n <- nls_examples[i, "n"]
+	p <- nls_examples[i, "p"]
+	nls_problem <- nls_test_problem(nm)
+	dotest(sprintf("1.3.1: %s", nm), inherits(nls_problem, "nls_test_formula") && is.data.frame(nls_problem[["data"]]) &&
+					inherits(nls_problem[["fn"]], "formula"), TRUE)
+	dotest(sprintf("1.3.2: %s", nm), c(nrow(nls_problem[["data"]]), length(nls_problem[["start"]]), length(nls_problem[["target"]])), c(n, p, p))
 }
 
 ## loop through all test functions
 for(i in 34:59) {
-  nm <- nls_examples[i, "name"]
-  n <- nls_examples[i, "n"]
-  p <- nls_examples[i, "p"]
-  nls_problem <- nls_test_problem(nm)
-  dotest(sprintf("1.4.1: %s", nm), inherits(nls_problem, "nls_test_function") && is.function(nls_problem[["fn"]]) && is.function(nls_problem[["jac"]]), TRUE)
-  dotest(sprintf("1.4.2: %s", nm), c(length(nls_problem[["start"]]), length(nls_problem[["target"]])), c(p, p))
-  fval <- nls_problem[["fn"]](x = nls_problem[["start"]])
-  jval <- nls_problem[["jac"]](x = nls_problem[["start"]])
-  dotest(sprintf("1.4.3: %s", nm), identical(length(fval), n) && all(is.finite(fval)), TRUE)
-  dotest(sprintf("1.4.4: %s", nm), identical(dim(jval), c(n, p)) && all(is.finite(jval)), TRUE)
+	nm <- nls_examples[i, "name"]
+	n <- nls_examples[i, "n"]
+	p <- nls_examples[i, "p"]
+	nls_problem <- nls_test_problem(nm)
+	dotest(sprintf("1.4.1: %s", nm), inherits(nls_problem, "nls_test_function") && is.function(nls_problem[["fn"]]) && is.function(nls_problem[["jac"]]), TRUE)
+	dotest(sprintf("1.4.2: %s", nm), c(length(nls_problem[["start"]]), length(nls_problem[["target"]])), c(p, p))
+	fval <- nls_problem[["fn"]](x = nls_problem[["start"]])
+	jval <- nls_problem[["jac"]](x = nls_problem[["start"]])
+	dotest(sprintf("1.4.3: %s", nm), identical(length(fval), n) && all(is.finite(fval)), TRUE)
+	dotest(sprintf("1.4.4: %s", nm), identical(dim(jval), c(n, p)) && all(is.finite(jval)), TRUE)
 }
 
 ## gsl_nls
@@ -85,14 +85,14 @@ linear1_2.2.4 <- with(linear1, gsl_nls(fn = fn, y = y, start = start, algorithm 
 dotest_tol("2.2.4", coef(linear1_2.2.4), linear1[["target"]])
 
 linear1_fn <- function(pars) {  ## access parameters as list
-  fn <- numeric(5L)
-  nms <- paste0("x", 1:5)
-  for(i in 1:5) {
-    fn[i] <- pars[[i]] - 2 * (pars$x1 + pars$x2 + pars$x3 + pars$x4 + pars$x5) / 5 - 1
-  }
-  attr(fn, "gradient") <- matrix(-2 / 5, nrow = 5L, ncol = 5L, dimnames = list(NULL, nms)) + diag(rep(1, 5L))
-  attr(fn, "hessian") <- array(0, dim = c(5L, 5L, 5L), dimnames = list(NULL, nms, nms))
-  return(fn)
+	fn <- numeric(5L)
+	nms <- paste0("x", 1:5)
+	for(i in 1:5) {
+		fn[i] <- pars[[i]] - 2 * (pars$x1 + pars$x2 + pars$x3 + pars$x4 + pars$x5) / 5 - 1
+	}
+	attr(fn, "gradient") <- matrix(-2 / 5, nrow = 5L, ncol = 5L, dimnames = list(NULL, nms)) + diag(rep(1, 5L))
+	attr(fn, "hessian") <- array(0, dim = c(5L, 5L, 5L), dimnames = list(NULL, nms, nms))
+	return(fn)
 }
 
 linear1_2.3.1 <- with(linear1, gsl_nls(fn = linear1_fn, y = y, start = as.list(start), algorithm = "lmaccel"))
@@ -218,10 +218,10 @@ dotest_tol("5.1.17", !misra1a_5.1.17$convInfo$isConv && !misra1a_5.1.17$irls$irl
 misra1a_5.1.18 <- with(misra1a, gsl_nls(fn = fn, data = misra1a_data, start = as.list(start), loss = "huber", weights = diag(rep(10.0, 14L))))
 dotest_tol("5.1.18", misra1a_5.1.18$convInfo$isConv && misra1a_5.1.18$irls$irls_conv && max(abs(1 - coef(misra1a_5.1.18) / misra1a$target)) < 1e-2, TRUE)
 misra1a_5.1.19 <- with(misra1a, gsl_nls(fn = fn, data = misra1a_data, start = as.list(start), algorithm = "lmaccel",
-                                        loss = gsl_nls_loss("barron", cc = c(1.0, 1.345)), weights = diag(rep(10.0, 14L))))
+				loss = gsl_nls_loss("barron", cc = c(1.0, 1.345)), weights = diag(rep(10.0, 14L))))
 dotest_tol("5.1.19", misra1a_5.1.19$convInfo$isConv && misra1a_5.1.19$irls$irls_conv && max(abs(1 - coef(misra1a_5.1.19) / misra1a$target)) < 1e-2, TRUE)
 misra1a_5.1.20 <- with(misra1a, gsl_nls(fn = fn, data = data, start = list(b1 = c(200, 250), b2 = 1e-4), algorithm = "lmaccel",
-                                        loss = "huber", trace = TRUE, weights = diag(rep(10.0, 14L))))
+				loss = "huber", trace = TRUE, weights = diag(rep(10.0, 14L))))
 dotest_tol("5.1.20", misra1a_5.1.20$convInfo$isConv && misra1a_5.1.20$irls$irls_conv && max(abs(1 - coef(misra1a_5.1.20) / misra1a$target)) < 1e-2, TRUE)
 
 ## function input
@@ -246,7 +246,7 @@ dotest_tol("5.2.8", coef(misra1a_5.2.8), coef(misra1a_5.1.15))
 misra1a_5.2.9 <- with(misra1a, gsl_nls(fn = misra1a_fn, x = data$x, y = data$y, start = as.list(start), loss = "welsh", weights = rep(10.0, 14L)))
 dotest_tol("5.2.9", coef(misra1a_5.2.9), coef(misra1a_5.1.8))
 misra1a_5.2.10 <- with(misra1a, gsl_nls(fn = misra1a_fn, x = misra1a_data$x, y = misra1a_data$y, start = as.list(start), trace = TRUE, algorithm = "lmaccel",
-                                       loss = gsl_nls_loss("barron", cc = c(1.0, 1.345)), weights = diag(rep(10.0, 14L))))
+				loss = gsl_nls_loss("barron", cc = c(1.0, 1.345)), weights = diag(rep(10.0, 14L))))
 dotest_tol("5.2.10", coef(misra1a_5.2.10), coef(misra1a_5.1.19))
 
 tools::assertWarning(gsl_nls_loss("barron", cc = c(2.5, 1.345)))
@@ -254,43 +254,43 @@ tools::assertWarning(gsl_nls_loss("barron", cc = c(2.5, 1.345)))
 ## miscellaneous
 
 x <- c(0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1, 1.125, 1.25,
-       1.375, 1.5, 1.625, 1.75, 1.875, 2, 2.125, 2.25, 2.375, 2.5, 2.625,
-       2.75, 2.875, 3)
+		1.375, 1.5, 1.625, 1.75, 1.875, 2, 2.125, 2.25, 2.375, 2.5, 2.625,
+		2.75, 2.875, 3)
 y <- c(5.84338654731442, 5.19105642195752, 4.22753924085235, 4.24773432418906,
-       3.44420970665891, 2.75291103735449, 2.74511959989887, 2.53031291992822,
-       2.25959613865552, 1.84855990274743, 2.14472012633735, 1.73313947376304,
-       1.37168597767387, 0.883220159182727, 1.64343151470703, 1.28903993722273,
-       1.24488777606458, 1.44233369960031, 1.37639589033285, 1.29031441255294,
-       1.3473330721821, 1.29301855572576, 1.09945871878213, 0.569662114359861,
-       1.21050141966489)
+		3.44420970665891, 2.75291103735449, 2.74511959989887, 2.53031291992822,
+		2.25959613865552, 1.84855990274743, 2.14472012633735, 1.73313947376304,
+		1.37168597767387, 0.883220159182727, 1.64343151470703, 1.28903993722273,
+		1.24488777606458, 1.44233369960031, 1.37639589033285, 1.29031441255294,
+		1.3473330721821, 1.29301855572576, 1.09945871878213, 0.569662114359861,
+		1.21050141966489)
 
 ## self-start
 ss_fit <- gsl_nls(
-  fn =  y ~ SSasymp(x, Asym, R0, lrc),                   ## model formula
-  data = data.frame(y = y, x = x),                       ## model fit data
+		fn =  y ~ SSasymp(x, Asym, R0, lrc),                   ## model formula
+		data = data.frame(y = y, x = x),                       ## model fit data
 )
 ss_fit_large <- gsl_nls_large(
-  fn =  y ~ SSasymp(x, Asym, R0, lrc),                   ## model formula
-  data = data.frame(x = x, y = y)                        ## model fit data
+		fn =  y ~ SSasymp(x, Asym, R0, lrc),                   ## model formula
+		data = data.frame(x = x, y = y)                        ## model fit data
 )
 ## non self-start
 SSasymp2 <- deriv(
-  ~Asym+(R0-Asym)*exp(-exp(lrc)*input),
-  namevec = c("Asym", "R0", "lrc"),
-  function.arg = c("input", "Asym", "R0", "lrc"),
-  hessian = TRUE
+		~Asym+(R0-Asym)*exp(-exp(lrc)*input),
+		namevec = c("Asym", "R0", "lrc"),
+		function.arg = c("input", "Asym", "R0", "lrc"),
+		hessian = TRUE
 )
 ss_fit2 <- gsl_nls(
-  fn = y ~ SSasymp2(x, Asym, R0, lrc),
-  data = data.frame(x = x, y = y),
-  start = c(Asym = 1, R0 = 6, lrc = 0.25),
-  algorithm = "lmaccel"
+		fn = y ~ SSasymp2(x, Asym, R0, lrc),
+		data = data.frame(x = x, y = y),
+		start = c(Asym = 1, R0 = 6, lrc = 0.25),
+		algorithm = "lmaccel"
 )
 ss_fit2_large <- gsl_nls_large(
-  fn = y ~ SSasymp2(x, Asym, R0, lrc),
-  data = data.frame(x = x, y = y),
-  start = c(Asym = 1, R0 = 6, lrc = 0.25),
-  algorithm = "lmaccel"
+		fn = y ~ SSasymp2(x, Asym, R0, lrc),
+		data = data.frame(x = x, y = y),
+		start = c(Asym = 1, R0 = 6, lrc = 0.25),
+		algorithm = "lmaccel"
 )
 
 dotest("6.1.1", inherits(ss_fit, "gsl_nls"), TRUE)
@@ -300,44 +300,44 @@ dotest("6.1.4", inherits(ss_fit2_large, "gsl_nls"), TRUE)
 
 ## sparse jacobian
 misra1a_fit_sp <- gsl_nls_large(
-  fn = misra1a$fn,
-  data = misra1a$data,
-  start = misra1a$start,
-  jac = function(par, x) {
-    .expr3 <- exp(-par[["b2"]] * x)
-    .expr4 <- 1 - .expr3
-    .grad <- Matrix::Matrix(c(.expr4, par[["b1"]] * (.expr3 * x)), nrow = length(x), ncol = 2L,
-                            dimnames = list(NULL, c("b1", "b2")), sparse = TRUE)
-    return(.grad)
-  },
-  x = misra1a$data$x
+		fn = misra1a$fn,
+		data = misra1a$data,
+		start = misra1a$start,
+		jac = function(par, x) {
+			.expr3 <- exp(-par[["b2"]] * x)
+			.expr4 <- 1 - .expr3
+			.grad <- Matrix::Matrix(c(.expr4, par[["b1"]] * (.expr3 * x)), nrow = length(x), ncol = 2L,
+					dimnames = list(NULL, c("b1", "b2")), sparse = TRUE)
+			return(.grad)
+		},
+		x = misra1a$data$x
 )
 
 dotest_tol("6.2.1", coef(misra1a_fit_sp), misra1a[["target"]])
 
 penalty_fit_dgC <- gsl_nls_large(
-  fn = function(theta) c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25),
-  y = rep(0, 11L),
-  start = rep(0.15, 10L),
-  jac = function(theta) rbind(Matrix::Diagonal(x = sqrt(1e-5), n = length(theta)), 2 * t(theta))
+		fn = function(theta) c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25),
+		y = rep(0, 11L),
+		start = rep(0.15, 10L),
+		jac = function(theta) rbind(Matrix::Diagonal(x = sqrt(1e-5), n = length(theta)), 2 * t(theta))
 )
 penalty_fit_dgR <- gsl_nls_large(
-  fn = function(theta) c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25),
-  y = rep(0, 11L),
-  start = rep(0.15, 10L),
-  jac = function(theta) as(rbind(Matrix::Diagonal(x = sqrt(1e-5), n = length(theta)), 2 * t(theta)), Class = "RsparseMatrix")
+		fn = function(theta) c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25),
+		y = rep(0, 11L),
+		start = rep(0.15, 10L),
+		jac = function(theta) as(rbind(Matrix::Diagonal(x = sqrt(1e-5), n = length(theta)), 2 * t(theta)), Class = "RsparseMatrix")
 )
 penalty_fit_dgT <- gsl_nls_large(
-  fn = function(theta) c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25),
-  y = rep(0, 11L),
-  start = rep(0.15, 10L),
-  jac = function(theta) as(rbind(diag(rep(sqrt(1e-5), length(theta))), 2 * t(theta)), Class = "TsparseMatrix")
+		fn = function(theta) c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25),
+		y = rep(0, 11L),
+		start = rep(0.15, 10L),
+		jac = function(theta) as(rbind(diag(rep(sqrt(1e-5), length(theta))), 2 * t(theta)), Class = "TsparseMatrix")
 )
 penalty_fit_dge <- gsl_nls_large(
-  fn = function(theta) c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25),
-  y = rep(0, 11L),
-  start = rep(0.15, 10L),
-  jac = function(theta) as(rbind(diag(rep(sqrt(1e-5), length(theta))), 2 * t(theta)), Class = "unpackedMatrix")
+		fn = function(theta) c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25),
+		y = rep(0, 11L),
+		start = rep(0.15, 10L),
+		jac = function(theta) as(rbind(diag(rep(sqrt(1e-5), length(theta))), 2 * t(theta)), Class = "unpackedMatrix")
 )
 
 dotest_tol("6.2.2", inherits(penalty_fit_dgC, "gsl_nls"), TRUE)
@@ -356,10 +356,10 @@ dotest_tol("7.1.5", sigma(misra1a_2.1.4), 1.018788)
 dotest_tol("7.1.6", sigma(misra1a_2.1.8), 1.018788)
 dotest("7.1.7", length(capture.output(summary(misra1a_2.1.1))), 15L)
 dotest("7.1.8", names(summary(misra1a_2.1.1)), c("formula", "residuals", "sigma", "df", "cov.unscaled", "call",
-                                                "convInfo", "control", "na.action", "coefficients", "parameters", "irls"))
+				"convInfo", "control", "na.action", "coefficients", "parameters", "irls"))
 dotest("7.1.9", length(capture.output(summary(misra1a_5.1.8, correlation = TRUE))), 22L)
 dotest("7.1.10", names(summary(misra1a_5.1.8, correlation = TRUE)), c("formula", "residuals", "sigma", "df", "cov.unscaled", "call", "convInfo", "control", "na.action",
-                                "coefficients", "parameters", "irls", "correlation", "symbolic.cor"))
+				"coefficients", "parameters", "irls", "correlation", "symbolic.cor"))
 dotest("7.1.11", length(predict(misra1a_2.1.1)), 14L)
 dotest("7.1.12", dim(predict(misra1a_2.1.4, interval = "prediction")), c(14L, 3L))
 dotest_tol("7.1.13", predict(misra1a_2.1.4, interval = "prediction"), predict(misra1a_2.1.8, interval = "prediction"))
@@ -371,7 +371,7 @@ dotest("7.1.18", df.residual(misra1a_2.1.1), 12L)
 dotest("7.1.19", dim(vcov(misra1a_2.1.1)), c(2L, 2L))
 dotest("7.1.20", names(anova(misra1a_2.1.1, misra1a_2.1.2)), c("Res.Df", "Res.Sum Sq", "Df", "Sum Sq", "F value", "Pr(>F)"))
 if(requireNamespace("MASS")) {
-  dotest("7.1.21", dim(confint(misra1a_2.1.1, method = "profile")), c(2L, 2L))
+	dotest("7.1.21", dim(confint(misra1a_2.1.1, method = "profile")), c(2L, 2L))
 }
 dotest("7.1.22", dim(confintd(misra1a_2.1.1, expr = "b1 + b2")), c(1L, 3L))
 dotest("7.1.23", capture.output(misra1a_2.1.1)[c(1, 2)], c("Nonlinear regression model", "  model: y ~ b1 * (1 - exp(-b2 * x))"))
@@ -399,7 +399,7 @@ dotest_tol("7.2.3", deviance(madsen_4.2.1), 0.7731991)
 dotest_tol("7.2.4", sigma(madsen_4.2.1), 0.8793174)
 dotest_tol("7.2.5", sigma(madsen_4.2.3), sigma(madsen_4.2.7))
 dotest("7.2.6", names(summary(madsen_4.2.1)), c("formula", "residuals", "sigma", "df", "cov.unscaled", "call",
-                                                "convInfo", "control", "na.action", "coefficients", "parameters", "irls"))
+				"convInfo", "control", "na.action", "coefficients", "parameters", "irls"))
 dotest("7.2.7", length(predict(madsen_4.2.1)), 3L)
 dotest("7.2.8", dim(predict(madsen_4.2.1, interval = "prediction")), c(3L, 3L))
 dotest_tol("7.2.9", predict(madsen_4.2.3, interval = "prediction"), predict(madsen_4.2.7, interval = "prediction"))
@@ -419,4 +419,25 @@ dotest("7.2.21", length(cooks.distance(madsen_4.2.1)), 3L)
 
 tools::assertError(confint(madsen_4.2.1, method = "profile"))
 
+## singular gradient
+warn <- tools::assertWarning({
+			misra1a_7.3.1 <- with(misra1a, gsl_nls(fn = fn, data = data, start = c(b1 = 1, b2 = 1), algorithm = "lm"))
+		})
+dotest("7.3.1", warn[[1]]$message, "singular gradient matrix at parameter estimates")
+
+tools::assertWarning(Sigma <- vcov(misra1a_7.3.1))
+dotest("7.3.2", all(is.na(Sigma)), TRUE)
+tools::assertWarning(smry <- summary(misra1a_7.3.1))
+dotest("7.3.3", all(is.na(smry$coefficients[, -1])), TRUE)
+tools::assertWarning(ci <- confint(misra1a_7.3.1))
+dotest("7.3.4", all(is.na(ci)), TRUE)
+tools::assertWarning(ci2 <- confintd(misra1a_7.3.1, expr = "b1 + b2"))
+dotest("7.3.5", all(is.na(ci2[-1])), TRUE)
+tools::assertWarning(pred <- predict(misra1a_7.3.1, interval = "confidence"))
+dotest("7.3.6", all(is.na(pred[, -1])), TRUE)
+tools::assertError(hatvalues(misra1a_7.3.1))
+tools::assertError(cooks.distance(misra1a_7.3.1))
+
 cat("Completed gslnls unit tests\n")
+
+
