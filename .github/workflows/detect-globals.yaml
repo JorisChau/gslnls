@@ -35,8 +35,7 @@ jobs:
           (chk <- checkglobals::checkglobals(pkg = "."))
           checkglobals::as_sarif_json(
                     chk, 
-                    path = file.path(Sys.getenv("GITHUB_WORKSPACE"), "checkglobals.json"),
-                    root_dir = Sys.getenv("GITHUB_WORKSPACE")
+                    path = file.path(Sys.getenv("GITHUB_WORKSPACE"), "checkglobals.json")
           )
         shell: Rscript {0}
       - name: upload sarif
