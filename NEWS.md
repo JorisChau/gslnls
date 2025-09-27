@@ -1,3 +1,11 @@
+# gslnls 1.4.2
+
+* `confint()`, `summary()` and other methods no longer fail in case of 
+  a singular gradient
+* Fixed bug: missing confidence/prediction intervals in `predict()` 
+  for multi-start `gsl_nls()` call with `fn` defined as a function
+  in combination with `newdata`.
+
 # gslnls 1.4.1
 
 * Fixed compatibility GSL versions < 2.5

@@ -1,15 +1,10 @@
-## CRAN package version 1.4.1
+## CRAN package version 1.4.2
 
 * System requirements: GSL (>= 2.3)
 
-## Author comments
-
-* Fixed compatibility with older GSL versions (<2.5) 
-  causing installation ERRORs in CRAN checks	
-
 ## Test environments
 
-* ubuntu gcc GSL 2.3 R-release (docker)
+* ubuntu gcc GSL 2.3 R-devel (docker)
 * ubuntu gcc R-oldrel, R-release, R-next, R-devel (rhub, gh-actions)
 * debian gcc/clang R-devel (rhub)
 * fedora gcc/clang R-devel (rhub)

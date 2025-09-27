@@ -1429,7 +1429,7 @@ gslModel <- function(fn, lhs, cFit, start, swts, jac, ...) {
   } else {
     gcall <- fcall
   }
-  gcall[[2]] <- do.call(call, args = c(ifelse(is.list(start), "list", "c"), sapply(names(start), as.name)), quote = TRUE)
+  gcall[[2]] <- do.call(call, args = c(ifelse(is.list(start), "list", "c"), sapply(names(pars), as.name)), quote = TRUE)
   if(is.null(cFit$irls)) {
     gr <- cFit$grad
   } else {
