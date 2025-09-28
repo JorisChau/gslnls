@@ -1,7 +1,7 @@
 FROM rocker/r-devel
 
 ARG PKG_VER=1.4.2
-ARG GSL_VER=2.3
+ARG GSL_VER=2.8
 
 ADD https://ftp.gnu.org/gnu/gsl/gsl-${GSL_VER}.tar.gz gsl-${GSL_VER}.tar.gz
 RUN tar -xf gsl-${GSL_VER}.tar.gz

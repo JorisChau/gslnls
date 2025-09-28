@@ -20,7 +20,7 @@ jobs:
       security-events: write
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-
+      sarif_json: gslnls.sarif.json
     steps:
       - uses: actions/checkout@v4
       - uses: r-lib/actions/setup-r@v2
@@ -35,11 +35,17 @@ jobs:
           (chk <- checkglobals::checkglobals(pkg = "."))
           checkglobals::as_sarif_json(
                     chk,
-                    path = file.path(Sys.getenv("GITHUB_WORKSPACE"), "checkglobals.json"),
+                    path = file.path(Sys.getenv("GITHUB_WORKSPACE"), Sys.getenv("sarif_json")),
                     root_dir = Sys.getenv("GITHUB_WORKSPACE")
           )
         shell: Rscript {0}
       - name: upload sarif
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: ${{ github.workspace }}/checkglobals.json
+          sarif_file: ${{ github.workspace }}/${{ env.sarif_json }}
+      - name: save artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.workspace }}/${{ env.sarif_json }}
+          path: ${{ env.sarif_json }}
+          if-no-files-found: error
